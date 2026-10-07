@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.21</title>
+<title>大学競泳監督シミュレーション PWA版 v1.22</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -341,34 +341,95 @@ nav .nav-action:hover{background:#edf6ff}
 
 /* v1.18 iPhone landscape-only compact UI */
 .portrait-blocker{display:none}
+
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
-  .portrait-blocker{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#eef3f8;color:#172236;text-align:center}
-  .portrait-blocker-card{display:grid;gap:10px;justify-items:center;max-width:320px;padding:24px 20px;background:#fff;border:1px solid #d6e0ea;border-radius:16px;box-shadow:0 18px 48px rgba(18,42,70,.16)}
-  .portrait-blocker-card b{font-size:18px}.portrait-blocker-card span{font-size:13px;color:#66758a}.rotate-icon{font-size:42px;line-height:1}
+  .portrait-blocker{
+    position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:#eef3f8;color:#172236;text-align:center
+  }
+  .portrait-blocker-card{
+    display:grid;gap:10px;justify-items:center;max-width:320px;padding:24px 20px;
+    background:#fff;border:1px solid #d6e0ea;border-radius:16px;
+    box-shadow:0 18px 48px rgba(18,42,70,.16)
+  }
+  .portrait-blocker-card b{font-size:18px}
+  .portrait-blocker-card span{font-size:13px;color:#66758a}
+  .rotate-icon{font-size:42px;line-height:1}
   body>header,body>nav,body>main,body>.toast-root,body>.modal-back{visibility:hidden!important}
 }
+
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
   body{font-size:12.5px;line-height:1.35}
-  header{position:static;padding:5px 7px}.header-row{gap:4px}.title{font-size:15px;width:auto;margin-right:auto}
-  .header-primary-actions{gap:4px}.header-primary-actions button,.utility-summary{font-size:11px;padding:3px 7px;min-height:32px}
-  .status{padding-top:3px;font-size:10px;gap:3px}.status-chip{padding:2px 5px;font-size:9px}
-  .pwa-status{margin-top:2px;gap:3px}.pwa-chip{padding:1px 5px;font-size:9px}
-  nav{padding:4px 5px;gap:3px}nav button{min-height:32px;padding:3px 7px;font-size:10.5px;border-radius:6px}
-  main{padding:4px;max-width:none}.page-lead{margin:0 1px 5px;gap:6px}.page-lead h1{font-size:15px}.page-lead p{font-size:10px;margin-top:1px}
-  .card{padding:6px;margin-bottom:6px;border-radius:8px}.card h2{font-size:15px;margin-bottom:5px}.card h3{font-size:13px;margin-bottom:4px}
-  .grid,.two{gap:5px}.dashboard-card{min-height:68px}.dashboard-card .big,.big{font-size:20px}.metric{font-size:10px}.metric b{font-size:17px}
-  button,select,input[type=text],input[type=number],.utility-summary{min-height:32px;font-size:11px}button{padding:4px 7px}select,input[type=text]{padding:4px 6px}input[type=number]{padding:3px;width:62px}
-  .table-wrap{border-radius:7px}table{font-size:10.5px}th,td{padding:4px 5px}
-  #trainingPlayers table{min-width:320px}#rosterTable{min-width:790px}#rankingTable{min-width:500px}#entryMatrix{min-width:860px!important}
-  #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){min-width:92px}#rosterTable th:nth-child(6),#rosterTable td:nth-child(6){min-width:160px}#rosterTable td:last-child{min-width:165px}
-  .action-group{min-width:135px;gap:3px}.action-group button{padding:3px 5px;font-size:9.5px}
-  .focus-grid{grid-template-columns:repeat(4,minmax(105px,1fr));gap:4px;margin-top:6px}.focus-btn{min-height:45px;padding:4px 6px}
-  .focus-btn .focus-rank-line{margin-top:2px;gap:4px}.focus-btn .stat-number{font-size:14px}.focus-btn .stat-rank-badge{width:23px;min-width:23px;height:23px;font-size:11px}
-  .focus-btn.selected::after{right:3px;top:3px;font-size:8px;padding:1px 4px}.stat-rank-legend{gap:3px;margin:4px 0 6px}.rank-legend-item{padding:2px 4px;font-size:9px}
-  .stat-rank-badge{width:22px;min-width:22px;height:22px;font-size:10px}.overall-rank{width:27px;height:27px;font-size:14px}.stat-number{font-size:14px;min-width:28px}
-  .training-list-scroll{max-height:56vh}.top-stat-list{gap:2px}.top-stat-chip{font-size:9px;padding:2px 3px}.entry-athlete{grid-template-columns:20px minmax(90px,1fr) auto auto;gap:4px;padding:4px}
-  .modal-back{padding:4px}.modal{width:100%;padding:6px;max-height:98vh;border-radius:8px}.modal>.row:first-child{top:-6px;padding:5px 0 4px;margin-bottom:5px}
-  .modal-actions{bottom:-6px;padding-top:7px;margin-top:7px}.notice{padding:6px 8px}.clock{font-size:20px}.race-toolbar{gap:3px;margin-bottom:4px}.race-info{font-size:8.5px;padding:5px;margin-top:4px}
+  header{position:static;padding:5px 7px}
+  .header-row{gap:4px}
+  .title{font-size:15px;width:auto;margin-right:auto}
+  .header-primary-actions{gap:4px}
+  .header-primary-actions button,.utility-summary{font-size:11px;padding:3px 7px;min-height:32px}
+  .status{padding-top:3px;font-size:10px;gap:3px}
+  .status-chip{padding:2px 5px;font-size:9px}
+  .pwa-status{margin-top:2px;gap:3px}
+  .pwa-chip{padding:1px 5px;font-size:9px}
+
+  nav{padding:4px 5px;gap:3px}
+  nav button{min-height:32px;padding:3px 7px;font-size:10.5px;border-radius:6px}
+
+  main{padding:4px;max-width:none}
+  .page-lead{margin:0 1px 5px;gap:6px}
+  .page-lead h1{font-size:15px}
+  .page-lead p{font-size:10px;margin-top:1px}
+  .card{padding:6px;margin-bottom:6px;border-radius:8px}
+  .card h2{font-size:15px;margin-bottom:5px}
+  .card h3{font-size:13px;margin-bottom:4px}
+  .grid,.two{gap:5px}
+  .dashboard-card{min-height:68px}
+  .dashboard-card .big,.big{font-size:20px}
+  .metric{font-size:10px}.metric b{font-size:17px}
+
+  button,select,input[type=text],input[type=number],.utility-summary{
+    min-height:32px;font-size:11px
+  }
+  button{padding:4px 7px}
+  select,input[type=text]{padding:4px 6px}
+  input[type=number]{padding:3px;width:62px}
+
+  .table-wrap{border-radius:7px}
+  table{font-size:10.5px}
+  th,td{padding:4px 5px}
+  #trainingPlayers table{min-width:320px}
+  #rosterTable{min-width:790px}
+  #rankingTable{min-width:500px}
+  #entryMatrix{min-width:860px!important}
+  #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){min-width:92px}
+  #rosterTable th:nth-child(6),#rosterTable td:nth-child(6){min-width:160px}
+  #rosterTable td:last-child{min-width:165px}
+  .action-group{min-width:135px;gap:3px}
+  .action-group button{padding:3px 5px;font-size:9.5px}
+
+  .focus-grid{grid-template-columns:repeat(4,minmax(105px,1fr));gap:4px;margin-top:6px}
+  .focus-btn{min-height:45px;padding:4px 6px}
+  .focus-btn .focus-rank-line{margin-top:2px;gap:4px}
+  .focus-btn .stat-number{font-size:14px}
+  .focus-btn .stat-rank-badge{width:23px;min-width:23px;height:23px;font-size:11px}
+  .focus-btn.selected::after{right:3px;top:3px;font-size:8px;padding:1px 4px}
+  .stat-rank-legend{gap:3px;margin:4px 0 6px}
+  .rank-legend-item{padding:2px 4px;font-size:9px}
+  .stat-rank-badge{width:22px;min-width:22px;height:22px;font-size:10px}
+  .overall-rank{width:27px;height:27px;font-size:14px}
+  .stat-number{font-size:14px;min-width:28px}
+
+  .training-list-scroll{max-height:56vh}
+  .top-stat-list{gap:2px}
+  .top-stat-chip{font-size:9px;padding:2px 3px}
+  .entry-athlete{grid-template-columns:20px minmax(90px,1fr) auto auto;gap:4px;padding:4px}
+
+  .modal-back{padding:4px}
+  .modal{width:100%;padding:6px;max-height:98vh;border-radius:8px}
+  .modal>.row:first-child{top:-6px;padding:5px 0 4px;margin-bottom:5px}
+  .modal-actions{bottom:-6px;padding-top:7px;margin-top:7px}
+  .notice{padding:6px 8px}
+  .clock{font-size:20px}
+  .race-toolbar{gap:3px;margin-bottom:4px}
+  .race-info{font-size:8.5px;padding:5px;margin-top:4px}
 }
 
 
@@ -381,7 +442,9 @@ nav .nav-action:hover{background:#edf6ff}
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
   body{font-size:12px}
-  header,nav,main,.page,.card,.grid,.two,.table-wrap,.modal,.detail-stats-pb{max-width:100%;min-width:0}
+  header,nav,main,.page,.card,.grid,.two,.table-wrap,.modal,.detail-stats-pb{
+    max-width:100%;min-width:0
+  }
   main{width:100%;padding:2px}
   .page{width:100%;overflow-x:hidden}
   .card{width:100%;padding:4px;margin-bottom:4px;border-radius:6px}
@@ -391,6 +454,7 @@ nav .nav-action:hover{background:#edf6ff}
   .page-lead{margin:0 0 3px}
   .page-lead h1{font-size:14px}
   .page-lead p{font-size:9.5px}
+
   header{padding:3px 4px}
   .header-row{gap:3px}
   .title{font-size:14px}
@@ -398,8 +462,10 @@ nav .nav-action:hover{background:#edf6ff}
   .header-primary-actions button,.utility-summary{padding:2px 5px;min-height:29px}
   .status{padding-top:2px}
   .pwa-status{margin-top:1px}
+
   nav{padding:3px 2px;gap:2px;max-width:100%;overflow-x:auto}
   nav button{min-height:29px;padding:2px 5px;font-size:9.5px}
+
   .table-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain}
   table{max-width:none}
   th,td{padding:3px 4px}
@@ -412,9 +478,11 @@ nav .nav-action:hover{background:#edf6ff}
   #rosterTable td:last-child{min-width:140px}
   .action-group{min-width:118px;gap:2px}
   .action-group button{padding:2px 4px;font-size:9px;min-height:27px}
+
   .focus-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
   .focus-btn{min-width:0;min-height:42px;padding:3px 4px}
   .top-stat-chip{max-width:100%;white-space:nowrap}
+
   .modal-back{padding:2px}
   .modal{padding:4px;max-height:99vh}
   .modal>.row:first-child{top:-4px;padding:3px 0;margin-bottom:3px}
@@ -422,10 +490,17 @@ nav .nav-action:hover{background:#edf6ff}
   .modal h3{font-size:12px}
   .modal p{margin:4px 0}
   .modal-actions{bottom:-4px;padding-top:4px;margin-top:4px}
-  .detail-stats-pb{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:6px}
+
+  .detail-stats-pb{
+    grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+    gap:6px;
+  }
   .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
   .detail-pb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 6px}
-  .stat-detail-row{min-width:0;grid-template-columns:minmax(0,1fr) auto;gap:4px;padding:3px 4px;margin-bottom:0;border-radius:5px}
+  .stat-detail-row{
+    min-width:0;grid-template-columns:minmax(0,1fr) auto;
+    gap:4px;padding:3px 4px;margin-bottom:0;border-radius:5px
+  }
   .stat-detail-value{gap:3px}
   .stat-detail-label{font-size:9.5px}
   .stat-detail-row .stat-rank-badge{width:19px;min-width:19px;height:19px;font-size:9px;border-radius:5px}
@@ -433,6 +508,7 @@ nav .nav-action:hover{background:#edf6ff}
   .pb-detail-row{gap:4px;padding:3px 2px;font-size:9.5px}
   .stat-rank-legend{margin:2px 0 4px}
   .rank-legend-item{padding:1px 3px;font-size:8.5px}
+
   #historyTable{max-width:100%}
   #historyTable table{min-width:680px}
 }
@@ -440,34 +516,58 @@ nav .nav-action:hover{background:#edf6ff}
 
 /* v1.20 iPhone landscape width compaction without smaller text */
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
+  /* Do not reduce font sizes further in this pass. */
   html,body{overflow-x:hidden}
   body>*{max-width:100%}
   header,nav,main,.page,.card,.grid,.two,.row,.table-wrap,.modal,.detail-stats-pb{
     width:100%;max-width:100%;min-width:0;box-sizing:border-box
   }
+
+  /* Remove horizontal padding first instead of shrinking text. */
   header{padding-left:2px;padding-right:2px}
   nav{padding-left:0;padding-right:0}
   main{padding-left:1px;padding-right:1px}
   .card{padding-left:3px;padding-right:3px}
   .modal-back{padding-left:1px;padding-right:1px}
   .modal{padding-left:3px;padding-right:3px}
+
+  /* Make flex/grid children genuinely shrinkable. */
   .header-row,.header-primary-actions,.page-lead,.row,.grid,.two,
   .detail-stat-grid,.detail-pb-grid{min-width:0}
   .header-row>*,.header-primary-actions>*,.page-lead>*,.row>*,
   .grid>*,.two>*,.detail-stat-grid>*,.detail-pb-grid>*{min-width:0}
+
+  /* Tables should fit the viewport instead of enforcing wide desktop geometry. */
   #rosterTable,#rankingTable,#trainingPlayers table,#entryMatrix{
-    width:100%!important;min-width:0!important;table-layout:fixed
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed;
   }
-  #rosterTable th,#rosterTable td,#rankingTable th,#rankingTable td,
-  #trainingPlayers th,#trainingPlayers td,#entryMatrix th,#entryMatrix td{
-    min-width:0!important;max-width:none!important;white-space:normal;
-    overflow-wrap:anywhere;word-break:break-word;padding-left:3px;padding-right:3px
+  #rosterTable th,#rosterTable td,
+  #rankingTable th,#rankingTable td,
+  #trainingPlayers th,#trainingPlayers td,
+  #entryMatrix th,#entryMatrix td{
+    min-width:0!important;
+    max-width:none!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    padding-left:3px;
+    padding-right:3px;
   }
-  #rosterTable td:nth-child(2),#rosterTable td:nth-child(3),
-  #rankingTable td:nth-child(2),#rankingTable td:nth-child(3),#rankingTable td:nth-child(4),
-  #trainingPlayers td:nth-child(2),#entryMatrix td:not(:first-child){
-    font-variant-numeric:tabular-nums
+
+  /* Preserve compact single-line values where wrapping is undesirable. */
+  #rosterTable td:nth-child(2),
+  #rosterTable td:nth-child(3),
+  #rankingTable td:nth-child(2),
+  #rankingTable td:nth-child(3),
+  #rankingTable td:nth-child(4),
+  #trainingPlayers td:nth-child(2),
+  #entryMatrix td:not(:first-child){
+    font-variant-numeric:tabular-nums;
   }
+
+  /* Roster column proportions: name/overall/stats/actions get room, dead space disappears. */
   #rosterTable th:nth-child(1),#rosterTable td:nth-child(1){width:15%}
   #rosterTable th:nth-child(2),#rosterTable td:nth-child(2){width:7%}
   #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){width:12%}
@@ -475,21 +575,51 @@ nav .nav-action:hover{background:#edf6ff}
   #rosterTable th:nth-child(5),#rosterTable td:nth-child(5){width:10%}
   #rosterTable th:nth-child(6),#rosterTable td:nth-child(6){width:25%}
   #rosterTable th:nth-child(7),#rosterTable td:nth-child(7){width:21%}
+
   #rosterTable td:last-child{min-width:0!important}
   .action-group{
-    min-width:0!important;width:100%;display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));gap:2px
+    min-width:0!important;
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:2px;
   }
-  .action-group button{width:100%;min-width:0;white-space:normal;padding-left:2px;padding-right:2px}
+  .action-group button{
+    width:100%;
+    min-width:0;
+    white-space:normal;
+    padding-left:2px;
+    padding-right:2px;
+  }
+
+  /* Compact stat chips by wrapping, not by reducing text size. */
   .top-stat-list{display:flex;flex-wrap:wrap;gap:2px}
   .top-stat-chip{min-width:0;max-width:100%;white-space:normal;padding-left:2px;padding-right:2px}
-  .player-overall{gap:3px}.player-overall-meta{min-width:0}
-  #entryMatrix th:first-child,#entryMatrix td:first-child{width:18%;min-width:0!important}
-  #entryMatrix th:not(:first-child),#entryMatrix td:not(:first-child){width:auto;text-align:center}
-  #entryMatrix select,#entryMatrix button,#entryMatrix input{max-width:100%;min-width:0}
-  .detail-stats-pb{gap:3px}.detail-stat-grid{gap:2px}.detail-pb-grid{gap:0 3px}
+  .player-overall{gap:3px}
+  .player-overall-meta{min-width:0}
+
+  /* Entry matrix: narrow labels, equal event columns, no page-level overflow. */
+  #entryMatrix th:first-child,#entryMatrix td:first-child{
+    width:18%;
+    min-width:0!important;
+  }
+  #entryMatrix th:not(:first-child),#entryMatrix td:not(:first-child){
+    width:auto;
+    text-align:center;
+  }
+  #entryMatrix select,#entryMatrix button,#entryMatrix input{
+    max-width:100%;
+    min-width:0;
+  }
+
+  /* Player detail remains two columns but removes internal gutters. */
+  .detail-stats-pb{gap:3px}
+  .detail-stat-grid{gap:2px}
+  .detail-pb-grid{gap:0 3px}
   .stat-detail-row{padding-left:2px;padding-right:2px;gap:2px}
   .pb-detail-row{padding-left:1px;padding-right:1px;gap:2px}
+
+  /* Any residual wide content stays inside its own scroller. */
   .table-wrap{overflow-x:auto;max-width:100%}
   #historyTable{overflow-x:auto}
 }
@@ -497,10 +627,25 @@ nav .nav-action:hover{background:#edf6ff}
 
 /* v1.21 landscape density pass: keep text size, tighten widths and gaps */
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
-  #page-home.active{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:3px;row-gap:3px}
-  #page-home>.page-lead,#page-home>.grid,#page-home>.toolbar-card{grid-column:1/-1}
-  #page-home>.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
-  #page-home>.grid .dashboard-card{min-height:58px;padding:4px 5px}
+
+  /* HOME: use landscape width efficiently and cut empty space */
+  #page-home.active{
+    display:grid;
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    column-gap:3px;
+    row-gap:3px;
+  }
+  #page-home>.page-lead,
+  #page-home>.grid,
+  #page-home>.toolbar-card{grid-column:1/-1}
+  #page-home>.grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:3px;
+  }
+  #page-home>.grid .dashboard-card{
+    min-height:58px;
+    padding:4px 5px;
+  }
   #page-home>.card:nth-of-type(2){grid-column:1/7}
   #page-home>.card:nth-of-type(3){grid-column:7/13}
   #page-home .toolbar-card{padding:3px 5px}
@@ -508,9 +653,19 @@ nav .nav-action:hover{background:#edf6ff}
   #page-home .growth-athlete{padding:4px}
   #page-home .growth-chip{margin:2px 2px 0 0;padding:2px 4px}
 
-  #page-training>.two{grid-template-columns:minmax(235px,.72fr) minmax(0,1.28fr);gap:3px}
+  /* TRAINING: narrower athlete list and tighter four columns */
+  #page-training>.two{
+    grid-template-columns:minmax(235px,.72fr) minmax(0,1.28fr);
+    gap:3px;
+  }
   #trainingPlayers table{table-layout:fixed;width:100%!important}
-  #trainingPlayers th,#trainingPlayers td{padding-left:2px!important;padding-right:2px!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+  #trainingPlayers th,#trainingPlayers td{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    white-space:nowrap!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   #trainingPlayers th:nth-child(1),#trainingPlayers td:nth-child(1){width:42%}
   #trainingPlayers th:nth-child(2),#trainingPlayers td:nth-child(2){width:13%;text-align:center}
   #trainingPlayers th:nth-child(3),#trainingPlayers td:nth-child(3){width:18%;text-align:center}
@@ -519,6 +674,7 @@ nav .nav-action:hover{background:#edf6ff}
   #trainingPlayers .training-player-rank{gap:2px;justify-content:center}
   #trainingPlayers .tag{padding-left:4px;padding-right:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 
+  /* ROSTER: reduce name-to-grade gap and compress all structural whitespace */
   #rosterTable th,#rosterTable td{padding-left:2px!important;padding-right:2px!important}
   #rosterTable th:nth-child(1),#rosterTable td:nth-child(1){width:13%}
   #rosterTable th:nth-child(2),#rosterTable td:nth-child(2){width:6%}
@@ -530,8 +686,14 @@ nav .nav-action:hover{background:#edf6ff}
   #rosterTable .grade-pill{padding-left:3px;padding-right:3px}
   #rosterTable .athlete-name{display:block;line-height:1.15}
 
+  /* ALL-PLAYER RANKING: tighten every column and inter-column gap */
   #rankingTable table{width:100%!important;table-layout:fixed}
-  #rankingTable th,#rankingTable td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  #rankingTable th,#rankingTable td{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
   #rankingTable th:nth-child(1),#rankingTable td:nth-child(1){width:8%;text-align:center}
   #rankingTable th:nth-child(2),#rankingTable td:nth-child(2){width:21%}
   #rankingTable th:nth-child(3),#rankingTable td:nth-child(3){width:25%}
@@ -540,12 +702,25 @@ nav .nav-action:hover{background:#edf6ff}
   #rankingTable th:nth-child(6),#rankingTable td:nth-child(6){width:15%}
   #rankingTable .rank-pill,#rankingTable .grade-pill{padding-left:3px;padding-right:3px}
 
-  #recordBook table,#archiveTable table,#meetHistory table{width:100%!important;min-width:0!important;table-layout:fixed}
-  #recordBook th,#recordBook td,#archiveTable th,#archiveTable td,#meetHistory th,#meetHistory td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  /* RECORDS / MEET HISTORY: compact every table */
+  #recordBook table,#archiveTable table,#meetHistory table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed;
+  }
+  #recordBook th,#recordBook td,
+  #archiveTable th,#archiveTable td,
+  #meetHistory th,#meetHistory td{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
   #recordBook th:nth-child(1),#recordBook td:nth-child(1){width:20%}
   #recordBook th:nth-child(2),#recordBook td:nth-child(2){width:18%}
   #recordBook th:nth-child(3),#recordBook td:nth-child(3){width:25%}
   #recordBook th:nth-child(4),#recordBook td:nth-child(4){width:37%}
+
   #meetHistory th:nth-child(1),#meetHistory td:nth-child(1){width:12%}
   #meetHistory th:nth-child(2),#meetHistory td:nth-child(2){width:17%}
   #meetHistory th:nth-child(3),#meetHistory td:nth-child(3){width:29%}
@@ -554,8 +729,14 @@ nav .nav-action:hover{background:#edf6ff}
   #meetHistory th:nth-child(6),#meetHistory td:nth-child(6){width:14%}
   #meetHistory button{padding-left:3px;padding-right:3px}
 
+  /* SCOUT: same dense column treatment */
   #scoutTable table{width:100%!important;min-width:0!important;table-layout:fixed}
-  #scoutTable th,#scoutTable td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  #scoutTable th,#scoutTable td{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
   #scoutTable th:nth-child(1),#scoutTable td:nth-child(1){width:17%}
   #scoutTable th:nth-child(2),#scoutTable td:nth-child(2){width:21%}
   #scoutTable th:nth-child(3),#scoutTable td:nth-child(3){width:20%}
@@ -564,30 +745,180 @@ nav .nav-action:hover{background:#edf6ff}
   #scoutTable th:nth-child(6),#scoutTable td:nth-child(6){width:11%}
   #scoutTable button{padding-left:2px;padding-right:2px;width:100%}
 
-  #facilityGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
-  #facilityGrid .facility-card{min-height:102px;padding:4px;gap:3px}
+  /* FACILITIES: less card gutter / more cards per row */
+  #facilityGrid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:3px;
+  }
+  #facilityGrid .facility-card{
+    min-height:102px;
+    padding:4px;
+    gap:3px;
+  }
   #facilityGrid .facility-head{gap:3px}
   #facilityGrid .facility-level{font-size:16px}
   #facilityGrid .facility-meter{height:5px}
   #facilityGrid button{padding-left:3px;padding-right:3px}
 
+  /* Schedule / standards / top10 modals */
   .compact-modal-table{width:100%;overflow-x:hidden}
-  .compact-modal-table table{width:100%!important;min-width:0!important;table-layout:fixed}
-  .compact-modal-table th,.compact-modal-table td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  .compact-modal-table table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed;
+  }
+  .compact-modal-table th,.compact-modal-table td{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
   .schedule-table th:nth-child(1),.schedule-table td:nth-child(1){width:29%}
   .schedule-table th:nth-child(2),.schedule-table td:nth-child(2){width:43%}
   .schedule-table th:nth-child(3),.schedule-table td:nth-child(3){width:14%}
   .schedule-table th:nth-child(4),.schedule-table td:nth-child(4){width:14%}
+
   .standards-table th:nth-child(1),.standards-table td:nth-child(1){width:16%}
   .standards-table th:nth-child(n+2),.standards-table td:nth-child(n+2){width:21%}
+
   .top10-table th:nth-child(1),.top10-table td:nth-child(1){width:9%}
   .top10-table th:nth-child(2),.top10-table td:nth-child(2){width:16%}
   .top10-table th:nth-child(3),.top10-table td:nth-child(3){width:39%}
   .top10-table th:nth-child(4),.top10-table td:nth-child(4){width:14%}
   .top10-table th:nth-child(5),.top10-table td:nth-child(5){width:22%}
 
-  #page-training .card,#page-roster .card,#page-rankings .card,#page-records .card,#page-scout .card,#page-facilities .card{padding-left:3px;padding-right:3px}
-  #page-roster #rosterTable,#page-rankings #rankingTable,#page-scout #scoutTable{margin-top:4px!important}
+  /* Common page/card spacing for the named screens */
+  #page-training .card,#page-roster .card,#page-rankings .card,#page-records .card,
+  #page-scout .card,#page-facilities .card{
+    padding-left:3px;
+    padding-right:3px;
+  }
+  #page-roster #rosterTable,#page-rankings #rankingTable,#page-scout #scoutTable{
+    margin-top:4px!important;
+  }
+}
+
+
+/* v1.22: calibration UI + denser landscape tables, keep text size */
+.entry-stat-view{line-height:1.2}
+.entry-pb-view{line-height:1.2}
+
+@media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
+
+  /* HOME: restore growth/result cards to original full-width stacking.
+     Only the top current/points/reputation summary is compressed. */
+  #page-home.active{display:block}
+  #page-home>.page-lead,
+  #page-home>.grid,
+  #page-home>.toolbar-card,
+  #page-home>.card:nth-of-type(2),
+  #page-home>.card:nth-of-type(3){width:100%;grid-column:auto}
+  #page-home>.grid{
+    display:grid;
+    grid-template-columns:minmax(110px,.62fr) minmax(105px,.58fr) minmax(205px,1.8fr);
+    gap:3px;
+  }
+  #page-home>.grid .dashboard-card{
+    min-height:54px;
+    padding:4px;
+  }
+  #page-home>.grid .dashboard-card .big{font-size:18px}
+  #page-home>.grid .dashboard-card .muted{font-size:9.5px;line-height:1.2}
+  #page-home #reputationInfoBtn{margin-top:3px!important;padding-left:4px;padding-right:4px}
+  #page-home .growth-list{gap:8px}
+  #page-home .growth-athlete{padding:10px}
+  #page-home .growth-chip{margin:4px 4px 0 0;padding:5px 8px}
+
+  /* TRAINING: athlete list narrower; columns tighter while keeping font. */
+  #page-training>.two{
+    grid-template-columns:minmax(190px,.56fr) minmax(0,1.44fr);
+    gap:3px;
+  }
+  #trainingPlayers table{width:100%!important;table-layout:fixed}
+  #trainingPlayers th,#trainingPlayers td{padding-left:1px!important;padding-right:1px!important}
+  #trainingPlayers th:nth-child(1),#trainingPlayers td:nth-child(1){width:39%}
+  #trainingPlayers th:nth-child(2),#trainingPlayers td:nth-child(2){width:12%}
+  #trainingPlayers th:nth-child(3),#trainingPlayers td:nth-child(3){width:18%}
+  #trainingPlayers th:nth-child(4),#trainingPlayers td:nth-child(4){width:31%}
+  #trainingPlayers .grade-pill,
+  #trainingPlayers .tag{padding-left:2px;padding-right:2px}
+
+  /* Every nav page from training onward: reduce table width and inter-column whitespace. */
+  #page-roster .table-wrap,
+  #page-rankings .table-wrap,
+  #page-records .table-wrap,
+  #page-scout .table-wrap{
+    width:90%;
+    max-width:90%;
+  }
+  #page-roster table,#page-rankings table,#page-records table,#page-scout table{
+    width:100%!important;
+    table-layout:fixed;
+  }
+  #page-roster th,#page-roster td,
+  #page-rankings th,#page-rankings td,
+  #page-records th,#page-records td,
+  #page-scout th,#page-scout td{
+    padding-left:1px!important;
+    padding-right:1px!important;
+  }
+
+  /* Roster */
+  #rosterTable th:nth-child(1),#rosterTable td:nth-child(1){width:12%}
+  #rosterTable th:nth-child(2),#rosterTable td:nth-child(2){width:5%}
+  #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){width:12%}
+  #rosterTable th:nth-child(4),#rosterTable td:nth-child(4){width:10%}
+  #rosterTable th:nth-child(5),#rosterTable td:nth-child(5){width:10%}
+  #rosterTable th:nth-child(6),#rosterTable td:nth-child(6){width:28%}
+  #rosterTable th:nth-child(7),#rosterTable td:nth-child(7){width:23%}
+
+  /* Ranking */
+  #rankingTable th:nth-child(1),#rankingTable td:nth-child(1){width:7%}
+  #rankingTable th:nth-child(2),#rankingTable td:nth-child(2){width:18%}
+  #rankingTable th:nth-child(3),#rankingTable td:nth-child(3){width:23%}
+  #rankingTable th:nth-child(4),#rankingTable td:nth-child(4){width:13%}
+  #rankingTable th:nth-child(5),#rankingTable td:nth-child(5){width:21%}
+  #rankingTable th:nth-child(6),#rankingTable td:nth-child(6){width:18%}
+
+  /* Records/history/archive */
+  #recordBook th,#recordBook td,
+  #meetHistory th,#meetHistory td,
+  #archiveTable th,#archiveTable td{padding-left:1px!important;padding-right:1px!important}
+
+  /* Scout */
+  #scoutTable th:nth-child(1),#scoutTable td:nth-child(1){width:15%}
+  #scoutTable th:nth-child(2),#scoutTable td:nth-child(2){width:20%}
+  #scoutTable th:nth-child(3),#scoutTable td:nth-child(3){width:20%}
+  #scoutTable th:nth-child(4),#scoutTable td:nth-child(4){width:20%}
+  #scoutTable th:nth-child(5),#scoutTable td:nth-child(5){width:11%}
+  #scoutTable th:nth-child(6),#scoutTable td:nth-child(6){width:14%}
+
+  /* Facilities: denser cards without smaller text */
+  #facilityGrid{width:90%;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}
+  #facilityGrid .facility-card{padding-left:3px;padding-right:3px}
+
+  /* Schedule / standards / top10 are also narrower and tighter. */
+  .compact-modal-table{width:90%;max-width:90%}
+  .compact-modal-table th,.compact-modal-table td{
+    padding-left:1px!important;
+    padding-right:1px!important;
+  }
+  .schedule-table th:nth-child(1),.schedule-table td:nth-child(1){width:27%}
+  .schedule-table th:nth-child(2),.schedule-table td:nth-child(2){width:45%}
+  .schedule-table th:nth-child(3),.schedule-table td:nth-child(3){width:14%}
+  .schedule-table th:nth-child(4),.schedule-table td:nth-child(4){width:14%}
+  .standards-table th:nth-child(1),.standards-table td:nth-child(1){width:15%}
+  .standards-table th:nth-child(n+2),.standards-table td:nth-child(n+2){width:21.25%}
+  .top10-table th:nth-child(1),.top10-table td:nth-child(1){width:8%}
+  .top10-table th:nth-child(2),.top10-table td:nth-child(2){width:15%}
+  .top10-table th:nth-child(3),.top10-table td:nth-child(3){width:40%}
+  .top10-table th:nth-child(4),.top10-table td:nth-child(4){width:13%}
+  .top10-table th:nth-child(5),.top10-table td:nth-child(5){width:24%}
+
+  /* Entry matrix toggle/button and dense cells */
+  #entryViewToggle{padding-left:4px;padding-right:4px}
+  #entryMatrix th,#entryMatrix td{padding-left:1px!important;padding-right:1px!important}
+  #entryMatrix .entry-stat-view b{white-space:nowrap}
 }
 
 </style>
@@ -611,7 +942,7 @@ nav .nav-action:hover{background:#edf6ff}
 </div>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.21</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.22</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -667,7 +998,6 @@ nav .nav-action:hover{background:#edf6ff}
     <div id="lastScores" class="muted">まだ大会結果はありません。</div>
   </div>
 </section>
-
 <section id="page-training" class="page">
   <div class="page-lead"><div><h1>練習指示</h1><p>選手を選び、S〜Gの能力ランクを見ながら伸ばしたい能力を重点指定します。重点なしなら全能力を均等に鍛えます。</p></div></div>
   <div class="two">
@@ -897,7 +1227,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.21";
+  state.version="pwa-v1.22";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1108,6 +1438,11 @@ function eventProfile(p,e){
   return [avg("speed"),avg("stamina"),avg("turn"),d];
 }
 function abilityValue(p,e){let [sp,st,tr,d]=eventProfile(p,e),sw={50:.05,100:.15,200:.28,400:.40}[d],vw=.72-sw*.35;let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;return clamp(raw/mx,0,1)}
+function entryEventSpeedStamina(p,e){
+  let [speed,stamina]=eventProfile(p,e);
+  return{speed:Math.round(speed),stamina:Math.round(stamina)};
+}
+
 function stableUnitHash(text){
   let h=2166136261>>>0;
   for(let i=0;i<String(text).length;i++){
@@ -1169,9 +1504,26 @@ function sanitizeCpuPBs(a){
 }
 
 const ELITE_JR_FACTOR=.99;
+const INTERCOLLEGE_A_FINAL_ANCHOR_ABILITY=163/200;
+const INTERCOLLEGE_A_FINAL_CUTOFF={
+  fr50:22.90,fr100:50.35,fr200:111.19,fr400:236.50,
+  ba100:56.00,ba200:123.50,br100:61.50,br200:132.21,
+  fly100:53.10,fly200:119.50,im200:121.00,im400:257.55
+};
 function expectedTime(p,e){
   let ability=abilityValue(p,e);
-  return JAPAN_RECORD[e]*(ELITE_JR_FACTOR+(1-ability)*(1.31-ELITE_JR_FACTOR));
+  let anchorAbility=INTERCOLLEGE_A_FINAL_ANCHOR_ABILITY;
+  let jr=JAPAN_RECORD[e];
+  let anchorFactor=(INTERCOLLEGE_A_FINAL_CUTOFF[e]||jr*1.055)/jr;
+  let factor;
+  if(ability>=anchorAbility){
+    let t=(ability-anchorAbility)/Math.max(.0001,1-anchorAbility);
+    factor=anchorFactor+(ELITE_JR_FACTOR-anchorFactor)*t;
+  }else{
+    let t=ability/Math.max(.0001,anchorAbility);
+    factor=1.31+(anchorFactor-1.31)*t;
+  }
+  return jr*factor;
 }
 function raceTarget(p,e,champ=true){let base=expectedTime(p,e),mental=p.stats.mental||100,effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;let sigma=Math.max(.001,.0032-(mental/200)*.0018);return Math.max(1,base*(1+effect+gauss(0,sigma)))}
 function strokeProfile(stroke,speed,stamina,skill){let sn=clamp(speed/200,0,1),kn=clamp(skill/200,0,1);
@@ -1319,7 +1671,8 @@ function playerReputationDelta(meet,selections,relaySel={}){
   }
   let n=ids.size,delta=0;
   if(meet==="kansai_college"){
-    delta=n?2*n+.5*entries:-0.5;  }else if(meet==="intercollege"){
+    delta=n?2*n+.5*entries:-0.5;
+  }else if(meet==="intercollege"){
     delta=n?12*n+entries:-1.5;
     if(n>=3)delta+=12;
     if(n>=6)delta+=13;
@@ -1450,7 +1803,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.21",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.22",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -1643,8 +1996,7 @@ function widenFinalField(rows,event,meet){
     if(x.source==="CPU"&&x.race.total<target){
       target=round2(target);
       x.race=replayRaceToOfficialTime(x.athlete,event,target,false);
-    }
-    previous=Math.max(previous,x.race.total);
+    }    previous=Math.max(previous,x.race.total);
   }
   return rows.sort((a,b)=>a.race.total-b.race.total);
 }
@@ -2140,13 +2492,14 @@ function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},
 
 function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.season,initialSelections=null,initialRelaySel=null){
   let selections=initialSelections?deepClone(initialSelections):Object.fromEntries(EVENTS.map(e=>[e,[]])),relaySel=initialRelaySel?deepClone(initialRelaySel):{};
+  let entryDisplayMode="pb";
   let ruleText=RECORD_MEETS.has(meet)
     ?"記録会：各選手が個人12種目から自由に選択できます。個人種目数の上限はありません。"
     :COLLEGE_ENTRY_LIMIT_MEETS.has(meet)
       ?`${MEET_LABEL[meet]}：各大学1種目3人まで、1人3種目まで（リレーは別枠）。参加標準記録を満たす種目のみ選択できます。`
       :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
 
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー</h2>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー</h2><button id="entryViewToggle">PB表示 → 能力表示</button>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
     <div class="notice small">${ruleText}</div>
     <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" style="min-width:1320px">
       <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${EVENTS.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
@@ -2174,7 +2527,12 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
       ${EVENTS.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
-        let sub=RESTRICTED.has(meet)?`<div class="small">${fmt(p.bestTimes[e])}<br>${qualified(p,meet,e)?"○":"×"} ${fmt(standardFor(meet,e))}</div>`:`<div class="small">${fmt(p.bestTimes[e])}</div>`;
+        let stats=entryEventSpeedStamina(p,e);
+        let statText=`<div class="small entry-stat-view"><b>速${statRank(stats.speed)} ${stats.speed}</b><br><b>持${statRank(stats.stamina)} ${stats.stamina}</b></div>`;
+        let pbText=RESTRICTED.has(meet)
+          ?`<div class="small entry-pb-view">${fmt(p.bestTimes[e])}<br>${qualified(p,meet,e)?"○":"×"} ${fmt(standardFor(meet,e))}</div>`
+          :`<div class="small entry-pb-view">${fmt(p.bestTimes[e])}</div>`;
+        let sub=entryDisplayMode==="stats"?statText:pbText;
         return`<td style="text-align:center"><input type="checkbox" data-pid="${p.id}" data-event="${e}" ${selected?"checked":""} ${!selected&&!status.ok?"disabled":""}>${sub}</td>`;
       }).join("")}
     </tr>`).join("");
@@ -2189,6 +2547,12 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   }
 
   if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
+  let entryViewToggle=m.querySelector("#entryViewToggle");
+  if(entryViewToggle)entryViewToggle.onclick=()=>{
+    entryDisplayMode=entryDisplayMode==="pb"?"stats":"pb";
+    entryViewToggle.textContent=entryDisplayMode==="pb"?"PB表示 → 能力表示":"能力表示 → PB表示";
+    render();
+  };
   m.querySelector("#clearAll").onclick=()=>{EVENTS.forEach(e=>selections[e]=[]);render()};
   if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=()=>openRelayEditor(relaySel,render);
   m.querySelector("#confirmEntry").onclick=()=>{
@@ -2319,6 +2683,7 @@ function buildMeetRaceQueue(result,selections){
     let [kind,finals,meta]=entry;
     if((result.relayEntries?.[kind]||[]).length!==4)continue;
     let eventStart=queue.length,heats=meta?.heats||[],prelim=meta?.prelim||[];
+
     heats.forEach((teams,hi)=>{
       if(!teams.some(t=>t.organization===state.playerUniversity))return;
       let rows=teams.map(t=>relayPlaybackRow(t,kind));
@@ -2630,8 +2995,7 @@ function playRaceCanvas(event,rows,options={}){
   function phaseJa(p){return({reaction:"スタート待機",start_dive:"飛び込み",back_start:"背泳ぎスタート",start_underwater:"潜水",underwater_dolphin:"ドルフィンキック",breast_pullout:"ひとかき・ひとけり",push_off:"壁蹴り",turn:"ターン",surface_swim:"泳動作",finish:"フィニッシュ"}[p]||p)}
   function strokeJa(s){return({fr:"Fr",ba:"Ba",br:"Br",fly:"Fly"}[s]||s)}
 
-  function joint(x1,y1,x2,y2,x3,y3,width,color){
-    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";ctx.lineJoin="round";
+  function joint(x1,y1,x2,y2,x3,y3,width,color){    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";ctx.lineJoin="round";
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();
   }
   function bubble(x,y,r,a=.35){ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
