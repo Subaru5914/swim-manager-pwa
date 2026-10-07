@@ -1,0 +1,2973 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1367d1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>大学競泳監督シミュレーション PWA版 v1.15</title>
+<style>
+:root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
+*{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;color:var(--ink)}
+button:hover{border-color:#9bb7d7}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button.primary:hover{background:var(--accent2)}
+button.danger{color:#fff;background:var(--bad);border-color:var(--bad)}button:disabled{opacity:.45;cursor:not-allowed}
+header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:10px 14px}
+.header-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.title{font-size:20px;font-weight:800;margin-right:auto}.status{font-size:13px;color:var(--muted);width:100%;padding-top:4px}
+nav{display:flex;gap:6px;overflow:auto;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line)}
+nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{padding:14px;max-width:1500px;margin:0 auto}.page{display:none}.page.active{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}.card h2,.card h3{margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.org-edit-list{display:flex;flex-direction:column;gap:6px}.org-edit-row{display:flex;align-items:center;gap:7px;justify-content:flex-start;min-height:38px}.org-edit-row b,.org-edit-row span{flex:0 1 auto;min-width:0}.org-edit-row button{flex:0 0 auto}.muted{color:var(--muted)}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.big{font-size:28px;font-weight:800}.metric{font-size:13px;color:var(--muted)}.metric b{display:block;font-size:22px;color:var(--ink)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f7f9fc;position:sticky;top:0;z-index:1;font-size:13px}tbody tr:hover{background:#f8fbff}
+.tag{display:inline-block;padding:2px 7px;border-radius:999px;background:#eef4fb;font-size:12px;margin:1px}.tag.good{background:#e4f6ef;color:#0d7050}.tag.gold{background:#fff5cf;color:#7f6100}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}.stat-row{display:grid;grid-template-columns:1fr 80px 70px;gap:6px;align-items:center}
+input[type=number]{width:76px;padding:6px;border:1px solid var(--line);border-radius:7px}select,input[type=text]{padding:7px;border:1px solid var(--line);border-radius:7px;background:white}
+.progress{height:8px;background:#edf1f6;border-radius:99px;overflow:hidden}.progress>span{display:block;height:100%;background:var(--accent)}
+.modal-back{position:fixed;inset:0;background:rgba(13,24,39,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}.modal{background:#fff;width:min(1200px,100%);max-height:92vh;overflow:auto;border-radius:14px;border:1px solid var(--line);padding:16px}.modal h2{margin-top:0}
+.hidden{display:none!important}.entry-list{max-height:350px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px}.entry-athlete{display:grid;grid-template-columns:24px 1fr auto auto;gap:8px;padding:6px;border-bottom:1px solid #edf1f6;align-items:center}
+canvas{display:block;width:100%;background:#eaf8ff;border:1px solid var(--line);border-radius:10px}.clock{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:34px;font-weight:800}
+.race-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.race-info{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;background:#f6f8fb;border-radius:8px;padding:8px;margin-top:8px}
+.notice{padding:10px 12px;border-left:4px solid var(--accent);background:#eef6ff;border-radius:6px}.small{font-size:12px}
+
+.focus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin-top:12px}
+.focus-btn{min-height:62px;text-align:left;border-width:2px;transition:.12s transform,.12s border-color,.12s background}
+.focus-btn:hover{transform:translateY(-1px)}
+.focus-btn.selected{box-shadow:inset 0 0 0 2px rgba(255,255,255,.7);font-weight:800}
+.focus-start{background:#fff4dc;border-color:#e7b958}.focus-start.selected{background:#f4b942;color:#342500}
+.focus-mental{background:#f2ebff;border-color:#aa8be8}.focus-mental.selected{background:#8a63d2;color:#fff}
+.focus-fr{background:#e5f4ff;border-color:#6ab5e6}.focus-fr.selected{background:#2389ca;color:#fff}
+.focus-ba{background:#e8f8f5;border-color:#61b9a9}.focus-ba.selected{background:#258d7a;color:#fff}
+.focus-br{background:#fff0e7;border-color:#e9a16d}.focus-br.selected{background:#d47735;color:#fff}
+.focus-fly{background:#fceaf2;border-color:#d989ad}.focus-fly.selected{background:#b94e80;color:#fff}
+.player-select-row{cursor:pointer}.player-select-row.selected{background:#eaf3ff!important;border-left:5px solid var(--accent)}
+.player-select-row td:first-child{font-weight:800}
+.growth-list{display:grid;gap:8px}.growth-athlete{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fbfdff}
+.growth-athlete strong{font-size:15px}.growth-chip{display:inline-block;margin:4px 4px 0 0;padding:5px 8px;border-radius:8px;background:#eaf7ef;color:#106b46;font-weight:800}
+.specialty{background:#e8f1ff;color:#155ba8;font-weight:800}
+.pb-badge{display:inline-block;background:#fff0b8;color:#735800;border:1px solid #efcf58;border-radius:999px;padding:4px 9px;font-weight:900}
+.std-new{display:inline-block;background:#dff8eb;color:#086942;border:1px solid #66c89c;border-radius:999px;padding:4px 9px;font-weight:900;margin:2px}
+.std-clear{display:inline-block;background:#eaf3ff;color:#155ba8;border:1px solid #8db9ec;border-radius:999px;padding:3px 8px;margin:2px}
+.entry-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.entry-summary-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#f9fbfe}
+.entry-summary-card.has{border-color:#76aee8;background:#edf6ff}.entry-summary-card b{font-size:20px;color:var(--accent)}
+.race-stage{background:linear-gradient(#dff6ff,#bfeaff);padding:10px;border-radius:12px}
+.race-progress{height:6px;background:#d8e5ef;border-radius:99px;overflow:hidden;margin:8px 0}.race-progress span{display:block;height:100%;background:var(--accent);width:0}
+.result-own{background:#f0f7ff!important}.result-win{background:#fff8dc!important}
+.stat-value{font-weight:900;font-variant-numeric:tabular-nums}
+.detail-stats-pb{display:grid;grid-template-columns:minmax(300px,1fr) minmax(280px,.9fr);gap:18px;align-items:start}
+.stat-detail-row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:7px 9px;border-radius:8px;margin-bottom:4px;border:1px solid transparent}
+.stat-detail-row.elite{background:#fff2bd;border-color:#e4bd38;color:#604a00}
+.stat-detail-row.strong{background:#e7f2ff;border-color:#91bce8;color:#164e83}
+.pb-detail-row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:7px 9px;border-bottom:1px solid var(--line)}
+@media(max-width:760px){.detail-stats-pb{grid-template-columns:1fr}}
+
+.legend-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.legend-dot{padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+
+@media(max-width:760px){
+  .two{grid-template-columns:1fr}.title{width:100%}header{position:static}table{min-width:640px}
+  main{padding:8px}.card{padding:10px}.modal{padding:10px;max-height:96vh}
+  button,select,input[type=text],input[type=number]{min-height:44px}
+  .header-row{gap:6px}.header-row button{flex:1 1 auto}
+  nav button{min-height:44px;white-space:nowrap}
+  .clock{font-size:26px}.race-info{font-size:10px}
+  .focus-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}
+}
+
+/* v1.10.1 readability pass */
+:root{
+  --bg:#eef3f8;--panel:#ffffff;--ink:#172236;--muted:#66758a;--line:#d6e0ea;
+  --accent:#1769cf;--accent2:#0d4f9e;--good:#087a55;--bad:#b73f45;
+  --soft:#f7fafd;--shadow:0 8px 24px rgba(25,54,88,.07);
+}
+body{line-height:1.5}
+header{box-shadow:0 2px 12px rgba(24,54,86,.06)}
+.title{letter-spacing:.01em}
+button{font-weight:650;transition:.12s border-color,.12s background,.12s transform,.12s box-shadow}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 3px 10px rgba(28,62,100,.08)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid rgba(23,105,207,.22);outline-offset:2px}
+nav{scrollbar-width:thin}
+nav button{font-weight:750}
+main{padding-top:18px}
+.page-lead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 2px 12px}
+.page-lead h1{font-size:22px;line-height:1.2;margin:0}
+.page-lead p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.card{box-shadow:var(--shadow)}
+.dashboard-card{position:relative;overflow:hidden;min-height:116px}
+.dashboard-card::after{content:"";position:absolute;right:-34px;bottom:-42px;width:110px;height:110px;border-radius:999px;background:rgba(23,105,207,.055)}
+.dashboard-card .big{font-size:30px;letter-spacing:-.02em}
+.toolbar-card{background:linear-gradient(135deg,#fff,#f7fbff);border-color:#cbdced}
+#advanceBtn{padding:11px 16px;font-weight:850}
+.status{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-top:7px}
+.status-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#f8fbfe;color:#506078;font-size:12px;font-weight:700}
+.status-chip.strong{background:#edf6ff;color:#155ba8;border-color:#b5d2ef}
+.table-wrap{box-shadow:0 2px 10px rgba(22,48,77,.035)}
+table{font-size:14px}
+th{letter-spacing:.01em;color:#526277;background:#f4f7fb}
+th,td{padding:9px 11px}
+tbody tr:nth-child(even){background:#fbfcfe}
+tbody tr:hover{background:#f1f7ff}
+.athlete-name{font-weight:850;color:#132e50}
+.grade-pill,.rank-pill,.prob-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-weight:800;font-size:12px;padding:3px 8px;line-height:1.2}
+.grade-pill{background:#f0f3f7;color:#536174}
+.rank-pill{min-width:28px;background:#eef4fb;color:#3f5875}
+.rank-pill.top1{background:#fff0ae;color:#765900}.rank-pill.top2{background:#eef1f5;color:#56616e}.rank-pill.top3{background:#f6e5d7;color:#7a4b2a}
+.prob-pill.easy{background:#dff6e9;color:#096943}.prob-pill.mid{background:#fff3c8;color:#755c00}.prob-pill.hard{background:#fde9e9;color:#9b3434}.prob-pill.very-hard{background:#f5e5ef;color:#7b2b61}
+.own-ranking{background:#edf6ff!important}
+.action-group{display:flex;gap:5px;flex-wrap:wrap}
+.action-group button{padding:6px 9px;font-size:12px}
+.training-list-scroll{max-height:68vh;overflow:auto}
+.training-summary{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px}
+.focus-btn{box-shadow:0 2px 8px rgba(20,47,77,.035)}
+.facility-card{display:flex;flex-direction:column;gap:7px;min-height:142px}
+.facility-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.facility-level{font-size:20px;font-weight:900}
+.facility-meter{height:7px;background:#e8eef5;border-radius:999px;overflow:hidden}
+.facility-meter>span{display:block;height:100%;background:var(--accent)}
+.facility-card button{margin-top:auto}
+.notice{box-shadow:inset 0 0 0 1px rgba(23,105,207,.04)}
+.modal{box-shadow:0 24px 70px rgba(12,31,56,.22)}
+.modal>.row:first-child{position:sticky;top:-16px;z-index:4;background:#fff;padding:10px 0 8px;border-bottom:1px solid #edf1f5;margin-bottom:10px}
+.empty-state{padding:18px;text-align:center;color:var(--muted)}
+#trainingPlayers table{min-width:440px}
+#trainingPlayers th:first-child,#trainingPlayers td:first-child{min-width:150px}
+#rosterTable td:last-child{min-width:220px}
+@media(max-width:760px){
+  main{padding-top:10px}
+  .page-lead{align-items:flex-start}.page-lead h1{font-size:19px}
+  .dashboard-card{min-height:98px}.dashboard-card .big{font-size:26px}
+  .training-list-scroll{max-height:48vh}
+  .status{font-size:12px}
+  table{font-size:13px}
+  th,td{padding:8px 9px}
+  #trainingPlayers table{min-width:390px}
+  .action-group{min-width:190px}
+}
+
+
+header .header-row button{font-size:13px;padding:7px 10px}
+.org-edit-list{max-height:380px;overflow:auto;padding-right:3px}
+#settingsUniversity .org-edit-row{border-bottom:1px solid #edf1f5;padding:3px 0}
+
+/* v1.11 commercial-quality UX pass */
+.header-primary-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.utility-menu{position:relative}
+.utility-summary{list-style:none;cursor:pointer;display:flex;align-items:center;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font-weight:750;user-select:none}
+.utility-summary::-webkit-details-marker{display:none}
+.utility-summary::after{content:"▾";margin-left:7px;font-size:11px;color:var(--muted)}
+.utility-menu[open] .utility-summary{border-color:#9bb7d7;background:#f7fbff}
+.utility-menu-panel{position:absolute;right:0;top:calc(100% + 7px);z-index:45;width:230px;padding:8px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 18px 44px rgba(18,42,70,.18);display:grid;gap:6px}
+.utility-menu-panel button{width:100%;text-align:left}
+.utility-separator{height:1px;background:var(--line);margin:2px 0}
+button,.utility-summary{min-height:40px}
+.modal-actions{position:sticky;bottom:-16px;z-index:4;background:linear-gradient(rgba(255,255,255,.92),#fff 24%);padding:13px 0 2px;margin-top:14px;border-top:1px solid #edf1f5}
+.modal-actions .primary{margin-left:auto}
+.entry-table-wrap{max-height:58vh}
+#entryMatrix th:first-child,#entryMatrix td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:1px 0 0 var(--line)}
+#entryMatrix th:first-child{z-index:5;background:#f4f7fb}
+#rosterTable th:first-child,#rosterTable td:first-child,
+#rankingTable th:first-child,#rankingTable td:first-child,
+#trainingPlayers th:first-child,#trainingPlayers td:first-child{position:sticky;left:0;z-index:2;background:#fff}
+#rosterTable th:first-child,#rankingTable th:first-child,#trainingPlayers th:first-child{z-index:4;background:#f4f7fb}
+.player-select-row:focus-visible{outline:3px solid rgba(23,105,207,.25);outline-offset:-3px}
+.toast-root{position:fixed;right:16px;bottom:16px;z-index:100;display:grid;gap:8px;pointer-events:none;max-width:min(380px,calc(100vw - 32px))}
+.toast{padding:11px 14px;border-radius:10px;background:#172236;color:#fff;box-shadow:0 12px 32px rgba(14,32,54,.22);font-weight:700}
+.toast.good{background:#087a55;color:#fff}.toast.warn{background:#8a6410;color:#fff}.toast.bad{background:#9e363c;color:#fff}
+.data-size-note{font-size:11px;color:var(--muted);margin-top:4px}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+  button:hover:not(:disabled),.focus-btn:hover{transform:none!important}
+}
+@media(max-width:760px){
+  .header-row{align-items:flex-start}
+  .header-primary-actions{width:100%;display:grid;grid-template-columns:1fr 1fr auto}
+  .header-primary-actions>button{width:100%}
+  .utility-summary{min-height:44px;justify-content:center}
+  .utility-menu-panel{position:absolute;right:0;width:min(300px,calc(100vw - 20px))}
+  button,.utility-summary,select,input[type=text],input[type=number]{min-height:44px}
+  .entry-table-wrap{max-height:62vh}
+  #entryMatrix{min-width:1180px!important}
+  .modal-actions{bottom:-10px}
+  .modal-actions button{flex:1 1 140px}
+  .toast-root{right:10px;bottom:10px;max-width:calc(100vw - 20px)}
+}
+
+
+/* v1.12 S-G stat rank system */
+.stat-rank-legend{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.rank-legend-item,.stat-rank-badge,.overall-rank{
+  display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;
+  border-radius:999px;font-weight:850;line-height:1.1
+}
+.rank-legend-item{gap:4px;padding:5px 8px;font-size:12px}
+.stat-rank-badge{width:28px;min-width:28px;height:28px;border-radius:8px;font-size:14px}
+.stat-number{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.overall-rank{width:34px;height:34px;border-radius:10px;font-size:18px}
+.rank-s{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
+.rank-a{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
+.rank-b{background:#e3f7f2!important;border-color:#46b6a4!important;color:#0a7061!important}
+.rank-c{background:#edf7df!important;border-color:#86b94a!important;color:#527a1d!important}
+.rank-d{background:#fff7d4!important;border-color:#dfb735!important;color:#755900!important}
+.rank-e{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
+.rank-f{background:#ffe6e3!important;border-color:#e77b72!important;color:#9a352e!important}
+.rank-g{background:#eef1f5!important;border-color:#aab5c3!important;color:#526173!important}
+.stat-detail-row.rank-s,.stat-detail-row.rank-a,.stat-detail-row.rank-b,.stat-detail-row.rank-c,
+.stat-detail-row.rank-d,.stat-detail-row.rank-e,.stat-detail-row.rank-f,.stat-detail-row.rank-g{
+  display:grid;grid-template-columns:minmax(120px,1fr) auto;align-items:center;
+}
+.stat-detail-value{display:flex;align-items:center;gap:7px}
+.focus-btn{position:relative;overflow:hidden}
+.focus-btn .focus-rank-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px}
+.focus-btn .stat-rank-badge{width:31px;min-width:31px;height:31px;font-size:16px}
+.focus-btn.selected::after{content:"重点";position:absolute;right:6px;top:6px;padding:2px 6px;border-radius:999px;background:rgba(20,50,82,.9);color:#fff;font-size:10px;font-weight:850}
+.focus-btn.selected{outline:3px solid rgba(23,105,207,.28);outline-offset:1px}
+.player-overall{display:flex;align-items:center;gap:7px}
+.player-overall-meta{display:grid;line-height:1.18}
+.player-overall-meta b{font-variant-numeric:tabular-nums}
+.top-stat-list{display:flex;gap:5px;flex-wrap:wrap}
+.top-stat-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:7px;border:1px solid var(--line);font-size:11px;font-weight:750;background:#fff}
+.top-stat-chip .stat-rank-badge{width:22px;min-width:22px;height:22px;border-radius:6px;font-size:11px}
+.training-player-rank{display:flex;align-items:center;gap:6px}
+.training-player-rank .stat-rank-badge{width:25px;min-width:25px;height:25px;font-size:12px}
+#rosterTable th:nth-child(3),#rosterTable td:nth-child(3){min-width:125px}
+#rosterTable th:nth-child(6),#rosterTable td:nth-child(6){min-width:220px}
+@media(max-width:760px){
+  .stat-rank-legend{gap:4px}.rank-legend-item{padding:4px 6px;font-size:11px}
+  .focus-btn .stat-number{font-size:17px}
+  #rosterTable{min-width:1080px}
+}
+
+
+nav .nav-action{border-style:dashed;background:#fbfdff}
+nav .nav-action:hover{background:#edf6ff}
+
+
+/* v1.13: training cards use the same S-G colors as player detail */
+.focus-btn.rank-s,.focus-btn.rank-a,.focus-btn.rank-b,.focus-btn.rank-c,
+.focus-btn.rank-d,.focus-btn.rank-e,.focus-btn.rank-f,.focus-btn.rank-g{
+  background:inherit;
+}
+.focus-btn.rank-s{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
+.focus-btn.rank-a{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
+.focus-btn.rank-b{background:#e3f7f2!important;border-color:#46b6a4!important;color:#0a7061!important}
+.focus-btn.rank-c{background:#edf7df!important;border-color:#86b94a!important;color:#527a1d!important}
+.focus-btn.rank-d{background:#fff7d4!important;border-color:#dfb735!important;color:#755900!important}
+.focus-btn.rank-e{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
+.focus-btn.rank-f{background:#ffe6e3!important;border-color:#e77b72!important;color:#9a352e!important}
+.focus-btn.rank-g{background:#eef1f5!important;border-color:#aab5c3!important;color:#526173!important}
+.focus-btn.selected{box-shadow:inset 0 0 0 3px #172236!important}
+.focus-btn.selected::after{background:#172236}
+
+
+/* v1.14 PWA */
+.pwa-status{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted)}
+.pwa-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:#fff}
+.pwa-chip.online{color:#096943;background:#e8f7ef;border-color:#9bd2b6}
+.pwa-chip.offline{color:#8a4a0b;background:#fff2df;border-color:#e6b77c}
+.pwa-chip.ready{color:#155ba8;background:#edf6ff;border-color:#a9cbe9}
+.install-help{padding:10px 12px;border:1px solid #cbdced;border-radius:10px;background:#f7fbff;margin-top:10px}
+@media(max-width:760px){
+  .pwa-status{margin-top:4px}
+  .pwa-chip{font-size:11px}
+}
+
+
+/* v1.15 */
+.std-new,.std-clear{white-space:nowrap}
+#autoSaveChip{font-variant-numeric:tabular-nums}
+
+</style>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#1769cf">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="大学競泳監督">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.15</div>
+    <div class="header-primary-actions">
+      <button id="saveBtn" class="primary">セーブ</button>
+      <button id="loadBtn">ロード</button>
+      <details class="utility-menu">
+        <summary class="utility-summary">データ・情報</summary>
+        <div class="utility-menu-panel">
+          <button id="universitiesBtn">設定</button>
+          <div class="utility-separator"></div>
+          <button id="exportBtn">セーブ書出</button>
+          <button id="importBtn">セーブ読込</button>
+          <button id="resetBtn" class="danger">初期化</button>
+        </div>
+      </details>
+      <input id="importFile" type="file" accept=".json,application/json" class="hidden">
+    </div>
+  </div>
+  <div id="status" class="status"></div><div id="pwaStatus" class="pwa-status" aria-live="polite"></div>
+</header>
+<nav id="nav">
+  <button data-page="home" class="active" aria-current="page">ホーム</button>
+  <button data-page="training">練習指示</button>
+  <button data-page="roster">選手一覧</button>
+  <button data-page="rankings">全選手ランキング</button>
+  <button data-page="records">記録・大会履歴</button>
+  <button data-page="scout">スカウト</button>
+  <button data-page="facilities">施設</button>
+  <button id="scheduleBtn" class="nav-action">大会日程</button>
+  <button id="standardsBtn" class="nav-action">参加標準</button>
+  <button id="top10Btn" class="nav-action">自チーム10傑</button>
+</nav>
+
+<main>
+<section id="page-home" class="page active">
+  <div class="page-lead"><div><h1>ホーム</h1><p>現在の週・評判・ポイントを確認して次の練習へ進みます。</p></div></div>
+  <div class="grid">
+    <div class="card dashboard-card"><div class="metric">現在</div><div id="homeDate" class="big"></div><div id="homeMeet" class="muted"></div></div>
+    <div class="card dashboard-card"><div class="metric">所持ポイント</div><div id="homePoints" class="big"></div><div class="muted">制限大会: 1選手×1種目=1pt / 合同記録会=10pt</div></div>
+    <div class="card dashboard-card"><div class="metric">学校評判</div><div id="homeRep" class="big"></div><div id="homeRepNum" class="muted"></div><button id="reputationInfoBtn" style="margin-top:8px">評判の仕組み</button></div>
+  </div>
+  <div class="card toolbar-card">
+    <div class="row">
+      <h2 style="margin-right:auto">練習ターン</h2>
+      <span id="campBadge"></span>
+      <button id="advanceBtn" class="primary">練習して1ターン進める</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>直前ターンの能力アップ</h3>
+    <div id="trainingGrowthHome" class="muted">まだ練習していません。</div>
+  </div>
+  <div class="card">
+    <h3>直近の大学対抗得点</h3>
+    <div id="lastScores" class="muted">まだ大会結果はありません。</div>
+  </div>
+</section>
+
+<section id="page-training" class="page">
+  <div class="page-lead"><div><h1>練習指示</h1><p>選手を選び、S〜Gの能力ランクを見ながら伸ばしたい能力を重点指定します。重点なしなら全能力を均等に鍛えます。</p></div></div>
+  <div class="two">
+    <div class="card">
+      <h2>選手をクリック</h2>
+      <div id="trainingPlayers" class="table-wrap training-list-scroll"></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div>
+          <h2 id="trainingPlayerTitle" style="margin-bottom:2px">重点練習</h2>
+          <div id="trainingFocusNote" class="muted small">重点なしの場合は全能力をバランス良く練習します。</div>
+        </div>
+        <button id="clearFocusBtn" style="margin-left:auto">重点を全解除</button>
+        <button id="copyPlanBtn">この重点設定を全選手へコピー</button>
+      </div>
+      <div class="legend-row">
+        <span class="legend-dot focus-start">基礎</span><span class="legend-dot focus-fr">自由形</span>
+        <span class="legend-dot focus-ba">背泳ぎ</span><span class="legend-dot focus-br">平泳ぎ</span>
+        <span class="legend-dot focus-fly">バタフライ</span>
+      </div>
+      <div id="trainingRankLegend"></div>
+      <div id="trainingPlan" class="focus-grid"></div>
+    </div>
+  </div>
+</section>
+
+<section id="page-roster" class="page">
+  <div class="page-lead"><div><h1>選手一覧</h1><p>総合ランク・上位能力・専門種目・PBを一覧で確認し、詳細や専門種目を編集できます。</p></div></div>
+  <div class="card">
+    <div class="row">
+      <h2 style="margin-right:auto">選手一覧</h2>
+      <label>並び順
+        <select id="rosterSortMode">
+          <option value="grade_asc">学年 1年→4年</option>
+          <option value="overall_desc">総合能力 高い順</option>
+          <option value="grade_desc">学年 4年→1年</option>
+          <option value="specialty_pb">専門種目PB順</option>
+          <option value="event_fr50">50mFr PB順</option>
+          <option value="event_fr100">100mFr PB順</option>
+          <option value="event_fr200">200mFr PB順</option>
+          <option value="event_fr400">400mFr PB順</option>
+          <option value="event_ba100">100mBa PB順</option>
+          <option value="event_ba200">200mBa PB順</option>
+          <option value="event_br100">100mBr PB順</option>
+          <option value="event_br200">200mBr PB順</option>
+          <option value="event_fly100">100mFly PB順</option>
+          <option value="event_fly200">200mFly PB順</option>
+          <option value="event_im200">200mIM PB順</option>
+          <option value="event_im400">400mIM PB順</option>
+          <option value="name">選手名順</option>
+        </select>
+      </label>
+    </div>
+    <div id="rosterRankLegend"></div>
+    <div id="rosterTable" class="table-wrap" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<section id="page-rankings" class="page">
+  <div class="page-lead"><div><h1>全選手ランキング</h1><p>種目と区分を切り替えて、ゲーム内の現在順位を確認します。</p></div></div>
+  <div class="card">
+    <div class="row">
+      <h2 style="margin-right:auto">全選手ランキング</h2>
+      <label>種目 <select id="rankEvent"></select></label>
+      <label>区分 <select id="rankCategory">
+        <option value="all">全体</option>
+        <option value="player">自大学</option>
+        <option value="middle">中学生</option>
+        <option value="high">高校生</option>
+        <option value="university">大学生</option>
+        <option value="adult">社会人</option>
+      </select></label>
+    </div>
+    <div id="rankingTable" class="table-wrap" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<section id="page-records" class="page">
+  <div class="page-lead"><div><h1>記録・大会履歴</h1><p>歴代記録、卒業後の進路、大会成績をまとめて確認できます。</p></div></div>
+  <div class="grid">
+    <div class="card"><h2>ゲーム内歴代記録</h2><div id="recordBook" class="table-wrap"></div></div>
+    <div class="card"><h2>卒業・進路アーカイブ</h2><div id="archiveTable" class="table-wrap"></div></div>
+  </div>
+  <div class="card"><h2>大会履歴</h2><div id="meetHistory" class="table-wrap"></div></div>
+</section>
+
+<section id="page-scout" class="page">
+  <div class="page-lead"><div><h1>スカウト</h1><p>高校生の実績・PBと自大学評判から勧誘成功率が決まります。</p></div></div>
+  <div class="card">
+    <div class="row"><h2 style="margin-right:auto">スカウト候補</h2><span class="tag good">新年度自動更新</span></div>
+    <div id="scoutTable" class="table-wrap" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<section id="page-facilities" class="page">
+  <div class="page-lead"><div><h1>練習施設</h1><p>1ptでLvを上げ、対応能力の成長倍率を強化します。</p></div></div>
+  <div class="card"><h2>練習施設</h2><div id="facilityGrid" class="stat-grid"></div></div>
+</section>
+
+<section id="page-settings" class="page">
+  <div class="page-lead"><div><h1>設定</h1><p>大学・学校・社会人チームの表示名を変更できます。</p></div></div>
+  <div class="card">
+    <h2>設定 — 学校・チーム名</h2>
+    <div class="grid" style="margin-top:12px">
+      <div class="card"><h3>自大学</h3><div id="settingsPlayerUniversity"></div></div>
+      <div class="card"><h3>中学校</h3><div id="settingsMiddle"></div></div>
+      <div class="card"><h3>高校</h3><div id="settingsHigh"></div></div>
+      <div class="card"><h3>大学（CPU）</h3><div id="settingsUniversity"></div></div>
+      <div class="card"><h3>社会人チーム</h3><div id="settingsAdult"></div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="toastRoot" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+<div id="modalRoot"></div>
+
+<script>
+const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
+const STANDARDS = {"kansai_college":{"source":"game rule: Intercollege official LCM + distance offset","fr50":24.2,"fr100":52.43,"fr200":115.38,"fr400":244.78,"ba100":58.81,"ba200":128.11,"br100":63.9,"br200":138.28,"fly100":56.02,"fly200":124.61,"im200":128.11,"im400":273.89},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
+const INTERHIGH = {"schema_version":2,"competition_id":"interhigh_2025","competition":"第93回日本高等学校選手権水泳競技大会","season":2025,"gender":"M","course":"LCM","stage":"A_final","stage_label":"A決勝","official_source":"SEIKO Swimming Results System","policy":"Only A-final results may be used for real-meet performance calibration.","events":{"fr50":{"label":"50mFr","times":[22.72,22.75,23.12,23.16,23.27,23.38,23.44,23.45],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R040.pdf"},"fr100":{"label":"100mFr","times":[49.95,50.29,50.62,50.65,50.84,50.98,51.11,51.13],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/04R080.pdf"},"fr200":{"label":"200mFr","times":[108.32,109.25,109.62,109.71,110.25,111.72,111.78,111.89],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R044.pdf"},"fr400":{"label":"400mFr","times":[229.9,231.31,231.59,232.59,233.75,234.38,236.26,237.82],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R014.pdf"},"ba100":{"label":"100mBa","times":[55.68,56.23,56.4,56.41,57.07,57.1,57.39,57.57],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R046.pdf"},"ba200":{"label":"200mBa","times":[121.22,121.29,121.85,123.08,123.32,123.51,123.52,123.68],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R064.pdf"},"br100":{"label":"100mBr","times":[61.52,61.55,61.69,61.75,61.99,61.99,62.1,62.41],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R068.pdf"},"br200":{"label":"200mBr","times":[131.11,132.05,132.42,132.59,132.83,133.75,133.77,134.14],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R018.pdf"},"fly100":{"label":"100mFly","times":[52.96,53.22,53.3,53.76,53.95,54.18,54.19,54.43],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R066.pdf"},"fly200":{"label":"200mFly","times":[116.57,118.7,119.7,119.75,119.86,120.18,120.26,122.12],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R042.pdf"},"im200":{"label":"200mIM","times":[121.9,122.32,122.33,122.36,123.25,123.43,123.45,124.25],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R016.pdf"},"im400":{"label":"400mIM","times":[257.9,258.03,258.26,258.8,260.42,260.7,264.24,268.21],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/04R082.pdf"}}};
+const JAPAN_RECORD = {"fr50":21.67,"fr100":47.87,"fr200":104.54,"fr400":223.9,"ba100":52.24,"ba200":112.51,"br100":58.78,"br200":126.4,"fly100":50.81,"fly200":112.53,"im200":115.07,"im400":245.83};
+
+const EVENTS=["fr50","fr100","fr200","fr400","ba100","ba200","br100","br200","fly100","fly200","im200","im400"];
+const EVENT_LABEL={fr50:"50mFr",fr100:"100mFr",fr200:"200mFr",fr400:"400mFr",ba100:"100mBa",ba200:"200mBa",br100:"100mBr",br200:"200mBr",fly100:"100mFly",fly200:"200mFly",im200:"200mIM",im400:"400mIM"};
+const STATS=["start","mental","fr_speed","fr_stamina","fr_turn","ba_speed","ba_stamina","ba_turn","br_speed","br_stamina","br_turn","fly_speed","fly_stamina","fly_turn"];
+const STAT_LABEL={
+ start:"スタート",mental:"メンタル",
+ fr_speed:"Fr スピード",fr_stamina:"Fr スタミナ",fr_turn:"Fr ターン",
+ ba_speed:"Ba スピード",ba_stamina:"Ba スタミナ",ba_turn:"Ba ターン",
+ br_speed:"Br スピード",br_stamina:"Br スタミナ",br_turn:"Br ターン",
+ fly_speed:"Fly スピード",fly_stamina:"Fly スタミナ",fly_turn:"Fly ターン"
+};
+const STAT_CLASS={start:"focus-start",mental:"focus-mental",fr_speed:"focus-fr",fr_stamina:"focus-fr",fr_turn:"focus-fr",ba_speed:"focus-ba",ba_stamina:"focus-ba",ba_turn:"focus-ba",br_speed:"focus-br",br_stamina:"focus-br",br_turn:"focus-br",fly_speed:"focus-fly",fly_stamina:"focus-fly",fly_turn:"focus-fly"};
+const FIXED_TRAINING_LEVEL=100;
+const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
+const MEETS={"4-4-後半":"team_trial","5-4-後半":"team_trial","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
+const MEET_LABEL={team_trial:"自チーム記録会",kansai_college:"関西カレッジ",intercollege:"インカレ",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",initial_pb:"初期PB"};
+const RESTRICTED=new Set(["kansai_college","intercollege","japan_open","japan_championship"]);
+const RELAY_MEETS=new Set(["kansai_college","intercollege","joint_record"]);
+const TEAM_SCORE_MEETS=new Set(["kansai_college","intercollege"]);
+const OPEN_AGE_MEETS=new Set(["japan_open","joint_record","japan_championship"]);
+const COLLEGE_ENTRY_LIMIT_MEETS=new Set(["kansai_college","intercollege"]);
+const RECORD_MEETS=new Set(["team_trial","joint_record"]);
+const UNLIMITED_STANDARD_MEETS=new Set(["japan_open","japan_championship"]);
+const RELAYS=["4x100fr","4x200fr","4x100medley"];
+const RELAY_LABEL={"4x100fr":"4×100m フリーリレー","4x200fr":"4×200m フリーリレー","4x100medley":"4×100m メドレーリレー"};
+const POTENTIAL_TYPES={
+ early:{label:"早熟型",profile:{1:1.30,2:1.12,3:.90,4:.72}},
+ normal:{label:"標準型",profile:{1:.95,2:1.12,3:1.18,4:.95}},
+ late:{label:"晩成型",profile:{1:.72,2:.90,3:1.18,4:1.32}},
+ ready:{label:"完成型",profile:{1:.82,2:.78,3:.72,4:.68}},
+ raw:{label:"素材型",profile:{1:.90,2:1.05,3:1.25,4:1.35}}
+};
+const FIRST=["悠真","蓮","湊","海斗","陸","颯太","翔","蒼","大和","陽斗","樹","翼","直人","亮","晴","拓海","健太","智也","陽","颯","怜","航","駿","悠斗","颯真","玲央","一真","朝陽","瑛太","煌","悠人","大翔","優斗","隼人","颯介","壮真","伊織","圭吾","奏太","光希","凌","遼","康太","誠","祐樹","龍之介","俊介","和真","慧","拓真","瑛介","孝太郎","悠生","海翔","健吾","直哉","雄大","誠也","大輝","健介","翔太","悠希","碧","琉生","宗一郎","慶太","侑真","蒼生","啓介","諒","晴紀","恭平","泰成","昂輝","将吾","瑛人","圭介","悠馬","隼","尚人","凪","凪人","凪翔","朔","朔也","朔太郎","結翔","結人","絃","碧人","翠","結仁","仁","璃空","柊","柊真","旭","新","叶翔","律","蓮斗","凌久","尊","透真","天","虎太郎","柚希","壱成","世那","玲","瑛士","燈","頼","珀","岳","環","伊吹","惺","怜央","絢斗","維吹","蒼空","理仁","琥太郎","晴翔","空良","大雅","惟月","紫苑","櫂","瑞樹","千隼","冬馬","弦","蒼士","景虎","雅楽","颯希","晴臣","悠月"];
+const LAST=["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田","松本","井上","木村","林","清水","斎藤","山口","森田","池田","橋本","阿部","石井","藤田","岡田","後藤","近藤","前田","藤原","西村","福田","太田","三浦","松田","原田","小川","竹内","中川","中島","中野","石川","村上","長谷川","青木","坂本","遠藤","藤井","岡本","長田","森","金子","和田","上田","酒井","工藤","横山","宮崎","宮本","内田","高木","安藤","谷口","大野","丸山","今井","河野","武田","杉山","増田","小島","平野","菅原","久保","松井","千葉","岩崎","桜井","野口","松尾","野村","新井","佐々木","本田","荒木","川口","永井","北村","大西","関口","古川","飯田","川崎","辻","望月","服部","星野","堀","片山","栗原","藤堂","神谷","早乙女","九条","東雲","一ノ瀬","二階堂","橘","榊原","鷹野","水無瀬","久世","御子柴","相楽","鳴海","白石","黒川","深澤","瀬川","雨宮","朝倉","篠宮","秋月","有馬","葛西","椎名","高瀬","柊木","桐生","如月","三神","小鳥遊","倉橋","神崎","鷲尾","碓氷","藤代","八神","西園寺","城戸"];
+const MIDDLE_SCHOOLS=["札幌北辰中","仙台青葉中","盛岡中央中","秋田南中","水戸東中","宇都宮中央中","前橋南中","浦和青葉中","千葉海浜中","東京東雲中","横浜港南中","新潟中央中","金沢白山中","松本旭中","静岡葵中","名古屋東中","京都洛北中","大阪城南中","神戸海浜中","岡山旭東中","広島中央中","高松青葉中","福岡城南中","熊本東中"];
+const HIGH_SCHOOLS=["札幌北星高","青森海洋高","仙台青陵高","盛岡中央高","秋田南高","山形城北高","水戸第一高","宇都宮東高","前橋育英高","浦和青葉高","千葉海浜高","東京東雲高","横浜港南高","新潟中央高","富山北辰高","金沢白山高","松本旭高","静岡葵高","東海中央高","京都洛北高","大阪桜陵高","神戸海浜高","岡山旭東高","広島中央高","高松青葉高","松山海星高","福岡城南高","熊本東高","鹿児島中央高","那覇海邦高"];
+const ADULT_TEAMS=["北海エナジー","東北テクノ","仙台アクア","北関東精機","関東ウォーターズ","東京ベイスポーツ","横浜マリン","信越テクノ","北陸精機","東海モビリティ","中京アクア","関西電工","近畿スポーツ","瀬戸内マリン","中国テクノ","四国エナジー","福岡アクア","九州モビリティ","南九州物流","沖縄マリン","首都圏システムズ","東日本スポーツ","西日本テクノ","全国アクアクラブ"];
+const EXTRA_UNIVERSITIES=[{"id":"CPUU101","name":"東北青葉大学","region":"other","strength":76},{"id":"CPUU102","name":"北関東体育大学","region":"other","strength":73},{"id":"CPUU103","name":"信州白峰大学","region":"other","strength":79},{"id":"CPUU104","name":"北陸工科大学","region":"other","strength":70},{"id":"CPUU105","name":"南九州体育大学","region":"other","strength":82},{"id":"CPUU106","name":"東海未来大学","region":"other","strength":78},{"id":"CPUU107","name":"山陰海洋大学","region":"other","strength":72},{"id":"CPUU108","name":"沖縄海洋大学","region":"other","strength":75},{"id":"CPUU109","name":"関西中央大学","region":"kansai","strength":80},{"id":"CPUU110","name":"近畿海洋大学","region":"kansai","strength":77},{"id":"CPUU111","name":"大阪東陵大学","region":"kansai","strength":74},{"id":"CPUU112","name":"京都翔泳大学","region":"kansai","strength":72},{"id":"CPUU113","name":"神戸港大学","region":"kansai","strength":70},{"id":"CPUU114","name":"札幌海星大学","region":"other","strength":78},{"id":"CPUU115","name":"仙台水明大学","region":"other","strength":81},{"id":"CPUU116","name":"首都圏体育大学","region":"other","strength":86},{"id":"CPUU117","name":"横浜青洋大学","region":"other","strength":83},{"id":"CPUU118","name":"新潟海洋大学","region":"other","strength":74},{"id":"CPUU119","name":"金沢体育大学","region":"other","strength":76},{"id":"CPUU120","name":"静岡東海大学","region":"other","strength":80},{"id":"CPUU121","name":"広島水産大学","region":"other","strength":77},{"id":"CPUU122","name":"四国中央大学","region":"other","strength":73},{"id":"CPUU123","name":"熊本体育大学","region":"other","strength":79},{"id":"CPUU124","name":"鹿児島海洋大学","region":"other","strength":75}];
+const LEGACY_ORG_RENAMES={"北摂第一中":"札幌北辰中","阪神中央中":"仙台青葉中","京都東中":"盛岡中央中","神戸西中":"秋田南中","大阪南中":"水戸東中","播磨中央中":"宇都宮中央中","京阪北中":"前橋南中","奈良学園中":"浦和青葉中","琵琶湖中":"千葉海浜中","和歌山中央中":"東京東雲中","六甲青雲中":"横浜港南中","大阪城南中":"新潟中央中","西京みらい中":"金沢白山中","千里丘中":"松本旭中","明石海浜中":"静岡葵中","泉州中央中":"名古屋東中","大和郡山中":"京都洛北中","高槻北中":"大阪城南中","伏見中央中":"神戸海浜中","芦屋東中":"岡山旭東中","堺陵南中":"広島中央中","西宮浜中":"高松青葉中","長岡京中":"福岡城南中","草津青葉中":"熊本東中","青陵高":"札幌北星高","阪神学院高":"青森海洋高","北摂高":"仙台青陵高","京都西高":"盛岡中央高","神戸中央高":"秋田南高","大阪湾高":"山形城北高","播磨高":"水戸第一高","南大阪高":"宇都宮東高","京阪高":"前橋育英高","奈良中央高":"浦和青葉高","近江高":"千葉海浜高","和歌山東高":"東京東雲高","六甲水明高":"横浜港南高","浪速スポーツ高":"新潟中央高","洛北学院高":"富山北辰高","摂津学園高":"金沢白山高","明石南高":"松本旭高","泉州学園高":"静岡葵高","大和青翔高":"東海中央高","高槻学院高":"京都洛北高","西京体育高":"大阪桜陵高","芦屋国際高":"神戸海浜高","堺東陵高":"岡山旭東高","西宮北辰高":"広島中央高","近江湖西高":"高松青葉高","紀州南高":"松山海星高","神戸港南高":"福岡城南高","大阪桜陵高":"熊本東高","京都紫明高":"鹿児島中央高","奈良若草高":"那覇海邦高","関西電工":"北海エナジー","青陵スポーツ":"東北テクノ","阪神アクア":"仙台アクア","京阪スイム":"北関東精機","神戸海洋":"関東ウォーターズ","大阪メトロ":"東京ベイスポーツ","播磨製作所":"横浜マリン","近畿スポーツ":"信越テクノ","六甲ウォーターズ":"北陸精機","浪速フィットネス":"東海モビリティ","京都テクノ":"中京アクア","摂津化学":"関西電工","神戸ベイスポーツ":"近畿スポーツ","泉州物流":"瀬戸内マリン","大和エナジー":"中国テクノ","近江精機":"四国エナジー","紀州マリン":"福岡アクア","西宮アスリート":"九州モビリティ","大阪システムズ":"南九州物流","京都フーズ":"沖縄マリン","奈良モビリティ":"首都圏システムズ","明石エンジニアリング":"東日本スポーツ","堺メディカル":"西日本テクノ","高槻アクア":"全国アクアクラブ","武蔵野大学":"武蔵野体育大学","湘南水泳大学":"湘南海洋大学","中京中央大学":"中京体育大学","名古屋体育大学":"東海スポーツ大学","九州水産大学":"福岡スポーツ大学","北海スポーツ大学":"北海道北辰大学","瀬戸内大学":"中国瀬戸大学","六甲学院大学":"東北青葉大学","浪速国際大学":"北関東体育大学","西京都大学":"信州白峰大学","瀬戸内工科大学":"北陸工科大学","北陸青峰大学":"山陰海洋大学","東北海洋大学":"沖縄海洋大学"};
+
+
+function freshSeed(){
+  try{
+    if(globalThis.crypto?.getRandomValues){
+      let a=new Uint32Array(1);globalThis.crypto.getRandomValues(a);
+      if(a[0])return a[0]>>>0;
+    }
+  }catch(e){}
+  return ((Date.now()^Math.floor(Math.random()*4294967295))>>>0)||1;
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function deepClone(x){return JSON.parse(JSON.stringify(x))}
+function round2(x){return Math.round(x*100)/100}
+function fmt(sec){if(sec==null||!Number.isFinite(+sec))return "-";sec=+sec;return sec<60?sec.toFixed(2):`${Math.floor(sec/60)}:${(sec%60).toFixed(2).padStart(5,"0")}`}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function uid(prefix="W"){state.serial=(state.serial||1000)+1;return prefix+String(state.serial).padStart(6,"0")}
+function rng(){state.rngSeed=(state.rngSeed*1664525+1013904223)>>>0;return state.rngSeed/4294967296}
+function rand(a,b){return a+(b-a)*rng()} function choice(a){return a[Math.floor(rng()*a.length)]}
+function gauss(mu=0,s=1){let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return mu+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function slotDate(slot){let i=slot-1,m=MONTHS[Math.floor(i/8)],within=i%8;return {month:m,week:Math.floor(within/2)+1,half:within%2===0?"前半":"後半"}}
+function campAt(m,w){return (m===8&&(w===3||w===4))||(m===12&&w===4)||m===3}
+function meetAt(d){return MEETS[`${d.month}-${d.week}-${d.half}`]||null}
+function dateText(slot){let d=slotDate(slot);return `${d.month}月 第${d.week}週${d.half}`}
+function activeCompetitionSlot(){return state.activeCompetitionSlot||state.slot}
+function activeCompetitionSeason(){return state.activeCompetitionSeason||state.season}
+
+function reputationLabel(v){if(v>=450)return"全国屈指";if(v>=280)return"名門";if(v>=160)return"強豪";if(v>=80)return"中堅";if(v>=30)return"発展途上";return"弱小"}
+function bestSpecialtyByAbility(p){return EVENTS.slice().sort((a,b)=>expectedTime(p,a)/JAPAN_RECORD[a]-expectedTime(p,b)/JAPAN_RECORD[b])[0]||"fr100"}
+function ensurePlayerSpecialty(p){if(!EVENTS.includes(p.specialty))p.specialty=bestSpecialtyByAbility(p);return p.specialty}
+function migrateLegacyOrganizationNames(){
+  const sets={
+    middle:new Set(MIDDLE_SCHOOLS),
+    high:new Set(HIGH_SCHOOLS),
+    adult:new Set(ADULT_TEAMS),
+    university:new Set(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES).map(u=>u.name))
+  };
+  const rename=(n,cat)=>sets[cat]?.has(n)?n:(LEGACY_ORG_RENAMES[n]||n);
+  const uniq=arr=>[...new Set(arr.filter(Boolean))];
+
+  if(state.organizationNames){
+    for(let cat of["middle","high","adult"]){
+      if(Array.isArray(state.organizationNames[cat]))state.organizationNames[cat]=uniq(state.organizationNames[cat].map(n=>rename(n,cat)));
+    }
+  }
+  for(let u of state.universities||[])u.name=rename(u.name,"university");
+  for(let a of state.world||[]){
+    let cat=a.category;
+    if(["middle","high","adult"].includes(cat))a.organization=rename(a.organization,cat);
+    else if(cat==="university")a.organization=rename(a.organization,"university");
+  }
+  for(let a of state.retiredArchive||[])a.organization=rename(a.organization,"adult");
+  for(let a of state.alumniCareer||[]){
+    if(a.to)a.to=rename(a.to,"adult");
+    if(a.from&&a.from!==state.playerUniversity)a.from=rename(a.from,"university");
+  }
+  const renameScoreObject=obj=>{
+    let next={};
+    for(let [k,v] of Object.entries(obj||{}))next[rename(k,"university")]=v;
+    return next;
+  };
+  for(let m of state.meetHistory||[])if(m.teamScores)m.teamScores=renameScoreObject(m.teamScores);
+  for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
+}
+function migrateState(){
+  state.version="pwa-v1.15";
+  if(!state.trainingFocus)state.trainingFocus={};
+  if(!state.reputationParticipation)state.reputationParticipation=[];
+  if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
+  for(let u of state.universities){
+    if(!Number.isFinite(u.baseReputation))u.baseReputation=initialUniversityReputation(u.strength||75);
+    if(!Number.isFinite(u.reputation))u.reputation=u.baseReputation;
+  }
+  if(!state.lastTrainingGains)state.lastTrainingGains=[];
+  if(!state.alumniCareer)state.alumniCareer=[];
+  if(!state.pendingFreshmenWelcome)state.pendingFreshmenWelcome=[];
+  if(!state.organizationNames)state.organizationNames={middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]};
+  if(state.orgNameModelVersion!==2){migrateLegacyOrganizationNames();state.orgNameModelVersion=2}
+  for(let cat of ["middle","high","adult"]){
+    if(!Array.isArray(state.organizationNames[cat]))state.organizationNames[cat]=[];
+    state.organizationNames[cat]=[...new Set(state.organizationNames[cat].filter(Boolean))];
+  }
+  for(let n of MIDDLE_SCHOOLS)if(!state.organizationNames.middle.includes(n))state.organizationNames.middle.push(n);
+  for(let n of HIGH_SCHOOLS)if(!state.organizationNames.high.includes(n))state.organizationNames.high.push(n);
+  for(let n of ADULT_TEAMS)if(!state.organizationNames.adult.includes(n))state.organizationNames.adult.push(n);
+  for(let u of EXTRA_UNIVERSITIES)if(!(state.universities||[]).some(x=>x.id===u.id))state.universities.push(deepClone(u));
+  if(state.cpuUniversityRepModelVersion!==2){
+    for(let u of state.universities){
+      let strength=u.strength||75;
+      let oldBase=clamp(60+(strength-65)*14,25,500);
+      let newBase=initialUniversityReputation(strength);
+      let current=Number.isFinite(u.reputation)?u.reputation:oldBase;
+      u.baseReputation=newBase;
+      u.reputation=round2(clamp(newBase+(current-oldBase)*.45,15,360));
+    }
+    state.cpuUniversityRepModelVersion=2;
+  }else{
+    for(let u of state.universities){
+      if(!Number.isFinite(u.baseReputation))u.baseReputation=initialUniversityReputation(u.strength||75);
+      if(!Number.isFinite(u.reputation))u.reputation=u.baseReputation;
+    }
+  }
+  state.kansaiIds=state.universities.filter(u=>u.region==="kansai").map(u=>u.id);
+  state.interIds=[...state.universities].sort((a,b)=>(b.reputation||0)-(a.reputation||0)).slice(0,30).map(u=>u.id);
+
+  // World population repair is applied below after athlete normalization.
+  if(!Array.isArray(state.world))state.world=[];
+
+  for(let p of state.players||[]){
+    fixedCapNormalize(p);ensurePlayerSpecialty(p);
+    if(!Array.isArray(state.trainingFocus[p.id])){
+      let plan=state.trainingPlans?.[p.id]||{},vals=STATS.map(k=>+plan[k]||0),mx=Math.max(0,...vals),mn=Math.min(...vals);
+      state.trainingFocus[p.id]=(mx-minSafe(mn)>.5)?STATS.filter(k=>(+plan[k]||0)>=mx*.85):[];
+    }
+    p.bestTimes=p.bestTimes||{};p.raceHistory=p.raceHistory||[];p.accolades=p.accolades||[];
+    p.prodigy=!!p.prodigy;
+  }
+  for(let a of state.world||[]){
+    fixedCapNormalize(a);sanitizeCpuPBs(a);
+    if(a.category==="high"&&a.grade!==3)a.discovered=false;
+    if(!a.alumni)a.raceHistory=[];
+    else{
+      if(!Array.isArray(a.raceHistory))a.raceHistory=[];
+      if(a.raceHistory.length>600)a.raceHistory=a.raceHistory.slice(-600);
+    }
+  }
+
+  // Purge legacy retirement logs for unrelated CPU swimmers.
+  let alumniIds=new Set((state.alumniCareer||[]).map(x=>x.id));
+  if(Array.isArray(state.retiredArchive)){
+    state.retiredArchive=state.retiredArchive.filter(x=>x.organization===state.playerUniversity||alumniIds.has(x.id));
+  }
+
+  maintainWorldPopulation();
+
+  if(!state.teamTop10)state.teamTop10={};
+  if(!state.recordBook)state.recordBook={};
+  if(!state.retiredArchive)state.retiredArchive=[];
+  state.activeCompetitionSlot=null;
+  state.activeCompetitionSeason=null;
+}
+function minSafe(v){return Number.isFinite(v)?v:0}
+function fixedCapNormalize(a){
+  if(!a)return;
+  a.potential=Object.fromEntries(STATS.map(k=>[k,200]));
+  STATS.forEach(k=>a.stats[k]=round2(clamp(+a.stats[k]||0,0,200)));
+}
+function organizationNames(){
+  if(!state.organizationNames)state.organizationNames={
+    middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]
+  };
+  return state.organizationNames;
+}
+function renameOrganization(category,index,newName){
+  let n=(newName||"").trim();if(!n)return{ok:false,msg:"名称を入力してください"};
+  let old;
+  if(category==="university"){
+    let u=state.universities[index];if(!u)return{ok:false,msg:"大学が見つかりません"};
+    old=u.name;
+    let dup=state.universities.some((x,i)=>i!==index&&x.name===n)||state.playerUniversity===n;
+    if(dup)return{ok:false,msg:"同名の大学があります"};
+    u.name=n;
+  }else{
+    let names=organizationNames()[category];if(!names||index<0||index>=names.length)return{ok:false,msg:"組織が見つかりません"};
+    old=names[index];
+    if(names.some((x,i)=>i!==index&&x===n))return{ok:false,msg:"同名の組織があります"};
+    names[index]=n;
+  }
+  state.world.forEach(a=>{if(a.organization===old)a.organization=n});
+  state.retiredArchive?.forEach(a=>{if(a.organization===old)a.organization=n});
+  for(let m of state.meetHistory||[]){
+    if(m.teamScores&&Object.prototype.hasOwnProperty.call(m.teamScores,old)){
+      m.teamScores[n]=m.teamScores[old];delete m.teamScores[old];
+    }
+    for(let podium of Object.values(m.podiums||{}))for(let x of podium)if(x.organization===old)x.organization=n;
+  }
+  return{ok:true,msg:`「${old}」を「${n}」に変更しました。`};
+}
+function renamePlayerUniversity(newName){
+  let n=(newName||"").trim();if(!n)return{ok:false,msg:"大学名を入力してください"};
+  let old=state.playerUniversity;
+  if(state.universities.some(u=>u.name===n))return{ok:false,msg:"同名の大学があります"};
+  state.playerUniversity=n;
+  state.players.forEach(p=>p.organization=n);
+  for(let rows of Object.values(state.teamTop10||{}))for(let r of rows){
+    if(r.organization===old)r.organization=n;
+  }
+  state.retiredArchive?.forEach(a=>{if(a.organization===old)a.organization=n});
+  for(let m of state.meetHistory||[]){
+    if(m.teamScores&&Object.prototype.hasOwnProperty.call(m.teamScores,old)){
+      m.teamScores[n]=m.teamScores[old];delete m.teamScores[old];
+    }
+    for(let podium of Object.values(m.podiums||{}))for(let x of podium)if(x.organization===old)x.organization=n;
+  }
+  return{ok:true,msg:`自大学名を「${n}」に変更しました。`};
+}
+function bestScoutEvent(a){
+  let title=a.accolades.filter(x=>x.competition==="全国高校総体"&&EVENTS.includes(x.event))
+    .sort((x,y)=>y.season-x.season||x.rank-y.rank)[0];
+  if(title)return{event:title.event,title};
+  let event=EVENTS.slice().sort((x,y)=>(a.bestTimes[x]/JAPAN_RECORD[x])-(a.bestTimes[y]/JAPAN_RECORD[y]))[0];
+  return{event,title:null};
+}
+const STAT_RANKS=[
+  {rank:"S",min:176,max:200},
+  {rank:"A",min:151,max:175},
+  {rank:"B",min:126,max:150},
+  {rank:"C",min:101,max:125},
+  {rank:"D",min:76,max:100},
+  {rank:"E",min:51,max:75},
+  {rank:"F",min:26,max:50},
+  {rank:"G",min:0,max:25}
+];
+function statRank(value){
+  let v=clamp(Math.round(+value||0),0,200);
+  return STAT_RANKS.find(x=>v>=x.min)?.rank||"G";
+}
+function statRankClass(value){return `rank-${statRank(value).toLowerCase()}`}
+function statRankLabel(value){
+  let v=clamp(Math.round(+value||0),0,200),r=statRank(v);
+  return `<span class="stat-rank-badge ${statRankClass(v)}">${r}</span><span class="stat-number">${v}</span>`;
+}
+function overallStatValue(p){
+  return STATS.reduce((s,k)=>s+(+p.stats?.[k]||0),0)/STATS.length;
+}
+function topStatKeys(p,count=3){
+  return [...STATS].sort((a,b)=>(p.stats?.[b]||0)-(p.stats?.[a]||0)).slice(0,count);
+}
+function statRankLegendHtml(){
+  return `<div class="stat-rank-legend">${STAT_RANKS.map(x=>`<span class="rank-legend-item ${"rank-"+x.rank.toLowerCase()}"><b>${x.rank}</b> ${x.min}–${x.max}</span>`).join("")}</div>`;
+}
+
+function statHighlightClass(p,k){
+  return statRankClass(p.stats?.[k]||0);
+}
+function freshmanCandidateScore(a){return recruitValue(a)}
+function pickGeneralFreshman(candidates,reputation){
+  if(!candidates.length)return null;
+  candidates.sort((a,b)=>freshmanCandidateScore(a)-freshmanCandidateScore(b));
+  let prestige=clamp(reputation/450,0,1);
+  // Weak programs recruit from the lower end; elite programs can attract the upper end.
+  let target=.10+.80*prestige+rand(-.08,.08);
+  target=clamp(target,.02,.98);
+  let idx=Math.round(target*(candidates.length-1));
+  return candidates.splice(idx,1)[0]||null;
+}
+
+function initialPlayerStatsByReputation(rawStats,year,reputation){
+  let rawAvg=STATS.reduce((s,k)=>s+(+rawStats[k]||60),0)/STATS.length;
+  let target=clamp(78+reputation*.15+(Math.max(1,year)-1)*3.0,76,158);
+  let factor=target/Math.max(1,rawAvg),out={};
+  for(let k of STATS){
+    let shape=(+rawStats[k]||rawAvg)*factor;
+    out[k]=round2(clamp(shape+gauss(0,2.2),42,188));
+  }
+  return out;
+}
+
+function recruitValue(a){
+  let current=STATS.reduce((s,k)=>s+(a.stats[k]||0),0)/STATS.length;
+  let future=Math.max(...Object.values(a.growthProfile||{1:1}));
+  return current+future*12;
+}
+
+
+function distanceOf(e){return +(e.match(/\d+/)||[100])[0]}
+function strokeForEvent(e){if(e.startsWith("fly"))return"fly";if(e.startsWith("im"))return"im";return e.slice(0,2)}
+function strokeAtDistance(event,d,total){let b=strokeForEvent(event);if(b!=="im")return b;let q=total/4;return ["fly","ba","br","fr"][Math.min(3,Math.floor(clamp(d,0,total-1e-7)/q))]}
+function statTriplet(p,stroke){return [p.stats[`${stroke}_speed`],p.stats[`${stroke}_stamina`],p.stats[`${stroke}_turn`]]}
+function eventProfile(p,e){
+  let d=distanceOf(e),s=strokeForEvent(e);
+  if(s!=="im"){let [sp,st,tr]=statTriplet(p,s);return [sp,st,tr,d]}
+  let ss=["fr","ba","br","fly"];let avg=k=>ss.reduce((a,x)=>a+p.stats[`${x}_${k}`],0)/4;
+  return [avg("speed"),avg("stamina"),avg("turn"),d];
+}
+function abilityValue(p,e){let [sp,st,tr,d]=eventProfile(p,e),sw={50:.05,100:.15,200:.28,400:.40}[d],vw=.72-sw*.35;let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;return clamp(raw/mx,0,1)}
+function stableUnitHash(text){
+  let h=2166136261>>>0;
+  for(let i=0;i<String(text).length;i++){
+    h^=String(text).charCodeAt(i);
+    h=Math.imul(h,16777619)>>>0;
+  }
+  return h/4294967295;
+}
+function cpuCeilingExtra(a,e){
+  let h=stableUnitHash(`${a?.id||a?.name||"CPU"}|${e}`);
+  if(a?.category==="middle")return .050+h*.060;
+  if(a?.category==="high")return .018+h*.045;
+  if(a?.category==="university"){
+    let rep=typeof universityReputationByName==="function"?universityReputationByName(a.organization):100;
+    let elite=clamp((rep-40)/460,0,1);
+    // Strong programs have more swimmers capable of approaching the Japanese record,
+    // but every athlete keeps an individual ceiling so the field never collapses to one time.
+    let base=.010-(elite*.0065);
+    let spread=.036-(elite*.012);
+    return Math.max(.0015,base+h*spread);
+  }
+  if(a?.category==="adult")return .0015+h*.026;
+  return .006+h*.035;
+}
+
+function cpuIndividualFloor(a,e){
+  // CPU athletes may approach the referenced Japanese record, but not beat it.
+  // The exact ceiling is athlete/event-specific to avoid many swimmers being clamped to the same time.
+  return JAPAN_RECORD[e]*(1+cpuCeilingExtra(a,e));
+}
+function cpuGrowthPressure(a){
+  let ratios=EVENTS.map(e=>{
+    let pb=a.bestTimes?.[e];
+    if(!Number.isFinite(pb))return 1.08;
+    return pb/Math.max(.01,cpuIndividualFloor(a,e));
+  });
+  let best=Math.min(...ratios);
+  // Full growth when still clearly away from the ceiling; almost none near it.
+  return clamp((best-1.002)/.045,0,1);
+}
+
+function cpuRelayAbsoluteFloor(e,takeover){
+  if(!takeover)return JAPAN_RECORD[e]*.998;
+  let floor={
+    fr100:46.75,
+    fr200:103.20,
+    ba100:51.95,
+    br100:57.95,
+    fly100:50.05
+  }[e];
+  return floor??JAPAN_RECORD[e]*.985;
+}
+function sanitizeCpuPBs(a){
+  if(!a||state.players?.includes(a))return;
+  a.bestTimes=a.bestTimes||{};
+  for(let e of EVENTS){
+    if(Number.isFinite(a.bestTimes[e]))a.bestTimes[e]=round2(Math.max(cpuIndividualFloor(a,e),a.bestTimes[e]));
+  }
+}
+
+function expectedTime(p,e){return JAPAN_RECORD[e]*(1+(1-abilityValue(p,e))*.31)}
+function raceTarget(p,e,champ=true){let base=expectedTime(p,e),mental=p.stats.mental||100,effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;let sigma=Math.max(.001,.0032-(mental/200)*.0018);return Math.max(1,base*(1+effect+gauss(0,sigma)))}
+function strokeProfile(stroke,speed,stamina,skill){let sn=clamp(speed/200,0,1),kn=clamp(skill/200,0,1);
+ if(stroke==="fr")return{cycle:.88-.22*sn,pulse:.025,fatigue:1,underStart:6+6.5*kn,underTurn:5+6.5*kn};
+ if(stroke==="ba")return{cycle:.94-.22*sn,pulse:.032,fatigue:1.02,underStart:7+6.5*kn,underTurn:6+6.8*kn};
+ if(stroke==="br")return{cycle:1.38-.34*sn,pulse:.105,fatigue:1.07,underStart:5+4*kn,underTurn:4.5+4*kn};
+ return{cycle:1.18-.27*sn,pulse:.065,fatigue:1.15,underStart:7+6.2*kn,underTurn:6+6.3*kn}
+}
+function pulse(stroke,phase,amp){phase=((phase%1)+1)%1;if(stroke==="fr"||stroke==="ba")return 1+amp*Math.sin(4*Math.PI*phase);if(stroke==="fly")return 1+amp*(.72*Math.sin(2*Math.PI*phase)+.28*Math.sin(4*Math.PI*phase));if(phase<.18)return 1+amp;if(phase<.52)return 1+amp*1.28;if(phase<.72)return 1-amp*.48;return 1-amp*.78}
+function turnDelay(stroke,turn,transition=false){let d;if(stroke==="fr"||stroke==="ba")d=(stroke==="ba"?.79:.74)-turn*.00135;else d=(stroke==="br"?.94:.90)-turn*.00145;if(transition)d+=.08;return clamp(d,.43,.94)}
+function pushSpeed(stroke,turn,start=false,startStat=100){if(start)return stroke==="ba"?3.2+startStat/200*1.25:3.15+startStat/200*1.45;return 2.7+turn/200*1.2}
+function underwaterDistance(stroke,prof,start){let d=start?prof.underStart:prof.underTurn;return stroke==="fr"||stroke==="ba"||stroke==="fly"?Math.min(14.5,d):Math.min(10,d)}
+
+function simulateCore(p,event,target,scale,record=false,relayTakeover=false,dt=.025){
+  let totalDist=distanceOf(event),[speedAvg,stamAvg]=eventProfile(p,event),first=strokeAtDistance(event,0,totalDist),[fs,fst,ft]=statTriplet(p,first);
+  let start=p.stats.start, reaction=relayTakeover?clamp(.24-start*.00072,.065,.24):(first==="ba"?clamp(.86-start*.00105,.61,.86):clamp(.82-start*.0012,.56,.82));
+  let paceBias=clamp((speedAvg-stamAvg)/200,-.7,.7),avg=totalDist/Math.max(1,target-reaction),nominal=avg*(1.06+clamp(speedAvg/200,0,1)*.04);
+  let t=0,d=0,v=0,fat=0,nextWall=50,turnRemain=0,underRemain=0,phase="reaction",splits=[],traj=[],nextSample=0,strokeClock=0,active=first,maxTime=target*1.8+25,just=false,prevD=0,prevT=0;
+  function snap(){let st=strokeAtDistance(event,Math.min(d,totalDist-1e-7),totalDist),[sp,sta,tr]=statTriplet(p,st),pr=strokeProfile(st,sp,sta,tr);return{t:round2(t*100)/100,distance:Math.min(d,totalDist),velocity:Math.max(0,v),fatigue:clamp(fat,0,1.4),phase,stroke:st,cyclePhase:(strokeClock/Math.max(.25,pr.cycle))%1,underwater:["start_underwater","underwater_dolphin","breast_pullout","push_off"].includes(phase)}}
+  if(record){traj.push(snap());nextSample=.033333}
+  while(d<totalDist-1e-9&&t<maxTime){
+    prevD=d;prevT=t;let st=strokeAtDistance(event,d,totalDist),[sp,sta,tr]=statTriplet(p,st),pr=strokeProfile(st,sp,sta,tr);
+    if(st!==active){active=st;strokeClock=0}
+    if(t<reaction){phase="reaction";v=0}
+    else if(turnRemain>0){phase="turn";turnRemain=Math.max(0,turnRemain-dt);v=Math.max(0,v-8.2*dt);if(turnRemain<=0){let ns=strokeAtDistance(event,Math.min(d+.001,totalDist-1e-7),totalDist),[, ,ntr]=statTriplet(p,ns),npr=strokeProfile(ns,...statTriplet(p,ns));v=Math.max(v,pushSpeed(ns,ntr,false));underRemain=underwaterDistance(ns,npr,false);phase="push_off";strokeClock=0;just=true}}
+    else{
+      let progress=clamp(d/totalDist,0,1),sn=clamp(sp/200,0,1),stn=clamp(sta/200,0,1);
+      if(t-reaction<.04&&d<.05){v=Math.max(v,pushSpeed(st,tr,true,start));underRemain=underwaterDistance(st,pr,true);phase=st==="ba"?"back_start":"start_dive";just=true}
+      if(underRemain>0)phase=st==="br"?"breast_pullout":(st==="ba"&&d<15?"start_underwater":"underwater_dolphin");else if(!just)phase="surface_swim";just=false;
+      let tactical=1+paceBias*(.060-.125*progress),intensity=.82+.38*sn;
+      fat+=Math.max(0,v)*dt*((.24+.83*(1-stn))*intensity*pr.fatigue/Math.max(25,totalDist));
+      let late=clamp((progress-.18)/.82,0,1),fatLoss=late*(.016+.100*(1-stn))*clamp(fat,0,1.8),cyc=(strokeClock/Math.max(.25,pr.cycle))%1;
+      let eff={fr:1.015,ba:.995,br:.955,fly:.985}[st],desired=nominal*scale*tactical*(1-fatLoss)*pulse(st,cyc,pr.pulse)*eff;
+      if(underRemain>0){let ub=st==="br"?2+tr/200*.62:2.25+tr/200*.82;desired=Math.max(desired,ub);underRemain=Math.max(0,underRemain-Math.max(0,v)*dt)}
+      let response=(1.58+1.20*sn)*({fr:1.04,ba:1,br:.90,fly:.96}[st]),prop=response*(desired-v),drag=.045*v*Math.abs(v);
+      v=Math.max(0,v+(prop-drag)*dt);d+=v*dt;strokeClock+=dt;
+      if(d>=nextWall-1e-9){let crossed=Math.min(nextWall,totalDist),den=Math.max(1e-9,d-prevD),frac=clamp((crossed-prevD)/den,0,1),ct=prevT+frac*dt;if(!splits.length||crossed>splits.length*50)splits.push(ct);d=crossed;if(crossed<totalDist-1e-9){let old=strokeAtDistance(event,Math.max(0,crossed-.001),totalDist),neu=strokeAtDistance(event,Math.min(totalDist-.001,crossed+.001),totalDist),[, ,otr]=statTriplet(p,old);turnRemain=turnDelay(old,otr,neu!==old);phase="turn";nextWall+=50}else phase="finish"}
+    }
+    t+=dt;if(record&&t+1e-9>=nextSample){traj.push(snap());nextSample+=.033333}
+  }
+  let total=splits.length?splits[splits.length-1]:t;if(record&&(!traj.length||traj[traj.length-1].t<total-.001)){t=total;d=totalDist;phase="finish";traj.push(snap())}
+  let parts=[],last=0;for(let x of splits){parts.push(round2(x-last));last=x}
+  return{total,splits:parts,cumulative:splits.map(round2),trajectory:traj,reaction,paceBias}
+}
+function simulateRace(p,event,champ=true,record=false,relayTakeover=false){
+  let isCpu=!!state&&!state.players.includes(p);
+  let target=raceTarget(p,event,champ);
+  if(isCpu)target=Math.max(target,cpuIndividualFloor(p,event));
+  let scale=.92;
+  for(let i=0;i<2;i++){
+    let q=simulateCore(p,event,target,scale,false,relayTakeover,1/12);
+    scale*=Math.pow(Math.max(.1,q.total)/target,.9);scale=clamp(scale,.52,1.90);
+  }
+  scale=clamp(scale*.99,.52,1.90);
+  let r=simulateCore(p,event,target,scale,record,relayTakeover,record?1/60:1/30);
+  r.total=round2(r.total);
+  if(isCpu&&r.total<cpuIndividualFloor(p,event)){
+    r=replayRaceToOfficialTime(p,event,round2(cpuIndividualFloor(p,event)),relayTakeover);
+  }
+  r.event=event;r.distance=distanceOf(event);r.record=r.total<JAPAN_RECORD[event];
+  r.physics={engine:"swim_physics_js_v1",reactionTime:r.reaction,paceBias:r.paceBias,targetTime:target};
+  return r;
+}
+function stateAt(race,elapsed){let tr=race.trajectory||[];if(!tr.length)return{distance:race.distance*(elapsed/race.total),velocity:0,fatigue:0,phase:"surface_swim",stroke:strokeAtDistance(race.event,race.distance*(elapsed/race.total),race.distance),cyclePhase:0};if(elapsed<=tr[0].t)return tr[0];if(elapsed>=tr[tr.length-1].t)return tr[tr.length-1];let lo=0,hi=tr.length-1;while(lo+1<hi){let m=(lo+hi)>>1;if(tr[m].t<=elapsed)lo=m;else hi=m}let a=tr[lo],b=tr[lo+1],f=clamp((elapsed-a.t)/Math.max(.0001,b.t-a.t),0,1),src=f<.5?a:b;return{t:elapsed,distance:a.distance+(b.distance-a.distance)*f,velocity:a.velocity+(b.velocity-a.velocity)*f,fatigue:a.fatigue+(b.fatigue-a.fatigue)*f,phase:src.phase,stroke:src.stroke,cyclePhase:a.cyclePhase+(b.cyclePhase-a.cyclePhase)*f,underwater:src.underwater,athleteName:src.athleteName,legIndex:src.legIndex}}
+function simulateRelay(members,kind,record=false){
+  let evs=kind==="4x100fr"?["fr100","fr100","fr100","fr100"]:kind==="4x200fr"?["fr200","fr200","fr200","fr200"]:["ba100","br100","fly100","fr100"],
+      legs=[],cumulativeLegs=[],total=0,trajectory=[],distOff=0;
+  evs.forEach((e,i)=>{
+    let r=simulateRace(members[i],e,true,record,i>0),before=total;
+    legs.push(r.total);total+=r.total;cumulativeLegs.push(round2(total));
+    if(record)for(let s of r.trajectory)trajectory.push({...s,t:before+s.t,distance:distOff+s.distance,legIndex:i,athleteName:members[i].name});
+    distOff+=r.distance;
+  });
+  return{event:kind,distance:distOff,total:round2(total),legs,cumulativeLegs,trajectory,relay:true}
+}
+function defaultPlan(){let x={};STATS.forEach(k=>x[k]=100/STATS.length);return x}
+function newName(used){for(let i=0;i<1000;i++){let n=choice(LAST)+" "+choice(FIRST);if(!used.has(n)){used.add(n);return n}}return choice(LAST)+" "+choice(FIRST)+Math.floor(rand(100,999))}
+function makeAthlete(category,org,used,age=null,grade=null,strength=65){
+  if(age==null)age={middle:Math.floor(rand(13,16)),high:Math.floor(rand(16,19)),university:Math.floor(rand(19,23)),adult:Math.floor(rand(23,30))}[category];
+  if(grade==null&&category!=="adult")grade={middle:age-12,high:age-15,university:age-18}[category];
+  let specialty=choice(EVENTS),stroke=specialty.startsWith("fly")?"fly":specialty.slice(0,2),stats={};
+  STATS.forEach(k=>{
+    let base=clamp(gauss(strength*2,13),55,184);
+    if(k==="mental")base+=rand(-5,8);
+    if(["fr","ba","br","fly"].includes(stroke)&&k.startsWith(stroke+"_"))base+=rand(8,18);
+    if(k==="start"&&(specialty.endsWith("50")||specialty.endsWith("100")))base+=rand(4,10);
+    stats[k]=round2(clamp(base,40,194));
+  });
+  let types=["early","normal","late","ready","raw"],pt=types[Math.floor(rng()*types.length)];
+  if(pt==="ready")STATS.forEach(k=>stats[k]=round2(Math.min(194,stats[k]+rand(10,20))));
+  if(pt==="raw")STATS.forEach(k=>stats[k]=round2(Math.max(40,stats[k]-rand(8,18))));
+  let potential=Object.fromEntries(STATS.map(k=>[k,200]));
+  let a={id:uid("W"),name:newName(used),gender:"M",category,age,grade,organization:org,stats,potential,condition:65,fatigue:0,bestTimes:{},retired:false,scouted:false,discovered:false,potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),accolades:[],raceHistory:[],specialty};
+  EVENTS.forEach(e=>a.bestTimes[e]=round2(Math.max(cpuIndividualFloor(a,e),expectedTime(a,e)*rand(.995,1.025))));
+  return a;
+}
+function assignInterhigh(){
+  let highs=state.world.filter(a=>a.category==="high"&&(a.grade===2||a.grade===3)&&!a.retired),cid=`interhigh_${state.season}`;if(highs.some(a=>a.accolades.some(x=>x.competitionId===cid)))return;
+  let pool=[...highs].sort((a,b)=>recruitValue(b)-recruitValue(a));
+  for(let e of EVENTS){let info=INTERHIGH.events[e];if(!info)continue;info.times.forEach((base,idx)=>{let cand=pool.filter(a=>a.accolades.filter(x=>x.competitionId===cid).length<2);if(!cand.length)return;let a=cand[Math.floor(rng()*Math.min(cand.length,20+(idx+1)*3))],target=round2(base*rand(.995,1.007));calibrateToTime(a,e,target);a.bestTimes[e]=target;a.accolades.push({title:`${EVENT_LABEL[e]} インターハイ${idx===0?"優勝":(idx+1)+"位"}`,competitionId:cid,competition:"全国高校総体",stage:"A_final",event:e,rank:idx+1,time:target,season:state.season});a.discovered=true})}
+}
+function calibrateToTime(a,e,target){
+  let keys;
+  if(e.startsWith("im"))keys=["fr","ba","br","fly"].flatMap(s=>[`${s}_speed`,`${s}_stamina`,`${s}_turn`]).concat("start");
+  else{let s=e.startsWith("fly")?"fly":e.slice(0,2);keys=[`${s}_speed`,`${s}_stamina`,`${s}_turn`,"start"]}
+  for(let n=0;n<10;n++){
+    let err=(expectedTime(a,e)-target)/target;if(Math.abs(err)<.004)break;
+    let d=clamp(err*210,-7,7);
+    keys.forEach(k=>a.stats[k]=round2(clamp(a.stats[k]+d+rand(-.8,.8),45,198)));
+  }
+}
+function initialUniversityReputation(strength){
+  return round2(clamp(35+(strength-65)*8.5,20,320));
+}
+function universityStrengthFromReputation(rep){
+  return clamp(65+(rep-60)/14,62,91);
+}
+function universityObjectByName(name){
+  return state.universities?.find(u=>u.name===name)||null;
+}
+function universityReputationByName(name){
+  if(name===state.playerUniversity)return state.reputation;
+  return universityObjectByName(name)?.reputation??80;
+}
+function chooseCpuUniversityForRecruit(a){
+  let avg=STATS.reduce((s,k)=>s+(a.stats[k]||0),0)/STATS.length;
+  let desired=clamp(70+(avg-90)*4.2,35,500);
+  let ranked=[...state.universities].sort((x,y)=>Math.abs((x.reputation??80)-desired)-Math.abs((y.reputation??80)-desired));
+  let pool=ranked.slice(0,Math.min(4,ranked.length));
+  let weights=pool.map((u,i)=>Math.max(.05,1/(1+i*.8))*Math.max(.4,(u.reputation??80)/180));
+  let total=weights.reduce((a,b)=>a+b,0),r=rng()*total;
+  for(let i=0;i<pool.length;i++){r-=weights[i];if(r<=0)return pool[i].name}
+  return pool[0]?.name||choice(state.universities).name;
+}
+function playerReputationDelta(meet,selections,relaySel={}){
+  if(!RESTRICTED.has(meet))return 0;
+  let ids=new Set(),entries=0;
+  for(let e of EVENTS)for(let id of selections[e]||[]){ids.add(id);entries++}
+  for(let kind of RELAYS){
+    let relayIds=relaySel[kind]||[];
+    if(relayIds.length===4){
+      relayIds.forEach(id=>ids.add(id));
+      entries++;
+    }
+  }
+  let n=ids.size,delta=0;
+  if(meet==="kansai_college"){
+    delta=n?2*n+.5*entries:-0.5;  }else if(meet==="intercollege"){
+    delta=n?12*n+entries:-1.5;
+    if(n>=3)delta+=12;
+    if(n>=6)delta+=13;
+  }else if(meet==="japan_open"){
+    delta=n?18*n+2*entries:-0.75;
+  }else if(meet==="japan_championship"){
+    delta=n?28*n+3*entries:-1;
+  }
+  return round2(delta);
+}
+function applyParticipationReputation(meet,selections,relaySel={}){
+  if(!RESTRICTED.has(meet))return;
+  let ids=new Set(),entries=0;
+  for(let e of EVENTS)for(let id of selections[e]||[]){ids.add(id);entries++}
+  for(let kind of RELAYS){
+    let relayIds=relaySel[kind]||[];
+    if(relayIds.length===4){
+      relayIds.forEach(id=>ids.add(id));
+      entries++;
+    }
+  }
+  let delta=playerReputationDelta(meet,selections,relaySel);
+  state.reputation=round2(clamp(state.reputation+delta,0,600));
+  if(!state.reputationParticipation)state.reputationParticipation=[];
+  state.reputationParticipation.push({season:activeCompetitionSeason(),meet,athletes:ids.size,entries,delta,reputation:state.reputation});
+}
+function updateCpuUniversityReputations(meet,eventResults){
+  if(!["kansai_college","intercollege"].includes(meet))return;
+  let orgAthletes={};
+  for(let e of EVENTS)for(let x of eventResults[e]?.prelim||[]){
+    if(x.source!=="CPU"||x.athlete.category!=="university")continue;
+    (orgAthletes[x.athlete.organization]||(orgAthletes[x.athlete.organization]=new Set())).add(x.athlete.id);
+  }
+  for(let u of state.universities){
+    let n=orgAthletes[u.name]?.size||0,delta=0;
+    if(meet==="kansai_college")delta=n?Math.min(7,n*.45):-1.5;
+    else delta=n?Math.min(12,n*1.15)+(n>=5?2:0):-3;
+    u.reputation=round2(clamp((u.reputation??initialUniversityReputation(u.strength))+delta,15,550));
+  }
+}
+function reputationRuleHtml(){
+  let recent=(state.reputationParticipation||[]).slice(-12).reverse();
+  return `<div class="notice"><b>評判は「参加標準記録のある大会に、何人を出場させ続けられるか」で上下します。</b><br>
+    インカレへ毎年複数人を送り込める大学は、数年継続すると「強豪」以上へ到達しやすい設計です。リレー出場者も「出場選手」に含みます。</div>
+    <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>大会</th><th>評判変化</th></tr></thead><tbody>
+      <tr><td>関西カレッジ</td><td>出場選手1人 +2、エントリー1件 +0.5／出場0人 -0.5</td></tr>
+      <tr><td>インカレ</td><td>出場選手1人 +12、エントリー1件 +1、3人以上 +12、6人以上さらに +13／0人 -1.5</td></tr>
+      <tr><td>ジャパンオープン</td><td>出場選手1人 +18、エントリー1件 +2／0人 -0.75</td></tr>
+      <tr><td>日本選手権</td><td>出場選手1人 +28、エントリー1件 +3／0人 -1</td></tr>
+      <tr><td>新年度</td><td>評判を1%だけ自然減衰。未出場だけでは大きく落ちません</td></tr>
+    </tbody></table></div>
+    <p class="small muted">区分: 弱小 0–29 / 発展途上 30–79 / 中堅 80–159 / 強豪 160–279 / 名門 280–449 / 全国屈指 450+</p>
+    <h3>最近の評判変化</h3>
+    <div class="table-wrap"><table><thead><tr><th>年度</th><th>大会</th><th>出場選手</th><th>エントリー</th><th>変化</th><th>評判</th></tr></thead><tbody>${
+      recent.map(x=>`<tr><td>${x.season}</td><td>${meetMonthLabel(x.meet)}</td><td>${x.athletes}人</td><td>${x.entries}</td><td>${x.delta>=0?"+":""}${x.delta}</td><td>${x.reputation}</td></tr>`).join("")||'<tr><td colspan="6">まだ対象大会への出場履歴がありません。</td></tr>'
+    }</tbody></table></div>`;
+}
+function showReputationInfo(){
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">学校評判の仕組み</h2><button id="x">閉じる</button></div>${reputationRuleHtml()}`);
+  m.querySelector("#x").onclick=()=>closeModal();
+}
+function showMeetSchedule(){
+  const order={"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"11":11,"12":12,"1":13,"2":14,"3":15};
+  let rows=Object.entries(MEETS).map(([key,meet])=>{
+    let [month,week,half]=key.split("-");
+    return{month:+month,week:+week,half,meet,ord:order[month]*10+(+week)+(half==="後半"?.5:0)};
+  }).sort((a,b)=>a.ord-b.ord);
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会日程</h2><button id="x">閉じる</button></div>
+    <div class="table-wrap"><table><thead><tr><th>時期</th><th>大会</th><th>参加標準</th><th>リレー</th></tr></thead><tbody>${
+      rows.map(x=>`<tr><td>${x.month}月 第${x.week}週${x.half}</td><td>${MEET_LABEL[x.meet]}</td><td>${RESTRICTED.has(x.meet)?"あり":"なし"}</td><td>${RELAY_MEETS.has(x.meet)?"あり":"なし"}</td></tr>`).join("")
+    }</tbody></table></div>`);
+  m.querySelector("#x").onclick=()=>closeModal();
+}
+
+function prodigyChance(){
+  // Independent of university reputation: roughly one in 22 entrants.
+  return .045;
+}
+function applyProdigyBoost(p,year=1){
+  if(!p||!p.stats)return p;
+  let avg=STATS.reduce((s,k)=>s+(p.stats[k]||0),0)/STATS.length;
+  let target=rand(130+(Math.max(1,year)-1)*3.5,151+(Math.max(1,year)-1)*3.5);
+  target=clamp(target,130,164);
+  if(avg<target){
+    let preferred=EVENTS.includes(p.specialty)?p.specialty:bestSpecialtyByAbility(p);
+    let st=strokeForEvent(preferred),factor=target/Math.max(1,avg);
+    for(let k of STATS){
+      let specialtyBoost=(st!=="im"&&k.startsWith(st+"_"))?rand(3,10):0;
+      if(st==="im"&&/(fr|ba|br|fly)_(speed|stamina)/.test(k))specialtyBoost=rand(2,7);
+      p.stats[k]=round2(clamp((p.stats[k]||avg)*factor+specialtyBoost+gauss(0,2.2),45,188));
+    }
+  }
+  p.prodigy=true;
+  // Talented arrivals should also have a useful development curve, without raising the 200 cap.
+  if(["ready","early"].includes(p.potentialType)){
+    p.potentialType=choice(["normal","late","raw"]);
+    p.growthProfile=deepClone(POTENTIAL_TYPES[p.potentialType].profile);
+  }
+  p.specialty=bestSpecialtyByAbility(p);
+  return p;
+}
+function rollProdigy(p,year=1){
+  if(rng()<prodigyChance())applyProdigyBoost(p,year);
+  return p;
+}
+
+function makeInitialPlayer(year,used){
+  let preferred=choice(EVENTS),stroke=strokeForEvent(preferred),raw={};
+  STATS.forEach(k=>{
+    let v=gauss(76,13);
+    if(k==="mental")v+=rand(-4,7);
+    if(stroke!=="im"&&k.startsWith(stroke+"_"))v+=rand(8,18);
+    if(stroke==="im"&&/(fr|ba|br|fly)_(speed|stamina)/.test(k))v+=rand(3,10);
+    if(k==="start"&&(preferred.endsWith("50")||preferred.endsWith("100")))v+=rand(4,9);
+    raw[k]=round2(clamp(v,42,125));
+  });
+  let stats=initialPlayerStatsByReputation(raw,year,state.reputation);
+  let types=Object.keys(POTENTIAL_TYPES),pt=choice(types);
+  let p={
+    id:uid("P"),name:newName(used),year,gender:"M",age:18+year,
+    organization:state.playerUniversity,stats,
+    potential:Object.fromEntries(STATS.map(k=>[k,200])),
+    potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),
+    raceHistory:[],accolades:[],condition:65,fatigue:0,bestTimes:{},specialty:preferred,prodigy:false
+  };
+  p.specialty=bestSpecialtyByAbility(p);
+  rollProdigy(p,year);
+  return p;
+}
+function createState(){
+  let s={version:"pwa-v1.15",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  state=s;
+  s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
+  s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
+  s.interIds=[...s.universities].sort((a,b)=>(b.reputation||0)-(a.reputation||0)).slice(0,30).map(u=>u.id);
+  STATS.forEach(k=>s.facilities[k]=0);
+  let used=new Set();
+
+  // Every new game/reset gets a fresh 8-athlete class in each grade.
+  for(let year=1;year<=4;year++){
+    for(let i=0;i<8;i++){
+      let p=makeInitialPlayer(year,used);
+      s.players.push(p);
+      s.trainingPlans[p.id]=defaultPlan();
+      s.trainingFocus[p.id]=[];
+    }
+  }
+
+  for(let org of s.organizationNames.middle){
+    for(let g=1;g<=3;g++)for(let i=0;i<({1:3,2:3,3:2}[g]);i++)s.world.push(makeAthlete("middle",org,used,12+g,g,57));
+  }
+  for(let org of s.organizationNames.high){
+    for(let g=1;g<=3;g++)for(let i=0;i<({1:3,2:3,3:4}[g]);i++)s.world.push(makeAthlete("high",org,used,15+g,g,66));
+  }
+  for(let u of s.universities){
+    let strength=universityStrengthFromReputation(u.reputation);
+    for(let g=1;g<=4;g++)for(let i=0;i<5;i++)s.world.push(makeAthlete("university",u.name,used,18+g,g,strength));
+  }
+  for(let org of s.organizationNames.adult)for(let i=0;i<12;i++)s.world.push(makeAthlete("adult",org,used,null,null,82));
+  assignInterhigh();refreshRecordBook();seedTop10();refreshScoutBoard();return s;
+}
+let state;
+let selectedTrainingId=null;
+let raceAnim=null;
+
+function meetMonthLabel(meet,slot=null){
+  let month=null;
+  if(Number.isFinite(+slot))month=slotDate(+slot).month;
+  if(!month)month={team_trial:4,joint_record:1,kansai_college:7,intercollege:9,japan_open:12,japan_championship:3}[meet]||"";
+  return `${month?month+"月":""}${MEET_LABEL[meet]||meet}`;
+}
+function athleteGradeLabel(a){
+  if(state.players.includes(a))return `${a.year}年`;
+  if(a.category==="university")return `${a.grade||"-"}年`;
+  if(a.category==="high")return `高${a.grade||"-"}`;
+  if(a.category==="middle")return `中${a.grade||"-"}`;
+  return a.age?`${a.age}歳`:"";
+}
+function relayLegEvents(kind){return kind==="4x100fr"?["fr100","fr100","fr100","fr100"]:kind==="4x200fr"?["fr200","fr200","fr200","fr200"]:["ba100","br100","fly100","fr100"]}
+function relayLegEvent(kind,i){return relayLegEvents(kind)[i]}
+
+function seedTop10(){EVENTS.forEach(e=>state.players.forEach(p=>{if(Number.isFinite(p.bestTimes[e]))upsertIndividualTop10(e,p,p.bestTimes[e],"initial_pb","PB")}))}
+function upsertIndividualTop10(e,p,t,meet,stage){
+  let rows=state.teamTop10[e]||(state.teamTop10[e]=[]),i=rows.findIndex(x=>x.athleteId===p.id),
+      r={kind:"individual",event:e,time:round2(t),athleteId:p.id,name:p.name,season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage};
+  if(i<0)rows.push(r);else if(r.time<rows[i].time)rows[i]=r;
+  rows.sort((a,b)=>a.time-b.time);rows.splice(10);
+}
+function upsertRelayTop10(kind,members,t,meet){
+  let rows=state.teamTop10[kind]||(state.teamTop10[kind]=[]),ids=members.map(x=>x.id).join("|"),i=rows.findIndex(x=>x.memberKey===ids),
+      r={kind:"relay",event:kind,time:round2(t),memberKey:ids,members:members.map(x=>({id:x.id,name:x.name})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage:"決勝"};
+  if(i<0)rows.push(r);else if(r.time<rows[i].time)rows[i]=r;
+  rows.sort((a,b)=>a.time-b.time);rows.splice(10);
+}
+function activeAthletes(){return state.players.concat(state.world.filter(a=>!a.retired))}
+function ranking(e,cat="all",limit=100){return activeAthletes().filter(a=>a.bestTimes[e]!=null&&(cat==="all"||(cat==="player"?state.players.includes(a):(!state.players.includes(a)&&a.category===cat)))).sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]).slice(0,limit)}
+function refreshRecordBook(){EVENTS.forEach(e=>{let a=ranking(e,"all",1)[0];if(!a)return;let old=state.recordBook[e],t=a.bestTimes[e];if(!old||t<old.time)state.recordBook[e]={event:e,time:t,athleteId:a.id,name:a.name,organization:a.organization,season:state.season,meet:"PB集計"}})}
+function standardFor(meet,e){return STANDARDS[meet]?.[e]??null}
+const STANDARD_LABEL_MEET={
+  "関西カレッジ":"kansai_college",
+  "インカレ":"intercollege",
+  "ジャパンオープン":"japan_open",
+  "日本選手権":"japan_championship"
+};
+function standardTimeForLabel(event,label){
+  let meet=STANDARD_LABEL_MEET[label];
+  return meet?standardFor(meet,event):null;
+}
+function standardDisplay(event,label){
+  let t=standardTimeForLabel(event,label);
+  return Number.isFinite(t)?`${label} ${fmt(t)}`:label;
+}
+
+function standardsCleared(e,t){return [["kansai_college","関西カレッジ"],["intercollege","インカレ"],["japan_open","ジャパンオープン"],["japan_championship","日本選手権"]].filter(([m])=>standardFor(m,e)!=null&&t<=standardFor(m,e)).map(x=>x[1])}
+function qualified(p,meet,e){let s=standardFor(meet,e);return s==null||p.bestTimes[e]<=s}
+function universityName(id){if(id==="PLAYER")return state.playerUniversity;return state.universities.find(x=>x.id===id)?.name||id}
+function meetUniversities(meet){if(meet==="kansai_college")return[state.playerUniversity,...state.kansaiIds.map(universityName)];if(meet==="intercollege")return[state.playerUniversity,...state.interIds.map(universityName)];return[state.playerUniversity,...state.universities.map(x=>x.name)]}
+function allowedCpu(a,meet){if(a.retired)return false;if(meet==="kansai_college"||meet==="intercollege")return a.category==="university"&&meetUniversities(meet).includes(a.organization);if(OPEN_AGE_MEETS.has(meet))return["middle","high","university","adult"].includes(a.category);return false}
+function updateResultHistory(a,e,t,meet,stage,rank){
+  let old=a.bestTimes[e],oldCleared=Number.isFinite(old)?standardsCleared(e,old):[];
+  let pb=old==null||!Number.isFinite(old)||t<old,newCleared=standardsCleared(e,t);
+  let newlyCleared=pb?newCleared.filter(x=>!oldCleared.includes(x)):[];
+  if(pb)a.bestTimes[e]=round2(t);
+  let achievement={pb,newlyCleared,cleared:newCleared,previousPB:Number.isFinite(old)?old:null};
+
+  // Detailed race history is useful only for own swimmers and own-team alumni.
+  if(state.players.includes(a)||a.alumni){
+    if(!Array.isArray(a.raceHistory))a.raceHistory=[];
+    a.raceHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),date:dateText(activeCompetitionSlot()),meet,event:e,stage,time:round2(t),rank,pb,standardsCleared:newCleared,newlyCleared});
+    if(a.raceHistory.length>600)a.raceHistory.splice(0,a.raceHistory.length-600);
+  }
+  if(pb&&state.players.includes(a))upsertIndividualTop10(e,a,t,meet,stage);
+  return achievement;
+}
+function buildCpuCollegeEntries(meet){
+  // Each CPU university follows the same rule as the player:
+  // max 3 athletes per event, max 3 individual events per athlete.
+  let byEvent=Object.fromEntries(EVENTS.map(e=>[e,[]]));
+  if(!COLLEGE_ENTRY_LIMIT_MEETS.has(meet))return byEvent;
+  let stds=STANDARDS[meet]||{};
+  for(let org of meetUniversities(meet).filter(o=>o!==state.playerUniversity)){
+    let roster=state.world.filter(a=>a.category==="university"&&a.organization===org&&!a.retired);
+    let eventCount=Object.fromEntries(EVENTS.map(e=>[e,0]));
+    let athleteCount=Object.fromEntries(roster.map(a=>[a.id,0]));
+    let pairs=[];
+    for(let a of roster){
+      for(let e of EVENTS){
+        let std=stds[e];
+        if(std!=null && a.bestTimes[e]<=std){
+          // Lower score means a stronger entry relative to the qualifying standard.
+          pairs.push({a,e,score:a.bestTimes[e]/std});
+        }
+      }
+    }
+    pairs.sort((x,y)=>x.score-y.score);
+    for(let x of pairs){
+      if(eventCount[x.e]>=3)continue;
+      if(athleteCount[x.a.id]>=3)continue;
+      byEvent[x.e].push(x.a.id);
+      eventCount[x.e]++;
+      athleteCount[x.a.id]++;
+    }
+  }
+  return byEvent;
+}
+
+function seedRaceHeats(entrants,event){
+  let pool=[...entrants].sort((a,b)=>(a.athlete.bestTimes[event]??expectedTime(a.athlete,event))-(b.athlete.bestTimes[event]??expectedTime(b.athlete,event)));
+  if(pool.length>48)pool=pool.slice(0,48);
+  let heatCount=Math.max(1,Math.ceil(pool.length/8)),heats=Array.from({length:heatCount},()=>[]);
+  // Slowest heats first, fastest entrants later.
+  let slow=[...pool].reverse();
+  slow.forEach((x,i)=>heats[Math.min(heatCount-1,Math.floor(i/8))].push(x));
+  return heats.map((h,hi)=>h.map((x,li)=>({...x,heatNo:hi+1,heatLane:li+1})));
+}
+
+const KANSAI_COLLEGE_WIN_TARGET={
+  fr50:23.40,fr100:50.70,fr200:111.60,fr400:236.70,
+  ba100:56.90,ba200:124.20,br100:61.80,br200:133.70,
+  fly100:54.10,fly200:120.50,im200:124.00,im400:265.00
+};
+const FINAL_SPREAD_PCT={
+  fr50:.032,fr100:.024,fr200:.033,fr400:.034,
+  ba100:.034,ba200:.025,br100:.018,br200:.025,
+  fly100:.028,fly200:.042,im200:.022,im400:.040
+};
+function kansaiCollegeIndividualFloor(a,e){
+  let base=KANSAI_COLLEGE_WIN_TARGET[e]||STANDARDS.kansai_college[e]||JAPAN_RECORD[e]*1.06;
+  let h=stableUnitHash(`KC|${a?.id||a?.name||"CPU"}|${e}`);
+  let rep=universityReputationByName(a?.organization);
+  let teamPenalty=Math.max(0,250-rep)/5000;
+  return base*(1+.0015+h*.018+teamPenalty);
+}
+function simulateMeetRace(p,event,meet,record=false){
+  let race=simulateRace(p,event,true,record);
+  if(!state.players.includes(p)&&meet==="kansai_college"){
+    let floor=round2(kansaiCollegeIndividualFloor(p,event));
+    if(race.total<floor)race=replayRaceToOfficialTime(p,event,floor,false);
+  }
+  return race;
+}
+function finalSpreadMultiplier(meet){
+  if(meet==="kansai_college")return 1.08;
+  if(meet==="intercollege")return .94;
+  if(meet==="japan_open"||meet==="japan_championship")return .80;
+  if(meet==="joint_record")return .95;
+  return 1;
+}
+function widenFinalField(rows,event,meet){
+  if(rows.length<2)return rows.sort((a,b)=>a.race.total-b.race.total);
+  rows.sort((a,b)=>a.race.total-b.race.total);
+  let winner=rows[0].race.total;
+  let pct=(FINAL_SPREAD_PCT[event]||.028)*finalSpreadMultiplier(meet);
+  let shape=[0,.13,.25,.39,.54,.69,.84,1];
+  let previous=winner;
+  for(let i=1;i<rows.length;i++){
+    let x=rows[i];
+    let target=winner*(1+pct*shape[Math.min(i,7)]);
+    let minStep=Math.max(.02,winner*pct*.07);
+    target=Math.max(target,previous+minStep);
+    if(x.source==="CPU"&&x.race.total<target){
+      target=round2(target);
+      x.race=replayRaceToOfficialTime(x.athlete,event,target,false);
+    }
+    previous=Math.max(previous,x.race.total);
+  }
+  return rows.sort((a,b)=>a.race.total-b.race.total);
+}
+
+function runEvent(meet,e,userIds,cpuCollegeEntries=null){
+  let user=userIds.map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+  let std=standardFor(meet,e),cpu;
+  if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)&&cpuCollegeEntries){
+    let ids=new Set(cpuCollegeEntries[e]||[]);
+    cpu=state.world.filter(a=>ids.has(a.id)).sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]);
+  }else{
+    cpu=state.world.filter(a=>allowedCpu(a,meet)&&(std==null||a.bestTimes[e]<=std))
+      .sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]);
+  }
+  cpu=cpu.slice(0,Math.max(0,48-user.length));
+  let entrants=user.map(a=>({source:"PLAYER",athlete:a,entryPB:a.bestTimes[e]})).concat(cpu.map(a=>({source:"CPU",athlete:a,entryPB:a.bestTimes[e]})));
+  let seeded=seedRaceHeats(entrants,e),heats=[];
+  for(let h of seeded){
+    let rows=h.map(x=>({...x,race:x.source==="PLAYER"?simulateRace(x.athlete,e,true,true):simulateMeetRace(x.athlete,e,meet,false)}))
+      .sort((a,b)=>a.race.total-b.race.total);
+    heats.push(rows);
+  }
+  let prelim=heats.flat().sort((a,b)=>a.race.total-b.race.total);
+  prelim.forEach((x,i)=>x.achievement=updateResultHistory(x.athlete,e,x.race.total,meet,"予選",i+1));
+  let final=prelim.slice(0,8).map(x=>({
+    source:x.source,
+    athlete:x.athlete,
+    entryPB:x.athlete.bestTimes[e],
+    race:x.source==="PLAYER"?simulateRace(x.athlete,e,true,true):simulateMeetRace(x.athlete,e,meet,false)
+  }));
+  final=widenFinalField(final,e,meet);
+  final.forEach((x,i)=>x.achievement=updateResultHistory(x.athlete,e,x.race.total,meet,"A決勝",i+1));
+  return{prelim,final,heats};
+}
+function bestRelayMembers(roster,kind){if(kind==="4x100fr")return[...roster].sort((a,b)=>expectedTime(a,"fr100")-expectedTime(b,"fr100")).slice(0,4);if(kind==="4x200fr")return[...roster].sort((a,b)=>expectedTime(a,"fr200")-expectedTime(b,"fr200")).slice(0,4);let picks=[];for(let e of["ba100","br100","fly100","fr100"]){let rem=roster.filter(a=>!picks.includes(a));if(!rem.length)return[];rem.sort((a,b)=>expectedTime(a,e)-expectedTime(b,e));picks.push(rem[0])}return picks}
+function cpu4x100FrLegTarget(pb,legIndex,meet,teamQuality){
+  let takeover=legIndex>0;
+  if(meet==="intercollege"){
+    // National university level: mostly 48–49, with a rare elite takeover in the high 47s.
+    let elite=teamQuality<49.25;
+    if(takeover&&elite&&rng()<.055){
+      return clamp(rand(47.55,47.95),pb-.65,49.95);
+    }
+    let lo=takeover?48.05:48.45,hi=takeover?49.65:49.95;
+    let target=rand(lo,hi)+(teamQuality-49.0)*.28;
+    return clamp(target,lo,50.10);
+  }
+  if(meet==="kansai_college"){
+    // Regional level: a team of roughly 50–51 second splits can win.
+    let lo=50.05,hi=51.85;
+    let target=rand(lo,hi)+(teamQuality-50.7)*.18;
+    return clamp(target,50.00,52.10);
+  }
+  return null;
+}
+
+function simulateCpuRelay(members,kind,meet){
+  let evs=relayLegEvents(kind),legs=[],cumulativeLegs=[],total=0;
+  let fr100Pbs=kind==="4x100fr"?members.map(m=>{
+    let pb=m.bestTimes?.fr100;
+    return Number.isFinite(pb)?Math.max(cpuIndividualFloor(m,"fr100"),pb):Math.max(cpuIndividualFloor(m,"fr100"),expectedTime(m,"fr100"));
+  }):[];
+  let teamQuality=fr100Pbs.length?fr100Pbs.reduce((a,b)=>a+b,0)/fr100Pbs.length:99;
+
+  evs.forEach((e,i)=>{
+    let pb=members[i].bestTimes[e];
+    if(!Number.isFinite(pb))pb=Math.max(cpuIndividualFloor(members[i],e),expectedTime(members[i],e));
+    pb=Math.max(cpuIndividualFloor(members[i],e),pb);
+
+    let target;
+    if(kind==="4x100fr"&&(meet==="intercollege"||meet==="kansai_college")){
+      target=cpu4x100FrLegTarget(pb,i,meet,teamQuality);
+      // Respect individual ability as well: relay takeover cannot magically erase >0.75 sec from PB.
+      target=Math.max(target,pb-(i>0?.75:0));
+    }else{
+      let takeover=i>0,bonus=takeover?(meet==="intercollege"?rand(.20,.62):rand(.10,.50)):rand(-.08,.18);
+      let jitter=meet==="intercollege"?rand(-.08,.22):rand(-.06,.30);
+      target=pb-bonus+jitter;
+      target=Math.max(pb-.75,target,cpuRelayAbsoluteFloor(e,takeover));
+    }
+
+    target=Math.max(1,target);
+    legs.push(round2(target));
+    total+=target;
+    cumulativeLegs.push(round2(total));
+  });
+  return{event:kind,distance:kind==="4x200fr"?800:400,total:round2(total),legs,cumulativeLegs,trajectory:[],relay:true};
+}
+function relaySeedScore(entry,kind){
+  let evs=relayLegEvents(kind);
+  return entry.members.reduce((sum,m,i)=>{
+    let e=evs[i],pb=m.bestTimes?.[e];
+    if(!Number.isFinite(pb))pb=expectedTime(m,e);
+    return sum+pb-(i>0?.35:0);
+  },0);
+}
+function seedRelayHeats(entries,kind){
+  let pool=[...entries].sort((a,b)=>relaySeedScore(b,kind)-relaySeedScore(a,kind));
+  let heatCount=Math.max(1,Math.ceil(pool.length/8)),heats=Array.from({length:heatCount},()=>[]);
+  pool.forEach((x,i)=>heats[Math.min(heatCount-1,Math.floor(i/8))].push(x));
+  return heats;
+}
+function relayPlaybackRow(team,kind){
+  return {
+    source:team.organization===state.playerUniversity?"PLAYER":"CPU",
+    athlete:{id:`RELAY-${team.organization}`,name:team.organization,organization:team.organization,category:"relay"},
+    members:team.members,
+    race:relayPlaybackRace(team,kind)
+  };
+}
+
+function runRelays(meet,manual){
+  if(!RELAY_MEETS.has(meet))return[];
+  let orgs=meetUniversities(meet),out=[];
+  for(let kind of RELAYS){
+    let entries=[];
+    for(let org of orgs){
+      let roster=org===state.playerUniversity?state.players:state.world.filter(a=>a.category==="university"&&a.organization===org&&!a.retired),members;
+      if(org===state.playerUniversity){
+        if((manual[kind]||[]).length!==4)continue;
+        members=manual[kind].map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+      }else{
+        members=bestRelayMembers(roster,kind);
+      }
+      if(members.length!==4)continue;
+      entries.push({organization:org,members});
+    }
+
+    let seeded=seedRelayHeats(entries,kind);
+    let heats=seeded.map(h=>h.map(entry=>{
+      let race=entry.organization===state.playerUniversity
+        ?simulateRelay(entry.members,kind,true)
+        :simulateCpuRelay(entry.members,kind,meet);
+      return{...entry,race};
+    }).sort((a,b)=>a.race.total-b.race.total));
+
+    let prelim=heats.flat().sort((a,b)=>a.race.total-b.race.total);
+    prelim.forEach((t,i)=>t.prelimRank=i+1);
+
+    let qualifiers=prelim.slice(0,8);
+    let finals=qualifiers.map(entry=>{
+      let race=entry.organization===state.playerUniversity
+        ?simulateRelay(entry.members,kind,true)
+        :simulateCpuRelay(entry.members,kind,meet);
+      return{organization:entry.organization,members:entry.members,race};
+    }).sort((a,b)=>a.race.total-b.race.total);
+    finals.forEach((t,i)=>t.rank=i+1);
+
+    let ownPrelim=prelim.find(x=>x.organization===state.playerUniversity);
+    if(ownPrelim)upsertRelayTop10(kind,ownPrelim.members,ownPrelim.race.total,meet);
+    let ownFinal=finals.find(x=>x.organization===state.playerUniversity);
+    if(ownFinal)upsertRelayTop10(kind,ownFinal.members,ownFinal.race.total,meet);
+
+    out.push([kind,finals,{prelim,heats}]);
+  }
+  return out;
+}
+function teamScoring(meet,eventResults,relays){
+  if(!TEAM_SCORE_MEETS.has(meet))return{};
+  let s=Object.fromEntries(meetUniversities(meet).map(x=>[x,0])),pts=[8,7,6,5,4,3,2,1],rpts=[16,14,12,10,8,6,4,2];
+  for(let e of EVENTS)eventResults[e].final.slice(0,8).forEach((x,i)=>s[x.athlete.organization]=(s[x.athlete.organization]||0)+pts[i]);
+  for(let [k,finals] of relays)finals.forEach((x,i)=>s[x.organization]=(s[x.organization]||0)+rpts[i]);
+  return s;
+}
+function facilityGrowthMultiplier(level){
+  return 1+Math.min(100,Math.max(0,+level||0))*.006;
+}
+
+function trainCommand(){
+  let d=slotDate(state.slot),camp=campAt(d.month,d.week)?1.35:1,growth=[];
+  for(let p of state.players){
+    let before=Object.fromEntries(STATS.map(k=>[k,p.stats[k]]));
+    let focus=(state.trainingFocus?.[p.id]||[]).filter(k=>STATS.includes(k));
+    let rawWeights=Object.fromEntries(STATS.map(k=>[k,focus.length?(focus.includes(k)?1:.03):1]));
+    let sum=STATS.reduce((a,k)=>a+rawWeights[k],0)||1,primary={};
+    for(let k of STATS){
+      let w=rawWeights[k]/sum,cap=200,gap=Math.max(0,200-p.stats[k]);
+      let pm=.82+.18*Math.min(1,gap/36),fm=facilityGrowthMultiplier(state.facilities[k]||0),ym=p.growthProfile?.[p.year]||1;
+      let concentration=focus.length?clamp(1.22-(focus.length-1)*.035,.92,1.22):1;let gain=5.15*w*pm*ym*fm*camp*concentration*rand(.94,1.08);
+      gain=Math.min(gain,gap);
+      if(gain>0){p.stats[k]=round2(p.stats[k]+gain);primary[k]=gain}
+    }
+    // Stroke-specific cross-development remains, so focused swimming work also improves related components.
+    for(let [k,g] of Object.entries(primary)){
+      if(!k.includes("_"))continue;
+      let st=k.split("_")[0];if(!["fr","ba","br","fly"].includes(st))continue;
+      let sib=[`${st}_speed`,`${st}_stamina`,`${st}_turn`].filter(x=>x!==k),sec=g*rand(.36,.44),share=rand(.42,.58);
+      [sec*share,sec*(1-share)].forEach((v,i)=>{let sk=sib[i],cap=200,x=Math.min(v,Math.max(0,200-p.stats[sk]));p.stats[sk]=round2(p.stats[sk]+x)})
+    }
+    let changes=[];
+    for(let k of STATS){
+      let oldI=Math.round(before[k]),newI=Math.round(p.stats[k]);
+      if(newI>oldI)changes.push({stat:k,before:oldI,after:newI,up:newI-oldI});
+    }
+    if(changes.length)growth.push({id:p.id,name:p.name,changes});
+  }
+  // CPU development continues, but roster condition/fatigue is no longer a game mechanic.
+  for(let a of state.world){
+    if(a.retired)continue;
+    if(["middle","high","university"].includes(a.category)){
+      let mult=a.growthProfile?.[Math.min(4,Math.max(1,a.grade||1))]||1,pressure=cpuGrowthPressure(a);
+      let teamMult=a.category==="university"?clamp(.82+universityReputationByName(a.organization)/1200,.84,1.22):1;
+      STATS.forEach(k=>{
+        let gap=Math.max(0,200-a.stats[k]),gain=gap*rand(.000025,.00011)*mult*pressure*teamMult;
+        a.stats[k]=round2(Math.min(200,a.stats[k]+gain));
+      })
+    }else if(a.age>=26){
+      let dd=(a.age-25)*rand(.002,.006);STATS.forEach(k=>a.stats[k]=round2(clamp(a.stats[k]-dd,35,200)))
+    }
+  }
+  state.lastTrainingGains=growth;
+  return growth;
+}
+
+function freshmanTargetAverage(reputation){
+  return clamp(75+reputation*.145,76,158);
+}
+function normalizeFreshmanForUniversity(p,reputation,isScouted=false){
+  let rawAvg=STATS.reduce((s,k)=>s+(p.stats[k]||0),0)/STATS.length;
+  let repTarget=freshmanTargetAverage(reputation);
+  // Reputation sets the class level, while the athlete's existing profile still matters.
+  let target=repTarget*.80+rawAvg*.20+(isScouted?2.5:0);
+  let factor=target/Math.max(1,rawAvg);
+  for(let k of STATS){
+    let shaped=(p.stats[k]||rawAvg)*factor+gauss(0,1.7);
+    p.stats[k]=round2(clamp(shaped,42,188));
+  }
+  ensurePlayerSpecialty(p);
+  return p;
+}
+function assignFreshmanPBs(p){
+  ensurePlayerSpecialty(p);
+  let candidates=EVENTS.filter(e=>e!==p.specialty)
+    .sort((a,b)=>abilityValue(p,b)-abilityValue(p,a))
+    .slice(0,6);
+  shuffle(candidates);
+  let extraCount=1+Math.floor(rng()*3);
+  let keep=[p.specialty,...candidates.slice(0,extraCount)];
+  let bestTimes={};
+  for(let e of keep){
+    let baseline=expectedTime(p,e);
+    bestTimes[e]=round2(Math.max(JAPAN_RECORD[e]*1.002,baseline*rand(.995,1.018)));
+  }
+  p.bestTimes=bestTimes;
+  return keep;
+}
+function freshmanWelcomeRows(incoming){
+  return incoming.map(p=>({
+    id:p.id,name:p.name,specialty:p.specialty,
+    specialtyPB:p.bestTimes?.[p.specialty],
+    pbEvents:Object.keys(p.bestTimes||{}),
+    prodigy:!!p.prodigy
+  }));
+}
+function showFreshmenWelcome(){
+  let rows=state.pendingFreshmenWelcome||[];
+  if(!rows.length)return false;
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">新入生が入部しました！</h2><button id="freshClose" class="primary">歓迎して閉じる</button></div>
+    <div class="notice"><b>${state.season}年度 4月前半</b>　新しい仲間を迎えました。</div>
+    <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>選手</th><th>注目</th><th>専門種目</th><th>専門種目PB</th></tr></thead><tbody>${
+      rows.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${x.prodigy?'<span class="tag gold">逸材候補</span>':"-"}</td><td><span class="tag specialty">${EVENT_LABEL[x.specialty]}</span></td><td><b>${fmt(x.specialtyPB)}</b></td></tr>`).join("")
+    }</tbody></table></div>`);
+  m.querySelector("#freshClose").onclick=()=>{state.pendingFreshmenWelcome=[];closeModal();renderAll()};
+  return true;
+}
+function graduateToAdult(p){
+  let avg=STATS.reduce((s,k)=>s+(p.stats[k]||0),0)/STATS.length;
+  let bestRatio=Math.min(...EVENTS.map(e=>Number.isFinite(p.bestTimes?.[e])?p.bestTimes[e]/JAPAN_RECORD[e]:9));
+  let abilityChance=clamp((avg-105)/95,0,.38);
+  let resultChance=bestRatio<1.08?.28:bestRatio<1.14?.14:0;
+  let repChance=clamp(state.reputation/1800,0,.22);
+  return rng()<clamp(.10+abilityChance+resultChance+repChance,.10,.72);
+}
+function alumniAdultFromPlayer(p,organization){
+  return {
+    id:p.id,name:p.name,gender:"M",category:"adult",age:p.age,grade:null,organization,
+    stats:deepClone(p.stats),potential:Object.fromEntries(STATS.map(k=>[k,200])),
+    condition:65,fatigue:0,bestTimes:deepClone(p.bestTimes||{}),retired:false,scouted:false,discovered:false,
+    potentialType:p.potentialType,growthProfile:deepClone(p.growthProfile),accolades:deepClone(p.accolades||[]),
+    raceHistory:deepClone(p.raceHistory||[]),specialty:p.specialty,
+    alumni:true,almaMater:state.playerUniversity,graduationSeason:state.season
+  };
+}
+
+function maintainWorldPopulation(){
+  let used=new Set([...(state.players||[]),...(state.world||[])].map(a=>a.name).filter(Boolean));
+  const add=(category,org,grade,strength)=>{
+    let age=category==="middle"?12+grade:category==="high"?15+grade:category==="university"?18+grade:null;
+    state.world.push(makeAthlete(category,org,used,age,grade,strength));
+  };
+
+  // School pools: keep each organization populated across grades.
+  let middleTarget={1:3,2:3,3:2};
+  for(let org of organizationNames().middle){
+    for(let g=1;g<=3;g++){
+      let n=state.world.filter(a=>a.category==="middle"&&a.organization===org&&a.grade===g&&!a.retired).length;
+      while(n++<middleTarget[g])add("middle",org,g,57);
+    }
+  }
+
+  let highTarget={1:3,2:3,3:4};
+  for(let org of organizationNames().high){
+    for(let g=1;g<=3;g++){
+      let n=state.world.filter(a=>a.category==="high"&&a.organization===org&&a.grade===g&&!a.retired).length;
+      while(n++<highTarget[g])add("high",org,g,66);
+    }
+  }
+
+  // Universities: five swimmers per grade keeps 20 active swimmers per school.
+  for(let u of state.universities){
+    let strength=universityStrengthFromReputation(u.reputation);
+    for(let g=1;g<=4;g++){
+      let n=state.world.filter(a=>a.category==="university"&&a.organization===u.name&&a.grade===g&&!a.retired).length;
+      while(n++<5)add("university",u.name,g,strength);
+    }
+  }
+
+  // Corporate pool only needs a baseline; university graduates supply the rest.
+  for(let org of organizationNames().adult){
+    let n=state.world.filter(a=>a.category==="adult"&&a.organization===org&&!a.retired).length;
+    while(n++<8)state.world.push(makeAthlete("adult",org,used,null,null,82));
+  }
+}
+
+function newSeason(){
+  let graduatingHighIds=state.world.filter(a=>a.category==="high"&&a.grade===3).map(a=>a.id);
+  let readyScoutIds=state.recruits.filter(id=>graduatingHighIds.includes(id)).slice(0,8);
+
+  // Own-team graduates: some continue into corporate swimming and remain active in the world.
+  let grads=state.players.filter(p=>p.year>=4);
+  if(!state.alumniCareer)state.alumniCareer=[];
+  for(let p of grads){
+    if(graduateToAdult(p)){
+      let org=choice(organizationNames().adult);
+      let alumni=alumniAdultFromPlayer(p,org);
+      state.world.push(alumni);
+      state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:org,status:"社会人継続",age:p.age});
+    }else{
+      state.retiredArchive.push({id:p.id,name:p.name,organization:p.organization,age:p.age,reason:"大学卒業・競技終了",season:state.season,bestTimes:deepClone(p.bestTimes),raceHistory:deepClone(p.raceHistory),accolades:deepClone(p.accolades)});
+      state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:"-",status:"大学卒業・競技終了",age:p.age});
+    }
+  }
+  state.players=state.players.filter(p=>p.year<4);
+  state.players.forEach(p=>{p.year++;p.age++});
+
+  let used=new Set(activeAthletes().map(a=>a.name)),survive=[];
+  for(let a of state.world){
+    // Alumni added above are already at the correct post-graduation age this spring.
+    if(!(a.alumni&&a.graduationSeason===state.season))a.age++;
+    if(a.category==="adult"){
+      if(a.age>=30&&rng()<Math.min(.92,.35+(a.age-30)*.18)){
+        // Only own-team alumni need retirement tracking.
+        if(a.alumni){
+          state.retiredArchive.push({id:a.id,name:a.name,organization:a.organization,age:a.age,reason:"社会人引退",season:state.season,bestTimes:deepClone(a.bestTimes),raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades)});
+          let career=(state.alumniCareer||[]).find(x=>x.id===a.id&&x.status==="社会人継続");
+          if(career)career.status="社会人引退";
+        }
+        continue;
+      }
+    }else{
+      a.grade=(a.grade||0)+1;
+      if(a.category==="middle"&&a.grade>3){
+        a.category="high";a.grade=1;a.organization=choice(organizationNames().high);
+      }else if(a.category==="high"&&a.grade>3){
+        a.category="university";a.grade=1;a.organization=chooseCpuUniversityForRecruit(a);
+      }else if(a.category==="university"&&a.grade>4){
+        // Most CPU university swimmers leave competitive swimming after graduation.
+        if(rng()<.22){
+          a.category="adult";a.grade=null;a.organization=choice(organizationNames().adult);
+        }else{
+          continue;
+        }
+      }
+    }
+    survive.push(a);
+  }
+  state.world=survive;
+
+  let incoming=[],scoutedSet=new Set(readyScoutIds);
+  // Scouted graduating high-school swimmers enter first.
+  for(let id of readyScoutIds){
+    let i=state.world.findIndex(a=>a.id===id);
+    if(i>=0){
+      let a=state.world.splice(i,1)[0];
+      incoming.push(worldToPlayer(a));
+    }
+  }
+
+  // Fill remaining spots to exactly eight.
+  let remainingIds=graduatingHighIds.filter(id=>!readyScoutIds.includes(id));
+  let generalPool=remainingIds.map(id=>state.world.find(a=>a.id===id)).filter(Boolean);
+  while(incoming.length<8&&generalPool.length){
+    let a=pickGeneralFreshman(generalPool,state.reputation);
+    if(!a)break;
+    let i=state.world.findIndex(x=>x.id===a.id);
+    if(i>=0)state.world.splice(i,1);
+    incoming.push(worldToPlayer(a));
+  }
+
+  while(incoming.length<8){
+    let names=new Set(activeAthletes().map(a=>a.name));
+    let strength=clamp(48+state.reputation*.075,48,82);
+    let walk=makeAthlete("university",state.playerUniversity,names,19,1,strength);
+    incoming.push(worldToPlayer(walk));
+  }
+
+  // April reputation after annual decay is the level freshmen enter into.
+  let enrollmentRep=round2(clamp(state.reputation*.99,0,600));
+  incoming.forEach(p=>{
+    p.year=1;p.age=19;p.organization=state.playerUniversity;
+    normalizeFreshmanForUniversity(p,enrollmentRep,scoutedSet.has(p.id));
+    if(!p.prodigy)rollProdigy(p,1);
+    assignFreshmanPBs(p);
+    state.players.push(p);
+    state.trainingPlans[p.id]=defaultPlan();
+    state.trainingFocus[p.id]=[];
+  });
+
+  state.pendingFreshmenWelcome=freshmanWelcomeRows(incoming);
+
+  state.recruits=state.recruits.filter(id=>!readyScoutIds.includes(id));
+  state.scoutBoard=[];
+
+  state.reputation=enrollmentRep;
+  for(let u of state.universities){
+    let base=u.baseReputation??initialUniversityReputation(u.strength);
+    u.baseReputation=base;
+    u.reputation=round2(clamp((u.reputation??base)*.97+base*.03,15,550));
+  }
+
+  state.season++;state.slot=1;
+  maintainWorldPopulation();
+  assignInterhigh();refreshRecordBook();refreshScoutBoard();
+}
+function worldToPlayer(a){
+  let p={id:a.id,name:a.name,year:1,gender:"M",potential:Object.fromEntries(STATS.map(k=>[k,200])),stats:deepClone(a.stats),condition:65,fatigue:0,injury_weeks:0,bestTimes:{},potentialType:a.potentialType,growthProfile:deepClone(a.growthProfile),age:19,organization:state.playerUniversity,raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades),specialty:a.specialty,prodigy:!!a.prodigy};
+  ensurePlayerSpecialty(p);
+  return p;
+}
+function advanceSlot(){state.slot++;if(state.slot>96)newSeason()}
+function scoutProbability(a){
+  let info=bestScoutEvent(a),e=info.event;
+  let time=Number.isFinite(a.bestTimes?.[e])?a.bestTimes[e]:expectedTime(a,e);
+  let ratio=time/JAPAN_RECORD[e];
+
+  // 1.00-1.20 of the Japanese record maps from extremely difficult to ordinary recruit.
+  let eliteDifficulty=clamp((1.20-ratio)/.18,0,1);
+  let repPower=Math.pow(clamp((state.reputation-10)/300,0,1),1.55);
+
+  // Weak programs still have a fair chance with ordinary candidates,
+  // but elite high-school swimmers are almost inaccessible without reputation.
+  let ordinaryEase=1-eliteDifficulty;
+  let titleFactor=1;
+  if(info.title){
+    let rank=clamp(info.title.rank||8,1,8);
+    titleFactor=.45+.06*rank; // champion .51 ... 8th .93
+  }
+
+  let core=ordinaryEase*.18
+    + .76*repPower*(.25+.75*ordinaryEase);
+  let p=.01+core*titleFactor;
+  return clamp(p,.01,.92);
+}
+function refreshScoutBoard(){
+  let highs=state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.scouted),
+      ih=highs.filter(a=>a.accolades.some(x=>x.competition==="全国高校総体"))
+        .sort((a,b)=>(a.accolades.find(x=>x.competition==="全国高校総体")?.rank||99)-(b.accolades.find(x=>x.competition==="全国高校総体")?.rank||99)),
+      seen=highs.filter(a=>a.discovered&&!ih.includes(a)),
+      general=highs.filter(a=>!ih.includes(a)&&!seen.includes(a))
+        .sort((a,b)=>Math.min(...EVENTS.map(e=>a.bestTimes[e]/JAPAN_RECORD[e]))-Math.min(...EVENTS.map(e=>b.bestTimes[e]/JAPAN_RECORD[e])))
+        .slice(0,12);
+  state.scoutBoard=[];
+  for(let a of ih.concat(seen,general))if(!state.scoutBoard.includes(a.id))state.scoutBoard.push(a.id);
+  return state.scoutBoard.map(id=>state.world.find(a=>a.id===id)).filter(Boolean);
+}
+function markJointScouts(){
+  for(let a of state.world)if(a.category==="high"&&a.grade!==3)a.discovered=false;
+  let h=shuffle(state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.scouted));
+  h.slice(0,28).forEach(a=>a.discovered=true);
+  refreshScoutBoard();
+}
+function showModal(html,onClose){
+  let root=document.getElementById("modalRoot");
+  root.innerHTML=`<div class="modal-back"><div class="modal">${html}</div></div>`;
+  let back=root.querySelector(".modal-back");
+  back.addEventListener("click",e=>{if(e.target===back){e.preventDefault();e.stopPropagation()}});
+  return root.querySelector(".modal");
+}
+function closeModal(cb){document.getElementById("modalRoot").innerHTML="";if(cb)cb()}
+function showStandards(){let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal()}
+function showTop10(){let opts=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")+RELAYS.map(e=>`<option value="${e}">${RELAY_LABEL[e]}</option>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><div id="t10body"></div>`);let render=()=>{let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];m.querySelector("#t10body").innerHTML=`<div class="table-wrap"><table><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>esc(state.players.find(p=>p.id===x.id)?.name||x.name)).join(" → "):esc(state.players.find(p=>p.id===r.athleteId)?.name||r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`).join("")||`<tr><td colspan="5">記録なし</td></tr>`}</tbody></table></div>`};m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render()}
+function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER"){state.playerUniversity=n;state.players.forEach(p=>p.organization=n)}else state.universities.find(x=>x.id===id).name=n;state.world.forEach(a=>{if(a.organization===old)a.organization=n});closeModal();showUniversities();renderAll()})}
+
+function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.season,initialSelections=null,initialRelaySel=null){
+  let selections=initialSelections?deepClone(initialSelections):Object.fromEntries(EVENTS.map(e=>[e,[]])),relaySel=initialRelaySel?deepClone(initialRelaySel):{};
+  let ruleText=RECORD_MEETS.has(meet)
+    ?"記録会：各選手が個人12種目から自由に選択できます。個人種目数の上限はありません。"
+    :COLLEGE_ENTRY_LIMIT_MEETS.has(meet)
+      ?`${MEET_LABEL[meet]}：各大学1種目3人まで、1人3種目まで（リレーは別枠）。参加標準記録を満たす種目のみ選択できます。`
+      :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
+
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー</h2>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
+    <div class="notice small">${ruleText}</div>
+    <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" style="min-width:1320px">
+      <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${EVENTS.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
+    </table></div>
+    <div class="row modal-actions"><button id="clearAll">個人種目を全解除</button>${RELAY_MEETS.has(meet)?'<button id="relayBtn">リレー編成</button>':""}<button id="confirmEntry" class="primary">エントリー確認へ</button></div>
+    <div id="entrySummary" class="small muted" style="margin-top:8px"></div>`);
+
+  const tbody=m.querySelector("#entryMatrix tbody"),summary=m.querySelector("#entrySummary");
+  const athleteSelectedCount=pid=>EVENTS.reduce((n,e)=>n+(selections[e].includes(pid)?1:0),0);
+  const eventSelectedCount=e=>selections[e].length;
+
+  function canSelect(pid,e){
+    let p=state.players.find(x=>x.id===pid);if(!p)return{ok:false,reason:""};
+    if(RESTRICTED.has(meet)&&!qualified(p,meet,e))return{ok:false,reason:`標準 ${fmt(standardFor(meet,e))}`};
+    if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
+      if(eventSelectedCount(e)>=3&&!selections[e].includes(pid))return{ok:false,reason:"種目3人上限"};
+      if(athleteSelectedCount(pid)>=3&&!selections[e].includes(pid))return{ok:false,reason:"1人3種目上限"};
+    }
+    return{ok:true,reason:""};
+  }
+
+  function render(){
+    tbody.innerHTML=state.players.map(p=>`<tr>
+      <td style="position:sticky;left:0;background:white;z-index:2"><b>${esc(p.name)}</b><br><span class="small muted">${p.year}年 / 専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span></td>
+      <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
+      ${EVENTS.map(e=>{
+        let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
+        let sub=RESTRICTED.has(meet)?`<div class="small">${fmt(p.bestTimes[e])}<br>${qualified(p,meet,e)?"○":"×"} ${fmt(standardFor(meet,e))}</div>`:`<div class="small">${fmt(p.bestTimes[e])}</div>`;
+        return`<td style="text-align:center"><input type="checkbox" data-pid="${p.id}" data-event="${e}" ${selected?"checked":""} ${!selected&&!status.ok?"disabled":""}>${sub}</td>`;
+      }).join("")}
+    </tr>`).join("");
+    tbody.querySelectorAll("input[type=checkbox]").forEach(ch=>ch.onchange=()=>{
+      let pid=ch.dataset.pid,e=ch.dataset.event;
+      if(ch.checked){let status=canSelect(pid,e);if(!status.ok){ch.checked=false;alert(status.reason);return}if(!selections[e].includes(pid))selections[e].push(pid)}
+      else selections[e]=selections[e].filter(x=>x!==pid);
+      render();
+    });
+    let total=EVENTS.reduce((n,e)=>n+selections[e].length,0),byEvent=EVENTS.filter(e=>selections[e].length).map(e=>`${EVENT_LABEL[e]} ${selections[e].length}名`).join(" / ");
+    summary.innerHTML=`個人エントリー合計 <b>${total}</b>件${byEvent?"<br>"+byEvent:""}`;
+  }
+
+  if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
+  m.querySelector("#clearAll").onclick=()=>{EVENTS.forEach(e=>selections[e]=[]);render()};
+  if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=()=>openRelayEditor(relaySel,render);
+  m.querySelector("#confirmEntry").onclick=()=>{
+    if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
+      for(let e of EVENTS)if(selections[e].length>3){alert(`${EVENT_LABEL[e]}が3人を超えています`);return}
+      for(let p of state.players)if(athleteSelectedCount(p.id)>3){alert(`${p.name}が3種目を超えています`);return}
+    }
+    closeModal();
+    showEntryConfirmation(meet,deepClone(selections),deepClone(relaySel),competitionSlot,competitionSeason);
+  };
+  render();
+}
+function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.slot,competitionSeason=state.season){
+  let cards=EVENTS.map(e=>{
+    let ids=selections[e]||[],names=ids.map(id=>state.players.find(p=>p.id===id)?.name).filter(Boolean);
+    return`<div class="entry-summary-card ${ids.length?"has":""}"><div>${EVENT_LABEL[e]}</div><b>${ids.length}名</b><div class="small muted">${names.map(esc).join(" / ")||"エントリーなし"}</div></div>`;
+  }).join("");
+  let relayCards=RELAY_MEETS.has(meet)?RELAYS.map(k=>{
+    let ids=relaySel[k]||[],names=ids.map(id=>state.players.find(p=>p.id===id)?.name).filter(Boolean);
+    return`<div class="entry-summary-card ${ids.length===4?"has":""}"><div>${RELAY_LABEL[k]}</div><b>${ids.length===4?"1チーム":"0"}</b><div class="small muted">${names.map(esc).join(" → ")||"エントリーなし"}</div></div>`;
+  }).join(""):"";
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー確認</h2></div>
+    <h3>個人種目</h3><div class="entry-summary-grid">${cards}</div>
+    ${relayCards?`<h3 style="margin-top:14px">リレー</h3><div class="entry-summary-grid">${relayCards}</div>`:""}
+    <div class="row modal-actions">
+      <button id="backEntry">エントリーへ戻る</button>
+      <button id="goRace" class="primary">この内容でレースへ進む</button>
+    </div>`);
+
+  m.querySelector("#backEntry").onclick=()=>{
+    closeModal();
+    setTimeout(()=>openMeetEntry(meet,competitionSlot,competitionSeason,selections,relaySel),0);
+  };
+
+  m.querySelector("#goRace").onclick=()=>{
+    document.getElementById("modalRoot").innerHTML=`<div class="modal-back"><div class="modal">
+      <div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} レース</h2><div class="clock">READY</div></div>
+      <div class="race-stage" style="padding:24px;text-align:center">
+        <div class="big">レース準備中</div>
+        <div class="muted" style="margin-top:8px">組み合わせとレースを生成しています</div>
+        <div class="race-progress" style="margin-top:18px"><span style="width:45%"></span></div>
+      </div>
+    </div></div>`;
+    setTimeout(()=>{
+      try{
+        state.activeCompetitionSlot=competitionSlot;
+        state.activeCompetitionSeason=competitionSeason;
+        let result=executeMeet(meet,selections,relaySel);
+        result.entries=deepClone(selections);
+        result.relayEntries=deepClone(relaySel);
+        let queue=buildMeetRaceQueue(result,selections);
+        autoSaveNow();
+
+        const finishMeet=()=>{
+          state.activeCompetitionSlot=null;
+          state.activeCompetitionSeason=null;
+          showMeetResults(result,()=>renderAll());
+        };
+
+        if(queue.length)playMeetSequence(result,selections,finishMeet,queue);
+        else finishMeet();
+      }catch(err){
+        console.error(err);
+        state.activeCompetitionSlot=null;
+        state.activeCompetitionSeason=null;
+        document.getElementById("modalRoot").innerHTML="";
+        alert("レース開始処理でエラーが発生しました: "+(err?.message||err));
+      }
+    },30);
+  };
+}
+function replayRaceToOfficialTime(p,event,target,relayTakeover=false){
+  let scale=.92;
+  for(let i=0;i<3;i++){
+    let q=simulateCore(p,event,target,scale,false,relayTakeover,1/15);
+    scale*=Math.pow(Math.max(.1,q.total)/target,.92);scale=clamp(scale,.48,2);
+  }
+  let r=simulateCore(p,event,target,scale,true,relayTakeover,1/60);
+  r.total=target;r.event=event;r.distance=distanceOf(event);r.record=target<JAPAN_RECORD[event];
+  return r;
+}
+
+function playbackRowsForStage(rows,event,ownIds){
+  if(rows.length<=8)return rows.map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,event,x.race.total)});
+  let own=rows.filter(x=>ownIds.includes(x.athlete.id)),picked=[...own];
+  for(let x of rows){if(picked.length>=8)break;if(!picked.includes(x))picked.push(x)}
+  return picked.slice(0,8).map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,event,x.race.total)});
+}
+
+function relayPlaybackRace(team,kind){
+  if(team.race.trajectory?.length)return team.race;
+  let evs=kind==="4x100fr"?["fr100","fr100","fr100","fr100"]:kind==="4x200fr"?["fr200","fr200","fr200","fr200"]:["ba100","br100","fly100","fr100"];
+  let trajectory=[],timeOff=0,distOff=0;
+  evs.forEach((e,i)=>{
+    let legTarget=team.race.legs?.[i]||team.race.total/4;
+    let r=replayRaceToOfficialTime(team.members[i],e,legTarget,i>0);
+    for(let s of r.trajectory)trajectory.push({...s,t:timeOff+s.t,distance:distOff+s.distance,legIndex:i,athleteName:team.members[i].name});
+    timeOff+=legTarget;distOff+=r.distance;
+  });
+  return{...team.race,total:team.race.total,distance:distOff,trajectory,relay:true,event:kind};
+}
+
+function buildMeetRaceQueue(result,selections){
+  let queue=[];
+  for(let e of EVENTS){
+    let ownIds=selections[e]||[];if(!ownIds.length)continue;
+    let r=result.events[e];if(!r)continue;
+    let eventStart=queue.length,heats=r.heats||[];
+    if(result.meet==="team_trial"){
+      heats.forEach((rows,hi)=>{
+        let ownHeat=rows.some(x=>x.source==="PLAYER"||ownIds.includes(x.athlete.id));
+        if(rows.length&&ownHeat)queue.push({event:e,label:`記録会 ${hi+1}組`,rows,stage:"team_trial",heatNo:hi+1,heatCount:heats.length,eventResult:r});
+      });
+    }else{
+      heats.forEach((rows,hi)=>{
+        let ownHeat=rows.some(x=>x.source==="PLAYER"||ownIds.includes(x.athlete.id));
+        if(rows.length&&ownHeat)queue.push({event:e,label:`予選 ${hi+1}組`,rows:rows.map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,e,x.race.total)}),stage:"heat",heatNo:hi+1,heatCount:heats.length,eventResult:r});
+      });
+      if(r.final.some(x=>x.source==="PLAYER")){
+        let rows=r.final.map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,e,x.race.total)});
+        queue.push({event:e,label:"A決勝",rows,stage:"final",eventResult:r});
+      }
+    }
+    if(queue.length>eventStart)queue[queue.length-1].eventEnd=true;
+  }
+
+  for(let entry of result.relays||[]){
+    let [kind,finals,meta]=entry;
+    if((result.relayEntries?.[kind]||[]).length!==4)continue;
+    let eventStart=queue.length,heats=meta?.heats||[],prelim=meta?.prelim||[];
+    heats.forEach((teams,hi)=>{
+      if(!teams.some(t=>t.organization===state.playerUniversity))return;
+      let rows=teams.map(t=>relayPlaybackRow(t,kind));
+      queue.push({event:kind,label:`リレー予選 ${hi+1}組`,rows,stage:"relay_prelim",heatNo:hi+1,heatCount:heats.length,relayTeams:prelim});
+    });
+
+    if(finals.some(t=>t.organization===state.playerUniversity)){
+      let rows=finals.map(t=>relayPlaybackRow(t,kind));
+      queue.push({event:kind,label:"リレー A決勝",rows,stage:"relay_final",relayTeams:finals});
+    }
+
+    if(queue.length>eventStart)queue[queue.length-1].eventEnd=true;
+  }
+  return queue;
+}
+function showRaceGroupResult(q,onClose){
+  let sorted=[...q.rows].sort((a,b)=>a.race.total-b.race.total);
+  let title=`${EVENT_LABEL[q.event]||RELAY_LABEL[q.event]} ${q.label} 結果`;
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${title}</h2><button id="nextGroup" class="primary">次へ</button></div>
+    <div class="table-wrap"><table><thead><tr><th>順位</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>記録</th></tr></thead><tbody>${
+      sorted.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td><b>${esc(x.athlete.name)}</b></td><td>${esc(x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"-":athleteGradeLabel(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td></tr>`).join("")
+    }</tbody></table></div>`);
+  m.querySelector("#nextGroup").onclick=()=>closeModal(onClose);
+}
+function showTeamTrialEventResult(q,onClose){
+  let rows=q.eventResult?.prelim||[];
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${EVENT_LABEL[q.event]} 記録会 最終結果</h2><button id="nextEv" class="primary">次の種目へ</button></div>
+    <div class="notice">組ごとの結果画面は表示せず、この種目の全レース終了後に最終結果を表示しています。</div>
+    <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>順位</th><th>選手</th><th>レース前PB</th><th>記録</th><th>更新</th><th>現在PB</th></tr></thead><tbody>${
+      rows.map((x,i)=>{
+        let a=x.achievement||{},before=a.previousPB,after=x.athlete.bestTimes?.[q.event];
+        let marks=[];
+        if(a.pb)marks.push('<span class="pb-badge">自己PB!</span>');
+        if((a.newlyCleared||[]).length)marks.push(...a.newlyCleared.map(s=>`<span class="std-new">NEW ${standardDisplay(q.event,s)} 突破!</span>`));
+        return`<tr class="result-own"><td>${i+1}</td><td><b>${esc(x.athlete.name)}</b></td><td>${fmt(before)}</td><td><b>${fmt(x.race.total)}</b></td><td>${marks.join(" ")||"-"}</td><td><b>${fmt(after)}</b></td></tr>`;
+      }).join("")
+    }</tbody></table></div>`);
+  m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
+}
+
+function showEventOverallPlayback(q,onClose){
+  if(q.stage==="team_trial"){showTeamTrialEventResult(q,onClose);return}
+  if(q.stage==="relay_prelim"||q.stage==="relay_final"){
+    let teams=q.relayTeams||[],label=q.stage==="relay_final"?"A決勝":"予選総合";
+    let m=showModal(`<div class="row"><h2 style="margin-right:auto">${RELAY_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次へ</button></div>
+      <div class="table-wrap"><table><thead><tr><th>順位</th><th>大学</th><th>記録</th><th>ラップ</th></tr></thead><tbody>${teams.map((t,i)=>`<tr class="${t.organization===state.playerUniversity?"result-own":""}"><td>${i+1}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</td></tr>`).join("")}</tbody></table></div>`);
+    m.querySelector("#nextEv").onclick=()=>closeModal(onClose);return;
+  }
+  let r=q.eventResult,rows=r.final?.length&&q.stage==="final"?r.final:r.prelim;
+  let label=r.final?.length&&q.stage==="final"?"A決勝":"予選総合";
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${EVENT_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次の種目へ</button></div>
+    <div class="table-wrap"><table><thead><tr><th>順位</th><th>選手</th><th>所属</th><th>学年</th><th>PB</th><th>記録</th></tr></thead><tbody>${
+      rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td>${esc(x.athlete.name)}</td><td>${esc(x.athlete.organization)}</td><td>${athleteGradeLabel(x.athlete)}</td><td>${fmt(x.athlete.bestTimes[q.event])}</td><td><b>${fmt(x.race.total)}</b></td></tr>`).join("")
+    }</tbody></table></div>`);
+  m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
+}
+function playMeetSequence(result,selections,onComplete,preparedQueue=null){
+  let queue=preparedQueue||buildMeetRaceQueue(result,selections);
+  if(!queue.length){onComplete();return}
+  let i=0;
+
+  function skipToNextEvent(currentIndex,event){
+    let j=currentIndex+1;
+    while(j<queue.length&&queue[j].event===event)j++;
+    return j;
+  }
+
+  const next=()=>{
+    if(i>=queue.length){onComplete();return}
+    let currentIndex=i,q=queue[i++],label=`${q.label}　${i}/${queue.length}`;
+    let isTrial=result.meet==="team_trial";
+    setTimeout(()=>playRaceCanvas(q.event,q.rows,{
+      stageLabel:label,
+      nextLabel:isTrial?(q.eventEnd?"種目結果を見る":"次の組へ"):"組結果を見る",
+      onDone:()=>{
+        if(isTrial){
+          if(q.eventEnd)showTeamTrialEventResult(q,next);
+          else next();
+          return;
+        }
+        showRaceGroupResult(q,()=>{
+          if(q.eventEnd)showEventOverallPlayback(q,next);
+          else next();
+        });
+      },
+      onSkip:()=>{
+        i=skipToNextEvent(currentIndex,q.event);
+        let summaryQ=q;
+        for(let k=currentIndex;k<i;k++){
+          if(queue[k].event===q.event&&queue[k].eventEnd)summaryQ=queue[k];
+        }
+        if(isTrial)showTeamTrialEventResult(summaryQ,next);
+        else showEventOverallPlayback(summaryQ,next);
+      }
+    }),0);
+  };
+  next();
+}
+function openRelayEditor(relaySel,done){
+  const root=document.getElementById("modalRoot");
+  const layer=document.createElement("div");
+  layer.className="modal-back";
+  layer.style.zIndex="80";
+  layer.innerHTML=`<div class="modal">
+    <div class="row"><h2 style="margin-right:auto">リレー編成</h2><button id="relayClose">戻る</button></div>
+    <div id="relayEditorBody"></div>
+    <div class="row" style="margin-top:12px"><button id="relayOk" class="primary">確定して種目選択へ戻る</button></div>
+  </div>`;
+  root.appendChild(layer);
+  const m=layer.querySelector(".modal"),body=m.querySelector("#relayEditorBody");
+  const closeChild=()=>layer.remove();
+  function legEvent(kind,i){
+    if(kind==="4x100fr")return"fr100";
+    if(kind==="4x200fr")return"fr200";
+    return["ba100","br100","fly100","fr100"][i];
+  }
+  function legName(kind,i){
+    if(kind==="4x100medley")return["Ba","Br","Fly","Fr"][i];
+    return `${i+1}泳`;
+  }
+  function renderEditor(){
+    body.innerHTML=RELAYS.map(kind=>`<div class="card">
+      <b>${RELAY_LABEL[kind]}</b>
+      <div class="row" style="margin-top:8px">${[0,1,2,3].map(i=>{
+        let e=legEvent(kind,i),current=relaySel[kind]?.[i]||"";
+        return`<label>${legName(kind,i)}<br><select data-kind="${kind}" data-i="${i}" style="min-width:220px">
+          <option value="">-- 選択 --</option>
+          ${state.players.map(p=>`<option value="${p.id}" ${current===p.id?"selected":""}>${esc(p.name)} — ${EVENT_LABEL[e]} ${fmt(p.bestTimes[e])}</option>`).join("")}
+        </select></label>`;
+      }).join("")}</div>
+    </div>`).join("");
+    RELAYS.forEach(kind=>refreshKind(kind));
+    body.querySelectorAll("select[data-kind]").forEach(sel=>sel.onchange=()=>{
+      let kind=sel.dataset.kind,i=+sel.dataset.i;
+      if(!relaySel[kind])relaySel[kind]=["","","",""];
+      relaySel[kind][i]=sel.value;
+      refreshKind(kind);
+    });
+  }
+  function refreshKind(kind){
+    let selects=[...body.querySelectorAll(`select[data-kind="${kind}"]`)];
+    let vals=selects.map(s=>s.value);
+    selects.forEach((sel,idx)=>{
+      let current=sel.value;
+      [...sel.options].forEach(opt=>{
+        if(!opt.value){opt.disabled=false;return}
+        opt.disabled=vals.some((v,j)=>j!==idx&&v===opt.value);
+      });
+      sel.value=current;
+    });
+  }
+  m.querySelector("#relayClose").onclick=closeChild;
+  m.querySelector("#relayOk").onclick=()=>{
+    for(let kind of RELAYS){
+      let vals=[...body.querySelectorAll(`select[data-kind="${kind}"]`)].map(s=>s.value).filter(Boolean);
+      if(vals.length!==0&&vals.length!==4){alert(`${RELAY_LABEL[kind]}は4名すべて選ぶか、全員未選択にしてください`);return}
+      if(new Set(vals).size!==vals.length){alert("同じ選手を2回選ぶことはできません");return}
+      relaySel[kind]=vals;
+    }
+    closeChild();done?.();
+  };
+  renderEditor();
+}
+function executeMeet(meet,selections,relaySel){
+  if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
+    let used={};
+    for(let e of EVENTS){
+      let kept=[];
+      for(let id of selections[e]){
+        let p=state.players.find(x=>x.id===id);
+        if(!p||!qualified(p,meet,e)||kept.length>=3||(used[id]||0)>=3)continue;
+        kept.push(id);used[id]=(used[id]||0)+1;
+      }
+      selections[e]=kept;
+    }
+  }else if(RESTRICTED.has(meet)){
+    EVENTS.forEach(e=>selections[e]=selections[e].filter(id=>{let p=state.players.find(x=>x.id===id);return p&&qualified(p,meet,e)}));
+  }
+
+  if(RESTRICTED.has(meet)){
+    let count=EVENTS.reduce((n,e)=>n+selections[e].length,0);
+    state.points+=count;
+    state.pointLog.push({season:activeCompetitionSeason(),meet,points:count});
+  }else if(meet==="joint_record"){
+    state.points+=10;
+    state.pointLog.push({season:activeCompetitionSeason(),meet,points:10});
+    markJointScouts();
+  }
+
+  let results={};
+  if(meet==="team_trial"){
+    for(let e of EVENTS){
+      let entrants=selections[e].map(id=>state.players.find(p=>p.id===id)).filter(Boolean).map(p=>({source:"PLAYER",athlete:p,entryPB:p.bestTimes[e]}));
+      let heats=seedRaceHeats(entrants,e).map(h=>h.map(x=>({...x,race:simulateRace(x.athlete,e,false,true)})).sort((a,b)=>a.race.total-b.race.total));
+      let rows=heats.flat().sort((a,b)=>a.race.total-b.race.total);
+      rows.forEach((x,i)=>x.achievement=updateResultHistory(x.athlete,e,x.race.total,meet,"記録会",i+1));
+      results[e]={prelim:rows,final:[],heats};
+    }
+  }else{
+    let cpuCollegeEntries=COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?buildCpuCollegeEntries(meet):null;
+    for(let e of EVENTS)results[e]=runEvent(meet,e,selections[e],cpuCollegeEntries);
+  }
+
+  let relays=runRelays(meet,relaySel),scores=teamScoring(meet,results,relays);
+
+  if(TEAM_SCORE_MEETS.has(meet)){
+    state.teamScoreHistory.push({season:activeCompetitionSeason(),meet,scores});
+  }
+
+  // Reputation is based on qualifying-meet participation, not team points.
+  applyParticipationReputation(meet,selections,relaySel);
+  updateCpuUniversityReputations(meet,results);
+
+  let podiums={};
+  for(let e of EVENTS){
+    let rows=results[e].final.length?results[e].final:results[e].prelim;
+    if(rows.length)podiums[e]=rows.slice(0,3).map((x,i)=>({rank:i+1,name:x.athlete.name,organization:x.athlete.organization,time:x.race.total}));
+  }
+  state.meetHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,teamScores:scores,pointsAfter:state.points,podiums});
+  refreshRecordBook();
+  return{meet,events:results,relays,teamScores:scores};
+}
+function showMeetResults(result,onClose){
+  let entered=EVENTS.filter(e=>(result.entries?.[e]||[]).length);
+  let available=entered.length?entered:EVENTS.filter(e=>(result.events[e].final.length||result.events[e].prelim.length));
+  let opts=available.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[result.meet]} 結果</h2>${available.length?`<select id="resEv">${opts}</select>`:""}<button id="x">結果を閉じて次へ</button></div>
+    <div class="notice"><b>レース終了</b>　自己ベストと新しい参加標準突破を色付きで表示しています。</div>
+    <div id="resBody" style="margin-top:10px"></div><div id="scoreBody"></div>`,onClose);
+
+  function badge(x,e){
+    let a=x.achievement||{},parts=[];
+    if(a.pb)parts.push('<span class="pb-badge">自己PB!</span>');
+    let newly=a.newlyCleared||[];
+    if(newly.length)parts.push(...newly.map(s=>`<span class="std-new">NEW ${standardDisplay(e,s)} 突破!</span>`));
+    let cleared=(a.cleared||standardsCleared(e,x.race.total)).filter(s=>!newly.includes(s));
+    if(cleared.length)parts.push(...cleared.map(s=>`<span class="std-clear">${standardDisplay(e,s)} 突破</span>`));
+    return parts.join(" ")||"-";
+  }
+
+  function render(){
+    let e=m.querySelector("#resEv")?.value;
+    if(!e){m.querySelector("#resBody").innerHTML="<p>自チームのエントリーはありませんでした。</p>";return}
+    let rr=result.events[e],own=[...rr.prelim.filter(x=>x.source==="PLAYER").map(x=>({...x,stage:result.meet==="team_trial"?"記録会":"予選"})),
+      ...rr.final.filter(x=>x.source==="PLAYER").map(x=>({...x,stage:"A決勝"}))];
+    let ownHtml=own.length?`<h3>自チーム結果</h3><div class="table-wrap"><table><thead><tr><th>区分</th><th>順位</th><th>選手</th><th>記録</th><th>PB・標準突破</th></tr></thead><tbody>${
+      own.map(x=>`<tr class="result-own"><td>${x.stage}</td><td>${x.achievement?.rank||"-"}</td><td><b>${esc(x.athlete.name)}</b></td><td><b>${fmt(x.race.total)}</b></td><td>${badge(x,e)}</td></tr>`).join("")
+    }</tbody></table></div>`:"<p>自チームの出場なし</p>";
+    // rank is derived from row position because achievement stores the flags, not the rank.
+    if(own.length){
+      ownHtml=`<h3>自チーム結果</h3><div class="table-wrap"><table><thead><tr><th>区分</th><th>順位</th><th>選手</th><th>記録</th><th>PB・標準突破</th></tr></thead><tbody>${
+        own.map(x=>{let src=x.stage==="A決勝"?rr.final:rr.prelim,rank=src.indexOf(x.stage==="A決勝"?rr.final.find(y=>y.athlete.id===x.athlete.id):rr.prelim.find(y=>y.athlete.id===x.athlete.id))+1;return`<tr class="result-own"><td>${x.stage}</td><td>${rank>0?rank:"-"}</td><td><b>${esc(x.athlete.name)}</b></td><td><b>${fmt(x.race.total)}</b></td><td>${badge(x,e)}</td></tr>`}).join("")
+      }</tbody></table></div>`;
+    }
+    let finalHtml=rr.final.length?`<h3>A決勝</h3><div class="table-wrap"><table><thead><tr><th>順位</th><th>選手</th><th>所属</th><th>記録</th></tr></thead><tbody>${
+      rr.final.map((x,i)=>`<tr class="${i===0?"result-win":""}"><td>${i+1}</td><td>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</td><td>${esc(x.athlete.organization)}</td><td><b>${fmt(x.race.total)}</b></td></tr>`).join("")
+    }</tbody></table></div>`:"";
+    m.querySelector("#resBody").innerHTML=ownHtml+finalHtml;
+  }
+
+  let extraHtml="";
+  if(result.relays?.length){
+    extraHtml+=`<h3>リレー結果</h3>`;
+    for(let [kind,finals,meta] of result.relays){
+      let ownEntered=(result.relayEntries?.[kind]||[]).length===4;
+      if(!ownEntered)continue;
+      let prelim=meta?.prelim||[],ownPre=prelim.find(t=>t.organization===state.playerUniversity),ownFin=finals.find(t=>t.organization===state.playerUniversity);
+      extraHtml+=`<h4>${RELAY_LABEL[kind]}</h4>`;
+      if(ownPre)extraHtml+=`<div class="notice"><b>自チーム予選</b>　${ownPre.prelimRank||prelim.indexOf(ownPre)+1}位 / ${prelim.length}チーム　${fmt(ownPre.race.total)}　${(ownPre.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</div>`;
+      if(ownPre&&!ownFin)extraHtml+=`<p class="muted">予選9位以下のためA決勝進出ならず。</p>`;
+      if(finals.length)extraHtml+=`<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>A決勝順位</th><th>大学</th><th>記録</th><th>ラップタイム</th><th>メンバー</th></tr></thead><tbody>${
+        finals.map((t,i)=>`<tr class="${t.organization===state.playerUniversity?"result-own":""}"><td>${i+1}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join("<br>")}</td><td>${t.members.map(x=>esc(x.name)).join(" → ")}</td></tr>`).join("")
+      }</tbody></table></div>`;
+    }
+  }
+  if(result.teamScores&&Object.keys(result.teamScores).length)extraHtml+=`<h3>大学対抗得点</h3><div class="table-wrap"><table><tbody>${Object.entries(result.teamScores).sort((a,b)=>b[1]-a[1]).map(([o,p],i)=>`<tr><td>${i+1}</td><td>${esc(o)}</td><td>${p}</td></tr>`).join("")}</tbody></table></div>`;
+  m.querySelector("#scoreBody").innerHTML=extraHtml;
+  if(m.querySelector("#resEv"))m.querySelector("#resEv").onchange=render;
+  m.querySelector("#x").onclick=()=>closeModal(onClose);render();
+}
+function raceEntryPB(row,event,athlete){
+  if(Object.prototype.hasOwnProperty.call(row,"entryPB"))return row.entryPB;
+  return athlete?.bestTimes?.[event];
+}
+
+function playRaceCanvas(event,rows,options={}){
+  if(typeof raceAnim==="undefined")raceAnim=null;
+  if(raceAnim?.cancel)raceAnim.cancel();
+  rows=rows.map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,event,x.race.total)});
+  let stage=options.stageLabel||"",nextLabel=options.nextLabel||"閉じる";
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">LIVE ${EVENT_LABEL[event]||RELAY_LABEL[event]||event} ${stage}</h2><div id="clock" class="clock">0.00</div>
+      <button id="pause">一時停止</button><button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button></div>
+    <div class="race-stage"><canvas id="raceCanvas" width="1240" height="${170+rows.length*68}"></canvas><div class="race-progress"><span id="raceProg"></span></div></div>
+    <div id="raceInfo" class="race-info"></div>
+    <div class="row" style="margin-top:10px">
+      <span id="finishNote" class="muted">レース終了まで結果画面には進めません。</span>
+      <button id="skipEvent" style="margin-left:auto">この種目をスキップ</button>
+      <button id="nextRace" class="primary" disabled>${nextLabel}</button>
+    </div>`);
+
+  let back=m.parentElement;
+  back.addEventListener("click",e=>{if(e.target===back){e.stopImmediatePropagation();e.preventDefault()}},true);
+
+  let canvas=m.querySelector("#raceCanvas"),ctx=canvas.getContext("2d"),clock=m.querySelector("#clock"),info=m.querySelector("#raceInfo"),
+      prog=m.querySelector("#raceProg"),nextBtn=m.querySelector("#nextRace"),finishNote=m.querySelector("#finishNote"),
+      speed=1,paused=false,elapsed=0,last=performance.now(),maxT=Math.max(...rows.map(x=>x.race.total)),raf=0,finished=false;
+  const palette=["#153e75","#9c2f4f","#146b55","#7c4db2","#b15b16","#216a9a","#80572c","#3c5577"];
+
+  function phaseJa(p){return({reaction:"スタート待機",start_dive:"飛び込み",back_start:"背泳ぎスタート",start_underwater:"潜水",underwater_dolphin:"ドルフィンキック",breast_pullout:"ひとかき・ひとけり",push_off:"壁蹴り",turn:"ターン",surface_swim:"泳動作",finish:"フィニッシュ"}[p]||p)}
+  function strokeJa(s){return({fr:"Fr",ba:"Ba",br:"Br",fly:"Fly"}[s]||s)}
+
+  function joint(x1,y1,x2,y2,x3,y3,width,color){
+    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";ctx.lineJoin="round";
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();
+  }
+  function bubble(x,y,r,a=.35){ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+  function drawSwimmer(x,y,s,st,lane){
+    ctx.save();ctx.translate(x,y);
+    let travelDir=((Math.floor(s.distance/50)%2)===0)?1:-1;
+    ctx.scale(travelDir,1);
+    // Canvas y increases downward: increasing angle is clockwise.
+    // Mirroring x on the return length makes the same local cycle appear counterclockwise on screen.
+    let cyc=(s.cyclePhase||0)*Math.PI*2,suit=palette[lane%palette.length],skin="#e6b58f",dark="#29384d";
+    for(let i=0;i<4;i++)bubble(-18-i*7,5*Math.sin(cyc+i),2.2-i*.25,.28);
+    if(s.underwater){ctx.globalAlpha=.72;for(let i=0;i<3;i++)bubble(-8-i*7,-4+i*3,2+i*.4,.45)}
+    if(s.phase==="turn"){
+      ctx.fillStyle=suit;ctx.beginPath();ctx.ellipse(0,0,10,7,cyc,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=skin;ctx.beginPath();ctx.arc(8,0,4.5,0,Math.PI*2);ctx.fill();ctx.restore();return;
+    }
+
+    // Body.
+    ctx.fillStyle=st==="ba"?"#d8b69c":suit;
+    ctx.beginPath();ctx.ellipse(-2,0,16,6.5,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=skin;ctx.beginPath();ctx.arc(14,0,5.2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=dark;ctx.beginPath();ctx.arc(15.5,-1.2,2.1,0,Math.PI*2);ctx.fill();
+
+    // Backstroke: face/chest are visible to emphasize the face-up body position.
+    if(st==="ba"&&!s.underwater){
+      ctx.fillStyle="#5b3a2b";ctx.beginPath();ctx.arc(16,-1.8,.7,0,Math.PI*2);ctx.arc(16,1.8,.7,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,.7)";ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-7,-3);ctx.lineTo(6,-3);ctx.stroke();
+    }
+
+    let shoulder=6,hip=-13;
+    const circularArm=(theta,side=1)=>{
+      let ex=shoulder+9*Math.cos(theta),ey=side*2+10*Math.sin(theta);
+      let hx=shoulder+19*Math.cos(theta+.22),hy=side*2+18*Math.sin(theta+.22);
+      joint(shoulder,side*2,ex,ey,hx,hy,4.4,skin);
+    };
+    if(s.underwater||["start_dive","back_start","push_off"].includes(s.phase)){
+      joint(shoulder,-2,18,-2,29,-1,4.2,skin);joint(shoulder,2,18,2,29,1,4.2,skin);
+      let kick=Math.sin(cyc*2)*4;joint(hip,-2,-22,-1,-31,-3+kick,5,skin);joint(hip,2,-22,1,-31,3-kick,5,skin);
+    }else if(st==="fr"){
+      circularArm(cyc,-1);circularArm(cyc+Math.PI,1);
+      joint(hip,-2,-22,-2+5*Math.sin(cyc*2),-32,-3+6*Math.sin(cyc*2),5,skin);
+      joint(hip,2,-22,2-5*Math.sin(cyc*2),-32,3-6*Math.sin(cyc*2),5,skin);
+    }else if(st==="ba"){
+      // Alternating circular recovery while face-up.
+      circularArm(cyc,-1);circularArm(cyc+Math.PI,1);
+      joint(hip,-2,-22,-2+4*Math.sin(cyc*2),-32,-3+5*Math.sin(cyc*2),5,skin);
+      joint(hip,2,-22,2-4*Math.sin(cyc*2),-32,3-5*Math.sin(cyc*2),5,skin);
+    }else if(st==="br"){
+      let pull=(1-Math.cos(cyc))/2,kick=(1-Math.cos(cyc+Math.PI))/2;
+      joint(shoulder,-2,11-5*pull,-9*pull,20-10*pull,-12*pull,4.5,skin);
+      joint(shoulder,2,11-5*pull,9*pull,20-10*pull,12*pull,4.5,skin);
+      joint(hip,-2,-21+5*kick,-3-8*kick,-31+12*kick,-4-12*kick,5,skin);
+      joint(hip,2,-21+5*kick,3+8*kick,-31+12*kick,4+12*kick,5,skin);
+    }else{
+      // Butterfly: both arms rotate simultaneously. Mirroring makes return lengths rotate opposite on screen.
+      circularArm(cyc,-1);circularArm(cyc,1);
+      let kick=Math.sin(cyc*2);
+      joint(hip,-2,-22,-2+5*kick,-32,-3+8*kick,5,skin);
+      joint(hip,2,-22,2+5*kick,-32,3+8*kick,5,skin);
+    }
+    ctx.restore();
+  }
+  function drawPool(left,right,top,laneH){
+    let h=rows.length*laneH,w=right-left;
+    ctx.fillStyle="#c9efff";ctx.fillRect(left,top-25,w,h+35);
+
+    // 5m lines (10% of 50m), solid.
+    ctx.strokeStyle="rgba(18,84,132,.48)";ctx.setLineDash([]);ctx.lineWidth=2;
+    for(let xx of[left+w*.10,right-w*.10]){
+      ctx.beginPath();ctx.moveTo(xx,top-25);ctx.lineTo(xx,top+h+10);ctx.stroke();
+    }
+    ctx.fillStyle="rgba(18,84,132,.75)";ctx.font="11px system-ui";
+    ctx.fillText("5m",left+w*.10-9,top-31);ctx.fillText("5m",right-w*.10-9,top-31);
+
+    // 15m lines, dashed.
+    ctx.strokeStyle="rgba(20,95,150,.25)";ctx.setLineDash([7,7]);ctx.lineWidth=2;
+    for(let xx of[left+w*.30,right-w*.30]){ctx.beginPath();ctx.moveTo(xx,top-25);ctx.lineTo(xx,top+h+10);ctx.stroke()}
+    ctx.setLineDash([]);
+
+    ctx.fillStyle="#31546f";ctx.fillRect(left-4,top-25,4,h+35);ctx.fillRect(right,top-25,4,h+35);
+    for(let i=0;i<=rows.length;i++){
+      let y=top+i*laneH-10;
+      for(let x=left;x<=right;x+=14){
+        ctx.fillStyle=(Math.floor((x-left)/14)%2)?"#f1c84a":"#df5353";
+        ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
+      }
+    }
+  }
+
+  function frame(now){
+    if(!paused&&!finished)elapsed+=((now-last)/1000)*speed;last=now;elapsed=Math.min(elapsed,maxT);
+    clock.textContent=elapsed.toFixed(2);prog.style.width=`${Math.min(100,elapsed/maxT*100)}%`;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let left=310,right=canvas.width-42,laneH=68,top=105,w=right-left;drawPool(left,right,top,laneH);
+    let states=[];
+    rows.forEach((row,i)=>{
+      let s=stateAt(row.race,elapsed),lap=Math.min(Math.floor(s.distance/50),Math.ceil(row.race.distance/50)-1),frac=(s.distance%50)/50;
+      if(s.distance>=row.race.distance){lap=Math.ceil(row.race.distance/50)-1;frac=1}
+      let x=(lap%2===0)?left+w*frac:right-w*frac,y=top+i*laneH+18;
+      ctx.fillStyle="#10243f";
+      let displayAthlete=row.athlete,displayName=row.athlete.name,org=row.athlete.organization||"",grade="",pb="-";
+      if(row.athlete.category==="relay"&&row.members?.length){
+        let li=s.legIndex||0,mem=row.members[li];displayName=`${org} / ${mem?.name||s.athleteName||""}`;org=row.athlete.organization||row.athlete.name;
+        grade=mem?athleteGradeLabel(mem):"";pb=mem?fmt(mem.bestTimes[relayLegEvent(event,li)]):"-";
+      }else{
+        grade=athleteGradeLabel(displayAthlete);pb=fmt(raceEntryPB(row,event,displayAthlete));
+      }
+      let ownRow=row.source==="PLAYER"||org===state.playerUniversity;
+      if(ownRow){
+        ctx.fillStyle="rgba(255,220,70,.42)";
+        ctx.fillRect(3,y-20,296,38);
+        ctx.fillStyle="#8b1e10";
+        ctx.font="900 15px system-ui";
+        ctx.fillText(`★ ${i+1} ${displayName}`,8,y-4);
+        ctx.font="700 12px system-ui";
+        ctx.fillText(`${org}  ${grade}  PB ${pb}`,18,y+13);
+      }else{
+        ctx.fillStyle="#10243f";
+        ctx.font="700 12px system-ui";ctx.fillText(`${i+1} ${displayName}`,8,y-4);
+        ctx.font="11px system-ui";ctx.fillText(`${org}  ${grade}  PB ${pb}`,18,y+12);
+      }
+      drawSwimmer(x,y,s,s.stroke,i);states.push({row,s});
+    });
+    states.sort((a,b)=>b.s.distance-a.s.distance||a.row.race.total-b.row.race.total);
+    info.textContent=states.map((x,i)=>{
+      let own=x.row.source==="PLAYER"||x.row.athlete.organization===state.playerUniversity;
+      return `${own?"★ ":"  "}${i+1}. ${(x.row.athlete.name+(x.s.athleteName?` / ${x.s.athleteName}`:"")).padEnd(18)} ${x.s.distance.toFixed(1).padStart(6)}m  ${x.s.velocity.toFixed(2)}m/s  ${strokeJa(x.s.stroke)} / ${phaseJa(x.s.phase)}`;
+    }).join("\n");
+    if(elapsed>=maxT&&!finished){
+      finished=true;paused=true;nextBtn.disabled=false;finishNote.innerHTML='<span class="good">FINISH — レースが終了しました。</span>';
+    }
+    if(!finished)raf=requestAnimationFrame(frame);
+  }
+
+  raceAnim={cancel:()=>cancelAnimationFrame(raf)};
+  m.querySelector("#pause").onclick=()=>{if(finished)return;paused=!paused;m.querySelector("#pause").textContent=paused?"再開":"一時停止"};
+  m.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>speed=+b.dataset.sp);
+  m.querySelector("#skipEvent").onclick=()=>{
+    cancelAnimationFrame(raf);raceAnim=null;
+    closeModal();
+    options.onSkip?.();
+  };
+  nextBtn.onclick=()=>{cancelAnimationFrame(raf);raceAnim=null;closeModal();options.onDone?.()};
+  raf=requestAnimationFrame(frame);
+}
+function renderAll(){
+  renderStatus();renderHome();renderTrainingPlayers();renderRoster();renderRankings();renderRecords();renderScout();renderFacilities();renderSettings();
+  scheduleAutoSave();
+}
+function renderStatus(){
+  let d=slotDate(state.slot),camp=campAt(d.month,d.week);
+  document.getElementById("status").innerHTML=
+    `<span class="status-chip strong">${state.season}年度</span>`+
+    `<span class="status-chip">${dateText(state.slot)}</span>`+
+    (camp?`<span class="status-chip strong">合宿期間</span>`:"")+
+    `<span class="status-chip">pt ${state.points}</span>`+
+    `<span class="status-chip">評判 ${reputationLabel(state.reputation)} ${state.reputation.toFixed(1)}</span>`;
+}
+function renderHome(){
+  let d=slotDate(state.slot),meet=meetAt(d);
+  document.getElementById("homeDate").textContent=dateText(state.slot);
+  document.getElementById("homeMeet").textContent=meet?`今コマンド: ${MEET_LABEL[meet]}`:"通常練習";
+  document.getElementById("homePoints").textContent=state.points;
+  document.getElementById("homeRep").textContent=reputationLabel(state.reputation);
+  document.getElementById("homeRepNum").textContent=state.reputation.toFixed(1);
+  document.getElementById("campBadge").innerHTML=campAt(d.month,d.week)?'<span class="tag gold">合宿期間・練習効率UP</span>':"";
+  let x=state.teamScoreHistory.at(-1);
+  document.getElementById("lastScores").innerHTML=x?Object.entries(x.scores).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([o,p],i)=>`${i+1}. ${esc(o)} ${p}pt`).join("<br>"):"まだ大会結果はありません。";
+  let gains=state.lastTrainingGains||[];
+  document.getElementById("trainingGrowthHome").innerHTML=gains.length
+    ? `<div class="growth-list">${gains.slice(0,12).map(g=>`<div class="growth-athlete"><strong>${esc(g.name)}</strong><div>${g.changes.map(c=>`<span class="growth-chip">${STAT_LABEL[c.stat]} ${c.before}→${c.after} (+${c.up})</span>`).join("")}</div></div>`).join("")}${gains.length>12?`<div class="muted">ほか ${gains.length-12}名</div>`:""}</div>`
+    : "このターンに整数表示で上昇した能力はありません。";
+}
+function renderTrainingPlayers(){
+  let el=document.getElementById("trainingPlayers");
+  if(!state.players.some(p=>p.id===selectedTrainingId))selectedTrainingId=state.players[0]?.id||null;
+  let legend=document.getElementById("trainingRankLegend");if(legend)legend.innerHTML=statRankLegendHtml();
+  el.innerHTML=`<table><thead><tr><th>選手</th><th>学年</th><th>総合</th><th>専門</th></tr></thead><tbody>${
+    state.players.map(p=>{
+      let overall=overallStatValue(p);
+      return`<tr data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.name)}を選択" class="player-select-row ${selectedTrainingId===p.id?"selected":""}">
+        <td><span class="athlete-name">${esc(p.name)}</span></td>
+        <td><span class="grade-pill">${p.year}年</span></td>
+        <td><div class="training-player-rank"><span class="stat-rank-badge ${statRankClass(overall)}">${statRank(overall)}</span><b>${Math.round(overall)}</b></div></td>
+        <td><span class="tag specialty">${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span></td>
+      </tr>`;
+    }).join("")
+  }</tbody></table>`;
+  el.querySelectorAll("tr[data-id]").forEach(r=>{
+    const select=()=>{selectedTrainingId=r.dataset.id;renderTrainingPlayers();renderTrainingPlan()};
+    r.onclick=select;
+    r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select()}};
+  });
+  renderTrainingPlan();
+}
+function renderTrainingPlan(){
+  let p=state.players.find(x=>x.id===selectedTrainingId),box=document.getElementById("trainingPlan");
+  if(!p){box.innerHTML="";return}
+  if(!state.trainingFocus)state.trainingFocus={};
+  let focus=state.trainingFocus[p.id]||(state.trainingFocus[p.id]=[]);
+  let overall=overallStatValue(p);
+  document.getElementById("trainingPlayerTitle").innerHTML=`${esc(p.name)} の重点練習 <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span>`;
+  document.getElementById("trainingFocusNote").textContent=focus.length
+    ? `重点指定: ${focus.map(k=>STAT_LABEL[k]).join(" / ")}`
+    : "重点なし：全14能力をバランス良く練習します。";
+  box.innerHTML=STATS.map(k=>{
+    let v=Math.round(p.stats[k]||0);
+    return`<button type="button" class="focus-btn ${STAT_CLASS[k]} ${statRankClass(v)} ${focus.includes(k)?"selected":""}" data-focus="${k}" aria-pressed="${focus.includes(k)}">
+      <div><b>${STAT_LABEL[k]}</b></div>
+      <div class="focus-rank-line"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div>
+    </button>`;
+  }).join("");
+  box.querySelectorAll("[data-focus]").forEach(b=>b.onclick=()=>{
+    let k=b.dataset.focus,arr=state.trainingFocus[p.id]||[];
+    state.trainingFocus[p.id]=arr.includes(k)?arr.filter(x=>x!==k):[...arr,k];
+    renderTrainingPlan();scheduleAutoSave();
+  });
+}
+function renderRoster(){
+  let rows=[...state.players];rows.forEach(ensurePlayerSpecialty);
+  let mode=document.getElementById("rosterSortMode")?.value||"grade_asc",displayEvent=null;
+  if(mode==="grade_asc")rows.sort((a,b)=>a.year-b.year||a.name.localeCompare(b.name,"ja"));
+  else if(mode==="grade_desc")rows.sort((a,b)=>b.year-a.year||a.name.localeCompare(b.name,"ja"));
+  else if(mode==="overall_desc")rows.sort((a,b)=>overallStatValue(b)-overallStatValue(a)||a.year-b.year);
+  else if(mode==="specialty_pb")rows.sort((a,b)=>(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:99999)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:99999));
+  else if(mode.startsWith("event_")){
+    displayEvent=mode.slice(6);
+    rows.sort((a,b)=>(Number.isFinite(a.bestTimes[displayEvent])?a.bestTimes[displayEvent]:99999)-(Number.isFinite(b.bestTimes[displayEvent])?b.bestTimes[displayEvent]:99999)||a.year-b.year);
+  }else rows.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  let eventHead=displayEvent?EVENT_LABEL[displayEvent]:"専門種目",pbHead=displayEvent?`${EVENT_LABEL[displayEvent]} PB`:"専門種目PB";
+  let legend=document.getElementById("rosterRankLegend");if(legend)legend.innerHTML=statRankLegendHtml();
+  document.getElementById("rosterTable").innerHTML=`<table>
+    <thead><tr><th>選手</th><th>学年</th><th>総合能力</th><th>${eventHead}</th><th>${pbHead}</th><th>上位能力</th><th>操作</th></tr></thead>
+    <tbody>${rows.map(p=>{
+      let overall=overallStatValue(p),top=topStatKeys(p,3);
+      return`<tr>
+        <td><span class="athlete-name">${esc(p.name)}</span></td>
+        <td><span class="grade-pill">${p.year}年</span></td>
+        <td><div class="player-overall"><span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span><span class="player-overall-meta"><b>${Math.round(overall)}</b><small class="muted">14能力平均</small></span></div></td>
+        <td><span class="tag specialty">${displayEvent?EVENT_LABEL[displayEvent]:EVENT_LABEL[p.specialty]}</span></td>
+        <td><b>${fmt(displayEvent?p.bestTimes[displayEvent]:p.bestTimes[p.specialty])}</b></td>
+        <td><div class="top-stat-list">${top.map(k=>`<span class="top-stat-chip"><span class="stat-rank-badge ${statRankClass(p.stats[k])}">${statRank(p.stats[k])}</span>${STAT_LABEL[k]} ${Math.round(p.stats[k])}</span>`).join("")}</div></td>
+        <td><div class="action-group"><button data-detail="${p.id}">詳細</button><button data-specialty="${p.id}">専門変更</button><button data-rename="${p.id}">改名</button></div></td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+  document.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>showPlayerDetail(b.dataset.detail));
+  document.querySelectorAll("[data-specialty]").forEach(b=>b.onclick=()=>showSpecialtyPicker(b.dataset.specialty));
+  document.querySelectorAll("[data-rename]").forEach(b=>b.onclick=()=>renamePlayer(b.dataset.rename));
+}
+function renderRankings(){
+  let table=document.getElementById("rankingTable");if(!table)return;
+  let e=document.getElementById("rankEvent")?.value||"fr100",cat=document.getElementById("rankCategory")?.value||"all";
+  let rows=ranking(e,cat,100);
+  table.innerHTML=`<table><thead><tr><th>順位</th><th>選手</th><th>所属</th><th>区分</th><th>学年 / 年齢</th><th>PB</th></tr></thead>
+    <tbody>${rows.map((a,i)=>{
+      let own=state.players.includes(a),topClass=i===0?"top1":i===1?"top2":i===2?"top3":"";
+      return`<tr class="${own?"own-ranking":""}">
+        <td><span class="rank-pill ${topClass}">${i+1}</span></td>
+        <td><span class="athlete-name">${own?"★ ":""}${esc(a.name)}</span></td><td>${esc(a.organization)}</td>
+        <td>${own?'<span class="tag good">自大学</span>':({middle:"中学",high:"高校",university:"大学",adult:"社会人"}[a.category]||"-")}</td>
+        <td>${own?`<span class="grade-pill">${a.year}年</span>`:(a.grade?`${a.grade}年 / ${a.age}歳`:`${a.age}歳`)}</td>
+        <td><b>${fmt(a.bestTimes[e])}</b></td>
+      </tr>`;
+    }).join("")||'<tr><td colspan="6"><div class="empty-state">まだ記録がありません。</div></td></tr>'}</tbody></table>`;
+}
+function renderRecords(){
+  refreshRecordBook();
+  document.getElementById("recordBook").innerHTML=`<table><thead><tr><th>種目</th><th>記録</th><th>選手</th><th>所属</th></tr></thead><tbody>${EVENTS.map(e=>{let r=state.recordBook[e];return`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(r?.time)}</td><td>${esc(r?.name||"-")}</td><td>${esc(r?.organization||"-")}</td></tr>`}).join("")}</tbody></table>`;
+
+  let career=(state.alumniCareer||[]).slice().reverse();
+  let retired=state.retiredArchive.slice().reverse().filter(a=>a.organization===state.playerUniversity&&!career.some(c=>c.id===a.id));
+  document.getElementById("archiveTable").innerHTML=`<table><thead><tr><th>選手</th><th>進路 / 最終所属</th><th>状況</th><th>年度</th><th>年齢</th></tr></thead><tbody>${
+    career.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.to||"-")}</td><td>${a.status}</td><td>${a.season}</td><td>${a.age||"-"}</td></tr>`).join("")+
+    retired.slice(0,100).map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.organization)}</td><td>${a.reason}</td><td>${a.season}</td><td>${a.age||"-"}</td></tr>`).join("")
+    ||'<tr><td colspan="5">まだありません</td></tr>'
+  }</tbody></table>`;
+
+  document.getElementById("meetHistory").innerHTML=`<table><thead><tr><th>年度</th><th>日程</th><th>大会</th><th>自大学得点</th><th>終了時pt</th><th></th></tr></thead><tbody>${state.meetHistory.slice().reverse().map((m,ri)=>{let idx=state.meetHistory.length-1-ri;return`<tr><td>${m.season}</td><td>${dateText(m.slot)}</td><td>${meetMonthLabel(m.meet,m.slot)}</td><td>${m.teamScores?.[state.playerUniversity]||0}</td><td>${m.pointsAfter}</td><td><button data-podium="${idx}">表彰台</button></td></tr>`}).join("")||'<tr><td colspan="6">まだありません</td></tr>'}</tbody></table>`;
+  document.querySelectorAll("[data-podium]").forEach(b=>b.onclick=()=>showPodiums(+b.dataset.podium));
+}
+function renderScout(){
+  let rows=refreshScoutBoard();
+  document.getElementById("scoutTable").innerHTML=`<table>
+    <thead><tr><th>選手</th><th>高校</th><th>肩書</th><th>最も得意な種目PB</th><th>成功率</th><th></th></tr></thead>
+    <tbody>${rows.map(a=>{
+      let info=bestScoutEvent(a),e=info.event,title=info.title,p=scoutProbability(a),pct=p*100;
+      let titleText=title?`${esc(title.title)}`:(a.discovered?"合同記録会出場":"通常候補");
+      let pc=pct>=55?"easy":pct>=25?"mid":pct>=8?"hard":"very-hard";
+      return`<tr>
+        <td><span class="athlete-name">${esc(a.name)}</span></td>
+        <td>${esc(a.organization)} <span class="grade-pill">高${a.grade}</span></td>
+        <td>${titleText}</td>
+        <td><span class="tag specialty">${EVENT_LABEL[e]}</span> <b>${fmt(a.bestTimes[e])}</b></td>
+        <td><span class="prob-pill ${pc}">${pct.toFixed(1)}%</span></td>
+        <td><button data-scout="${a.id}" class="primary">1ptで勧誘</button></td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+  document.querySelectorAll("[data-scout]").forEach(b=>b.onclick=()=>doScout(b.dataset.scout));
+}
+function renderFacilities(){
+  document.getElementById("facilityGrid").innerHTML=STATS.map(k=>{
+    let lv=state.facilities[k]||0,m=facilityGrowthMultiplier(lv);
+    return`<div class="card ${STAT_CLASS[k]} facility-card">
+      <div class="facility-head"><b>${STAT_LABEL[k]}</b><span class="facility-level">Lv.${lv}</span></div>
+      <div class="facility-meter"><span style="width:${lv}%"></span></div>
+      <div class="small muted">成長補正 <b>×${m.toFixed(3)}</b>（1Lvごと +0.6%）</div>
+      <button data-up="${k}" ${state.points<1||lv>=100?"disabled":""}>1ptで +1</button>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{if(state.points>=1&&state.facilities[b.dataset.up]<100){state.points--;state.facilities[b.dataset.up]++;renderAll()}});
+}
+function renderSettings(){
+  if(!document.getElementById("settingsMiddle"))return;
+  let names=organizationNames();
+  const list=(category,arr)=>`<div class="org-edit-list">${arr.map((n,i)=>{
+    let repHtml="";
+    if(category==="university"){
+      let u=state.universities[i],rep=u?.reputation??80;
+      repHtml=`<span class="tag">${reputationLabel(rep)} ${rep.toFixed(1)}</span>`;
+    }
+    return`<div class="org-edit-row"><span>${esc(n)}</span>${repHtml}<button data-org="${category}" data-index="${i}">改名</button></div>`;
+  }).join("")}</div>`;
+  document.getElementById("settingsPlayerUniversity").innerHTML=`<div class="org-edit-row"><b>${esc(state.playerUniversity)}</b><span class="tag">${reputationLabel(state.reputation)} ${state.reputation.toFixed(1)}</span><button id="renameSelfUniversity">改名</button></div>`;
+  document.getElementById("settingsMiddle").innerHTML=list("middle",names.middle);
+  document.getElementById("settingsHigh").innerHTML=list("high",names.high);
+  document.getElementById("settingsUniversity").innerHTML=list("university",state.universities.map(u=>u.name));
+  document.getElementById("settingsAdult").innerHTML=list("adult",names.adult);
+  document.getElementById("renameSelfUniversity").onclick=()=>{
+    let n=prompt("自大学の新しい名称",state.playerUniversity);if(n==null)return;
+    let r=renamePlayerUniversity(n);alert(r.msg);if(r.ok)renderAll();
+  };
+  document.querySelectorAll("[data-org]").forEach(b=>b.onclick=()=>{
+    let cat=b.dataset.org,i=+b.dataset.index;
+    let current=cat==="university"?state.universities[i]?.name:organizationNames()[cat]?.[i];
+    let n=prompt("新しい名称",current);if(n==null)return;
+    let r=renameOrganization(cat,i,n);alert(r.msg);if(r.ok)renderAll();
+  });
+}
+function showPlayerDetail(id){
+  let p=state.players.find(x=>x.id===id);if(!p)return;
+  let historyOptions=`<option value="recent">新しい順</option><option value="event">種目順</option>`+
+    EVENTS.map(e=>`<option value="only_${e}">${EVENT_LABEL[e]}のみ</option>`).join("");
+  let overall=overallStatValue(p);
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} 選手詳細</h2><button id="x">閉じる</button></div>
+    <p><span class="tag specialty">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span> <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></p>
+    <div>${statRankLegendHtml()}</div>
+    <div class="detail-stats-pb">
+      <div>
+        <h3>14能力</h3>
+        ${STATS.map(k=>{
+          let v=Math.round(p.stats[k]||0);
+          return`<div class="stat-detail-row ${statRankClass(v)}"><span>${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
+        }).join("")}
+      </div>
+      <div>
+        <h3>PB</h3>
+        <div>${EVENTS.map(e=>`<div class="pb-detail-row"><span>${EVENT_LABEL[e]}</span><b>${fmt(p.bestTimes[e])}</b></div>`).join("")}</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px"><h3 style="margin-right:auto">戦績</h3><select id="historySort">${historyOptions}</select></div>
+    <div id="historyTable" class="table-wrap"></div>`);
+  const body=m.querySelector("#historyTable"),sortSel=m.querySelector("#historySort");
+  function renderHistory(){
+    let mode=sortSel.value,rows=[...p.raceHistory];
+    if(mode==="recent")rows.sort((a,b)=>b.season-a.season||b.slot-a.slot);
+    else if(mode==="event")rows.sort((a,b)=>EVENTS.indexOf(a.event)-EVENTS.indexOf(b.event)||b.season-a.season||b.slot-a.slot);
+    else if(mode.startsWith("only_")){
+      let e=mode.slice(5);rows=rows.filter(h=>h.event===e).sort((a,b)=>b.season-a.season||b.slot-a.slot);
+    }
+    body.innerHTML=`<table><thead><tr><th>年度</th><th>大会</th><th>種目</th><th>区分</th><th>順位</th><th>記録</th><th>標準突破</th><th>PB</th></tr></thead><tbody>${
+      rows.map(h=>`<tr><td>${h.season}</td><td>${meetMonthLabel(h.meet,h.slot)}</td><td>${EVENT_LABEL[h.event]}</td><td>${h.stage}</td><td>${h.rank||"-"}</td><td>${fmt(h.time)}</td><td>${(h.newlyCleared||[]).map(x=>`<span class="std-new">NEW ${standardDisplay(h.event,x)}</span>`).join("")||(h.standardsCleared||[]).map(x=>`<span class="std-clear">${standardDisplay(h.event,x)}</span>`).join("")||"-"}</td><td>${h.pb?'<span class="pb-badge">自己PB</span>':""}</td></tr>`).join("")||'<tr><td colspan="8">戦績なし</td></tr>'
+    }</tbody></table>`;
+  }
+  sortSel.onchange=renderHistory;renderHistory();
+  m.querySelector("#x").onclick=()=>closeModal();
+}
+function showSpecialtyPicker(id){
+  let p=state.players.find(x=>x.id===id);if(!p)return;
+  let options=EVENTS.map(e=>`<option value="${e}" ${p.specialty===e?"selected":""}>${EVENT_LABEL[e]}</option>`).join("");
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} の専門種目</h2><button id="x">閉じる</button></div>
+    <div class="row"><select id="spec">${options}</select><button id="ok" class="primary">決定</button></div>`);
+  m.querySelector("#ok").onclick=()=>{p.specialty=m.querySelector("#spec").value;closeModal();renderRoster()};
+  m.querySelector("#x").onclick=()=>closeModal();
+}
+
+function applyPlayerRename(id,newName){
+  let p=state.players.find(x=>x.id===id);if(!p)return{ok:false,msg:"選手が見つかりません"};
+  let old=p.name,n=(newName||"").trim();
+  if(!n)return{ok:false,msg:"名前を入力してください"};
+  if(n===old)return{ok:true,msg:"変更なし"};
+  if(activeAthletes().some(a=>a!==p&&a.name===n)||state.retiredArchive.some(a=>a.name===n))return{ok:false,msg:"その名前は既に使用されています"};
+  p.name=n;
+  for(let e of Object.keys(state.recordBook||{})){let r=state.recordBook[e];if(r?.athleteId===id)r.name=n}
+  for(let rows of Object.values(state.teamTop10||{}))for(let r of rows){
+    if(r.athleteId===id)r.name=n;
+    if(r.members)r.members.forEach(x=>{if(x.id===id)x.name=n});
+  }
+  for(let m of state.meetHistory||[])for(let podium of Object.values(m.podiums||{}))for(let x of podium){
+    if(x.name===old&&x.organization===state.playerUniversity)x.name=n;
+  }
+  return{ok:true,msg:`選手名を「${n}」に変更しました。`};
+}
+
+function renamePlayer(id){
+  let p=state.players.find(x=>x.id===id);if(!p)return;
+  let n=prompt("新しい選手名",p.name);if(n==null)return;
+  let r=applyPlayerRename(id,n);alert(r.msg);if(r.ok)renderAll();
+}
+function doScout(id){let a=state.world.find(x=>x.id===id);if(!a)return;if(state.points<1){alert("ポイント不足です");return}let p=scoutProbability(a);state.points--;if(rng()<=p){a.scouted=true;if(!state.recruits.includes(id))state.recruits.push(id);alert(`${a.name}のスカウトに成功しました。翌年度加入予定です。`)}else alert(`${a.name}のスカウトに失敗しました。`);renderAll()}
+function showPodiums(idx){let m=state.meetHistory[idx],lines=[];for(let [e,p] of Object.entries(m.podiums||{})){lines.push(`<h3>${EVENT_LABEL[e]}</h3>`+p.map(x=>`${x.rank}位 ${esc(x.name)} (${esc(x.organization)}) ${fmt(x.time)}`).join("<br>"))}let q=showModal(`<div class="row"><h2 style="margin-right:auto">${meetMonthLabel(m.meet,m.slot)} 表彰台</h2><button id="x">閉じる</button></div>${lines.join("")||"データなし"}`);q.querySelector("#x").onclick=()=>closeModal()}
+
+function showTrainingGrowth(gains,onClose){
+  let body=gains.length
+    ? `<div class="growth-list">${gains.map(g=>`<div class="growth-athlete"><strong>${esc(g.name)}</strong><div>${g.changes.map(c=>`<span class="growth-chip">${STAT_LABEL[c.stat]} ${c.before} → ${c.after} <b>+${c.up}</b></span>`).join("")}</div></div>`).join("")}</div>`
+    : `<div class="notice">このターンは能力上昇なし</div>`;
+  let m=showModal(`<div class="row" style="margin-bottom:12px"><h2 style="margin-right:auto">練習結果</h2><button id="next" class="primary">次へ</button></div>${body}`,onClose);
+  m.querySelector("#next").onclick=()=>closeModal(onClose);
+}
+function showToast(message,kind="info"){
+  let root=document.getElementById("toastRoot");
+  if(!root)return;
+  let el=document.createElement("div");
+  el.className=`toast ${kind}`;
+  el.textContent=message;
+  root.appendChild(el);
+  setTimeout(()=>el.remove(),2600);
+}
+function serializedStateBytes(payload=null){
+  let text=payload??JSON.stringify(state);
+  try{return new TextEncoder().encode(text).length}catch(e){return text.length*2}
+}
+function closeUtilityMenu(){
+  document.querySelector(".utility-menu")?.removeAttribute("open");
+}
+
+let autoSaveTimer=null;
+let lastAutoSaveAt=null;
+let autoSaveEnabled=true;
+
+function formatAutoSaveTime(ts){
+  if(!ts)return"未保存";
+  try{
+    let d=new Date(ts);
+    return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+  }catch(e){return"保存済み"}
+}
+function updateAutoSaveStatus(){
+  let el=document.getElementById("pwaStatus");if(!el)return;
+  let chip=el.querySelector("#autoSaveChip");
+  if(!chip)return;
+  chip.textContent=autoSaveEnabled
+    ?`オートセーブ ON・${formatAutoSaveTime(lastAutoSaveAt)}`
+    :"オートセーブ OFF";
+}
+function writeSaveSilently(reason="auto"){
+  if(!autoSaveEnabled&&reason==="auto")return false;
+  try{
+    let payload=JSON.stringify(state);
+    localStorage.setItem("swimManagerSave",payload);
+    lastAutoSaveAt=Date.now();
+    try{localStorage.setItem("swimManagerLastAutoSave",String(lastAutoSaveAt))}catch(e){}
+    updateAutoSaveStatus();
+    return true;
+  }catch(e){
+    console.warn("Autosave failed:",e);
+    if(reason==="auto"){
+      autoSaveEnabled=false;
+      updateAutoSaveStatus();
+      showToast("オートセーブに失敗しました。手動の「セーブ書出」でバックアップしてください。","bad");
+    }
+    return false;
+  }
+}
+function scheduleAutoSave(delay=700){
+  if(!autoSaveEnabled)return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>{
+    autoSaveTimer=null;
+    writeSaveSilently("auto");
+  },delay);
+}
+function autoSaveNow(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=null;
+  return writeSaveSilently("auto");
+}
+
+function saveLocal(){
+  try{
+    let payload=JSON.stringify(state),bytes=serializedStateBytes(payload);
+    localStorage.setItem("swimManagerSave",payload);
+    lastAutoSaveAt=Date.now();
+    try{localStorage.setItem("swimManagerLastAutoSave",String(lastAutoSaveAt))}catch(e){}
+    updateAutoSaveStatus();
+    showToast(`セーブしました（約 ${(bytes/1024/1024).toFixed(2)} MB）`,"good");
+    if(bytes>4.2*1024*1024)alert("セーブデータが大きくなっています。安全のため「セーブ書出」でバックアップを作成してください。");
+  }catch(e){
+    console.warn("Browser storage unavailable:",e);
+    alert("ブラウザ保存を使用できません。セーブ書出を使用してください。");
+  }
+}
+function loadLocal(showMessage=false){
+  try{
+    let s=localStorage.getItem("swimManagerSave")||localStorage.getItem("swimManagerHtmlV13");
+    if(!s){if(showMessage)showToast("セーブデータがありません","warn");return false}
+    state=JSON.parse(s);migrateState();selectedTrainingId=null;try{lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){};
+    if(showMessage){renderAll();showToast("ロードしました","good")}
+    return true;
+  }catch(e){
+    console.warn("Save load failed:",e);
+    if(showMessage)alert("セーブデータを読み込めませんでした");
+    return false;
+  }
+}
+function resetGame(){
+  if(!confirm("ゲームを初期化します。現在の進行データは失われます。よろしいですか？"))return;
+  try{
+    localStorage.removeItem("swimManagerSave");
+    localStorage.removeItem("swimManagerHtmlV13");
+  }catch(e){}
+  state=createState();migrateState();selectedTrainingId=null;
+  initSelectors();renderAll();autoSaveNow();
+  alert("初期化しました");
+}
+
+function exportJson(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`swim_manager_${state.season}_slot${state.slot}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importJson(file){
+  let r=new FileReader();
+  r.onload=()=>{
+    try{
+      state=JSON.parse(r.result);migrateState();selectedTrainingId=null;renderAll();
+      showToast("セーブデータを読み込みました","good");
+    }catch(e){
+      console.error(e);alert("JSONを読み込めませんでした");
+    }
+  };
+  r.readAsText(file);
+}
+function initSelectors(){
+  let r=document.getElementById("rankEvent");
+  if(r){r.innerHTML=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");r.value="fr100"}
+}
+
+document.getElementById("nav").addEventListener("click",e=>{
+  let b=e.target.closest("button[data-page]");if(!b)return;
+  document.querySelectorAll("nav button").forEach(x=>{
+    x.classList.toggle("active",x===b);
+    if(x===b)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");
+  });
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.getElementById("page-"+b.dataset.page).classList.add("active");renderAll();
+});
+
+document.getElementById("advanceBtn").onclick=()=>{
+  let competitionSlot=state.slot,competitionSeason=state.season;
+  let d=slotDate(competitionSlot),meet=meetAt(d),gains=trainCommand();
+
+  // The calendar always advances as soon as the training turn is completed.
+  advanceSlot();
+  renderAll();
+
+  showTrainingGrowth(gains,()=>{
+    if(meet)openMeetEntry(meet,competitionSlot,competitionSeason);
+    else{
+      renderAll();
+      if(state.slot===1&&state.pendingFreshmenWelcome?.length)setTimeout(()=>showFreshmenWelcome(),0);
+    }
+  });
+};
+document.getElementById("standardsBtn").onclick=showStandards;
+document.getElementById("top10Btn").onclick=showTop10;
+document.getElementById("scheduleBtn").onclick=showMeetSchedule;
+document.getElementById("reputationInfoBtn").onclick=showReputationInfo;
+document.getElementById("universitiesBtn").onclick=()=>{
+  closeUtilityMenu();
+  document.querySelectorAll("nav button").forEach(x=>{x.classList.remove("active");x.removeAttribute("aria-current")});
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.getElementById("page-settings").classList.add("active");renderSettings();
+};
+document.getElementById("saveBtn").onclick=saveLocal;
+document.getElementById("loadBtn").onclick=()=>loadLocal(true);
+document.getElementById("resetBtn").onclick=()=>{closeUtilityMenu();resetGame()};
+document.getElementById("exportBtn").onclick=()=>{closeUtilityMenu();exportJson()};
+document.getElementById("importBtn").onclick=()=>{closeUtilityMenu();document.getElementById("importFile").click()};
+document.getElementById("importFile").onchange=e=>{
+  let file=e.target.files[0];
+  if(file)importJson(file);
+  e.target.value="";
+};
+
+document.getElementById("clearFocusBtn").onclick=()=>{
+  if(!selectedTrainingId)return;
+  state.trainingFocus[selectedTrainingId]=[];renderTrainingPlan();scheduleAutoSave();
+};
+document.getElementById("copyPlanBtn").onclick=()=>{
+  if(!selectedTrainingId)return;
+  let focus=deepClone(state.trainingFocus[selectedTrainingId]||[]);
+  state.players.forEach(p=>state.trainingFocus[p.id]=deepClone(focus));
+  alert("この重点設定を全選手へコピーしました。");
+  renderTrainingPlayers();scheduleAutoSave();
+};
+if(document.getElementById("rosterSortMode"))document.getElementById("rosterSortMode").onchange=renderRoster;
+if(document.getElementById("rankEvent"))document.getElementById("rankEvent").onchange=renderRankings;
+if(document.getElementById("rankCategory"))document.getElementById("rankCategory").onchange=renderRankings;
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden")autoSaveNow();
+});
+window.addEventListener("pagehide",()=>autoSaveNow());
+
+initSelectors();
+if(!loadLocal()){state=createState();migrateState()}
+try{if(!lastAutoSaveAt)lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){}
+
+function renderPwaStatus(){
+  let el=document.getElementById("pwaStatus");if(!el)return;
+  let standalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+  let network=navigator.onLine!==false
+    ?'<span class="pwa-chip online">● オンライン</span>'
+    :'<span class="pwa-chip offline">● オフライン</span>';
+  let mode=standalone
+    ?'<span class="pwa-chip ready">ホーム画面アプリで起動中</span>'
+    :'<span class="pwa-chip">Safari表示</span>';
+  let sw=("serviceWorker" in navigator)
+    ?'<span class="pwa-chip ready">オフライン対応</span>'
+    :'<span class="pwa-chip">Service Worker非対応</span>';
+  let autosave=`<span id="autoSaveChip" class="pwa-chip ready">${autoSaveEnabled?`オートセーブ ON・${formatAutoSaveTime(lastAutoSaveAt)}`:"オートセーブ OFF"}</span>`;
+  el.innerHTML=network+mode+sw+autosave;
+}
+async function registerPwa(){
+  renderPwaStatus();
+  window.addEventListener("online",renderPwaStatus);
+  window.addEventListener("offline",renderPwaStatus);
+  if(!("serviceWorker" in navigator))return;
+  try{
+    let reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});
+    await navigator.serviceWorker.ready;
+    renderPwaStatus();
+    if(reg.waiting)showToast("新しいバージョンがあります。再起動すると更新されます。","info");
+    reg.addEventListener("updatefound",()=>{
+      let worker=reg.installing;
+      if(!worker)return;
+      worker.addEventListener("statechange",()=>{
+        if(worker.state==="installed"&&navigator.serviceWorker.controller){
+          showToast("更新を取得しました。次回起動時に反映されます。","good");
+        }
+      });
+    });
+  }catch(e){
+    console.warn("Service Worker registration failed:",e);
+    let el=document.getElementById("pwaStatus");
+    if(el)el.innerHTML='<span class="pwa-chip offline">オフライン準備に失敗</span>';
+  }
+}
+registerPwa();
+
+renderAll();
+if(state.slot===1&&state.pendingFreshmenWelcome?.length)setTimeout(()=>showFreshmenWelcome(),0);
+</script>
+</body>
+</html>
