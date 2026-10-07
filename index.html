@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.18</title>
+<title>大学競泳監督シミュレーション PWA版 v1.19</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -371,6 +371,72 @@ nav .nav-action:hover{background:#edf6ff}
   .modal-actions{bottom:-6px;padding-top:7px;margin-top:7px}.notice{padding:6px 8px}.clock{font-size:20px}.race-toolbar{gap:3px;margin-bottom:4px}.race-info{font-size:8.5px;padding:5px;margin-top:4px}
 }
 
+
+/* v1.19 iPhone landscape overflow + spacing fix */
+.detail-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.detail-pb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+.detail-stat-section,.detail-pb-section{min-width:0}
+.stat-detail-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{font-size:12px}
+  header,nav,main,.page,.card,.grid,.two,.table-wrap,.modal,.detail-stats-pb{max-width:100%;min-width:0}
+  main{width:100%;padding:2px}
+  .page{width:100%;overflow-x:hidden}
+  .card{width:100%;padding:4px;margin-bottom:4px;border-radius:6px}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:4px}
+  .two{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .grid>*,.two>*,.row>*{min-width:0}
+  .page-lead{margin:0 0 3px}
+  .page-lead h1{font-size:14px}
+  .page-lead p{font-size:9.5px}
+  header{padding:3px 4px}
+  .header-row{gap:3px}
+  .title{font-size:14px}
+  .header-primary-actions{gap:3px}
+  .header-primary-actions button,.utility-summary{padding:2px 5px;min-height:29px}
+  .status{padding-top:2px}
+  .pwa-status{margin-top:1px}
+  nav{padding:3px 2px;gap:2px;max-width:100%;overflow-x:auto}
+  nav button{min-height:29px;padding:2px 5px;font-size:9.5px}
+  .table-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+  table{max-width:none}
+  th,td{padding:3px 4px}
+  #rosterTable{min-width:700px}
+  #rankingTable{min-width:440px}
+  #trainingPlayers table{min-width:300px}
+  #entryMatrix{min-width:760px!important}
+  #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){min-width:78px}
+  #rosterTable th:nth-child(6),#rosterTable td:nth-child(6){min-width:132px}
+  #rosterTable td:last-child{min-width:140px}
+  .action-group{min-width:118px;gap:2px}
+  .action-group button{padding:2px 4px;font-size:9px;min-height:27px}
+  .focus-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  .focus-btn{min-width:0;min-height:42px;padding:3px 4px}
+  .top-stat-chip{max-width:100%;white-space:nowrap}
+  .modal-back{padding:2px}
+  .modal{padding:4px;max-height:99vh}
+  .modal>.row:first-child{top:-4px;padding:3px 0;margin-bottom:3px}
+  .modal h2{font-size:14px}
+  .modal h3{font-size:12px}
+  .modal p{margin:4px 0}
+  .modal-actions{bottom:-4px;padding-top:4px;margin-top:4px}
+  .detail-stats-pb{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:6px}
+  .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+  .detail-pb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 6px}
+  .stat-detail-row{min-width:0;grid-template-columns:minmax(0,1fr) auto;gap:4px;padding:3px 4px;margin-bottom:0;border-radius:5px}
+  .stat-detail-value{gap:3px}
+  .stat-detail-label{font-size:9.5px}
+  .stat-detail-row .stat-rank-badge{width:19px;min-width:19px;height:19px;font-size:9px;border-radius:5px}
+  .stat-detail-row .stat-number{font-size:12px;min-width:23px}
+  .pb-detail-row{gap:4px;padding:3px 2px;font-size:9.5px}
+  .stat-rank-legend{margin:2px 0 4px}
+  .rank-legend-item{padding:1px 3px;font-size:8.5px}
+  #historyTable{max-width:100%}
+  #historyTable table{min-width:680px}
+}
+
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -392,7 +458,7 @@ nav .nav-action:hover{background:#edf6ff}
 </div>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.18</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.19</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -678,7 +744,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.18";
+  state.version="pwa-v1.19";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1231,7 +1297,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.18",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.19",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2760,16 +2826,16 @@ function showPlayerDetail(id){
     <p><span class="tag specialty">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span> <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></p>
     <div>${statRankLegendHtml()}</div>
     <div class="detail-stats-pb">
-      <div>
+      <div class="detail-stat-section">
         <h3>14能力</h3>
-        ${STATS.map(k=>{
+        <div class="detail-stat-grid">${STATS.map(k=>{
           let v=Math.round(p.stats[k]||0);
-          return`<div class="stat-detail-row ${statRankClass(v)}"><span>${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
-        }).join("")}
+          return`<div class="stat-detail-row ${statRankClass(v)}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
+        }).join("")}</div>
       </div>
-      <div>
+      <div class="detail-pb-section">
         <h3>PB</h3>
-        <div>${EVENTS.map(e=>`<div class="pb-detail-row"><span>${EVENT_LABEL[e]}</span><b>${fmt(p.bestTimes[e])}</b></div>`).join("")}</div>
+        <div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row"><span>${EVENT_LABEL[e]}</span><b>${fmt(p.bestTimes[e])}</b></div>`).join("")}</div>
       </div>
     </div>
     <div class="row" style="margin-top:14px"><h3 style="margin-right:auto">戦績</h3><select id="historySort">${historyOptions}</select></div>
