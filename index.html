@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.23</title>
+<title>大学競泳監督シミュレーション PWA版 v1.24</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -953,6 +953,59 @@ nav .nav-action:hover{background:#edf6ff}
     white-space:normal!important;overflow-wrap:anywhere
   }
 }
+
+/* v1.24 compact training + meet-flow popups */
+@media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
+  .modal-training-result{width:62%!important;max-width:620px!important;max-height:88vh!important;padding:5px!important}
+  .modal-training-result .growth-list{gap:4px}
+  .modal-training-result .growth-athlete{padding:5px}
+  .modal-training-result .growth-chip{margin:2px 2px 0 0;padding:2px 4px}
+  .modal-training-result>.row:first-child{margin-bottom:4px!important}
+
+  .modal-meet-entry{width:90%!important;max-width:860px!important;max-height:96vh!important;padding:4px!important}
+  .modal-meet-entry .notice{padding:4px 6px}
+  .modal-meet-entry .entry-table-wrap{margin-top:4px!important;max-height:61vh}
+  .modal-meet-entry #entryMatrix{font-size:9.5px}
+  .modal-meet-entry #entryMatrix th,.modal-meet-entry #entryMatrix td{padding:2px 1px!important}
+  .modal-meet-entry #entryMatrix input[type=checkbox]{width:12px;height:12px;margin:0 1px}
+  .modal-meet-entry #entrySummary{margin-top:3px!important}
+  .modal-meet-entry .modal-actions{padding-top:4px;margin-top:4px}
+
+  .modal-entry-confirm{width:68%!important;max-width:650px!important;max-height:90vh!important;padding:5px!important}
+  .modal-entry-confirm .entry-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  .modal-entry-confirm .entry-summary-card{padding:4px}
+  .modal-entry-confirm h3{margin:5px 0 3px!important}
+  .modal-relay-editor{width:76%!important;max-width:720px!important;max-height:93vh!important;padding:5px!important}
+  .modal-relay-editor .card{padding:4px;margin-bottom:4px}
+  .modal-relay-editor select{min-width:0!important;width:150px!important;max-width:100%}
+
+  .modal-race-prep{width:54%!important;max-width:520px!important;padding:5px!important}
+  .modal-race-prep .race-stage{padding:10px!important}
+
+  .modal-race-live{width:84%!important;max-width:810px!important;max-height:96vh!important;padding:4px!important}
+  .modal-race-live .race-stage{padding:3px!important}
+  .modal-race-live canvas{height:min(42vh,215px)!important}
+  .modal-race-live .race-info{max-height:62px;overflow:auto;padding:3px}
+  .modal-race-live>.row:last-child{margin-top:4px!important}
+
+  .modal-race-result,.modal-event-result{width:66%!important;max-width:640px!important;max-height:90vh!important;padding:5px!important}
+  .modal-race-result .table-wrap,.modal-event-result .table-wrap{max-height:68vh}
+  .modal-race-result th,.modal-race-result td,.modal-event-result th,.modal-event-result td{padding:3px 4px!important}
+
+  .modal-meet-results{width:76%!important;max-width:730px!important;max-height:94vh!important;padding:5px!important}
+  .modal-meet-results .notice{padding:4px 6px}
+  .modal-meet-results #resBody{margin-top:4px!important}
+  .modal-meet-results h3,.modal-meet-results h4{margin:5px 0 3px}
+  .modal-meet-results .table-wrap{max-height:45vh}
+  .modal-meet-results th,.modal-meet-results td{padding:3px 4px!important}
+
+  .modal-schedule{width:56%!important;max-width:540px!important;padding:5px!important}
+  .modal-standards{width:66%!important;max-width:640px!important;padding:5px!important}
+  .modal-top10{width:68%!important;max-width:660px!important;padding:5px!important}
+  .schedule-table-wrap{width:88%!important;max-width:88%!important}
+  .standards-table-wrap{width:94%!important;max-width:94%!important}
+  .top10-table-wrap{width:94%!important;max-width:94%!important}
+}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -974,7 +1027,7 @@ nav .nav-action:hover{background:#edf6ff}
 </div>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.23</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.24</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1259,7 +1312,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.23";
+  state.version="pwa-v1.24";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1776,6 +1829,7 @@ function showMeetSchedule(){
     <div class="table-wrap compact-modal-table schedule-table-wrap"><table class="schedule-table"><thead><tr><th>時期</th><th>大会</th><th>参加標準</th><th>リレー</th></tr></thead><tbody>${
       rows.map(x=>`<tr><td>${x.month}月 第${x.week}週${x.half}</td><td>${MEET_LABEL[x.meet]}</td><td>${RESTRICTED.has(x.meet)?"あり":"なし"}</td><td>${RELAY_MEETS.has(x.meet)?"あり":"なし"}</td></tr>`).join("")
     }</tbody></table></div>`);
+  m.classList.add("modal-schedule");
   m.querySelector("#x").onclick=()=>closeModal();
 }
 
@@ -1835,7 +1889,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.23",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.24",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2518,8 +2572,8 @@ function showModal(html,onClose){
   return root.querySelector(".modal");
 }
 function closeModal(cb){document.getElementById("modalRoot").innerHTML="";if(cb)cb()}
-function showStandards(){let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal()}
-function showTop10(){let opts=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")+RELAYS.map(e=>`<option value="${e}">${RELAY_LABEL[e]}</option>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><div id="t10body"></div>`);let render=()=>{let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];m.querySelector("#t10body").innerHTML=`<div class="table-wrap compact-modal-table top10-table-wrap"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>esc(state.players.find(p=>p.id===x.id)?.name||x.name)).join(" → "):esc(state.players.find(p=>p.id===r.athleteId)?.name||r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`).join("")||`<tr><td colspan="5">記録なし</td></tr>`}</tbody></table></div>`};m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render()}
+function showStandards(){let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th></tr></thead><tbody>${rows}</tbody></table></div>`);m.classList.add("modal-standards");m.querySelector("#x").onclick=()=>closeModal()}
+function showTop10(){let opts=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")+RELAYS.map(e=>`<option value="${e}">${RELAY_LABEL[e]}</option>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><div id="t10body"></div>`);m.classList.add("modal-top10");let render=()=>{let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];m.querySelector("#t10body").innerHTML=`<div class="table-wrap compact-modal-table top10-table-wrap"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>esc(state.players.find(p=>p.id===x.id)?.name||x.name)).join(" → "):esc(state.players.find(p=>p.id===r.athleteId)?.name||r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`).join("")||`<tr><td colspan="5">記録なし</td></tr>`}</tbody></table></div>`};m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render()}
 function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER"){state.playerUniversity=n;state.players.forEach(p=>p.organization=n)}else state.universities.find(x=>x.id===id).name=n;state.world.forEach(a=>{if(a.organization===old)a.organization=n});closeModal();showUniversities();renderAll()})}
 
 function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.season,initialSelections=null,initialRelaySel=null){
@@ -2538,6 +2592,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     </table></div>
     <div class="row modal-actions"><button id="clearAll">個人種目を全解除</button>${RELAY_MEETS.has(meet)?'<button id="relayBtn">リレー編成</button>':""}<button id="confirmEntry" class="primary">エントリー確認へ</button></div>
     <div id="entrySummary" class="small muted" style="margin-top:8px"></div>`);
+  m.classList.add("modal-meet-entry");
 
   const tbody=m.querySelector("#entryMatrix tbody"),summary=m.querySelector("#entrySummary");
   const athleteSelectedCount=pid=>EVENTS.reduce((n,e)=>n+(selections[e].includes(pid)?1:0),0);
@@ -2613,6 +2668,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
       <button id="backEntry">エントリーへ戻る</button>
       <button id="goRace" class="primary">この内容でレースへ進む</button>
     </div>`);
+  m.classList.add("modal-entry-confirm");
 
   m.querySelector("#backEntry").onclick=()=>{
     closeModal();
@@ -2620,7 +2676,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
   };
 
   m.querySelector("#goRace").onclick=()=>{
-    document.getElementById("modalRoot").innerHTML=`<div class="modal-back"><div class="modal">
+    document.getElementById("modalRoot").innerHTML=`<div class="modal-back"><div class="modal modal-race-prep">
       <div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} レース</h2><div class="clock">READY</div></div>
       <div class="race-stage" style="padding:24px;text-align:center">
         <div class="big">レース準備中</div>
@@ -2738,6 +2794,7 @@ function showRaceGroupResult(q,onClose){
     <div class="table-wrap"><table><thead><tr><th>順位</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>記録</th></tr></thead><tbody>${
       sorted.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td><b>${esc(x.athlete.name)}</b></td><td>${esc(x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"-":athleteGradeLabel(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td></tr>`).join("")
     }</tbody></table></div>`);
+  m.classList.add("modal-race-result");
   m.querySelector("#nextGroup").onclick=()=>closeModal(onClose);
 }
 function showTeamTrialEventResult(q,onClose){
@@ -2753,6 +2810,7 @@ function showTeamTrialEventResult(q,onClose){
         return`<tr class="result-own"><td>${i+1}</td><td><b>${esc(x.athlete.name)}</b></td><td>${fmt(before)}</td><td><b>${fmt(x.race.total)}</b></td><td>${marks.join(" ")||"-"}</td><td><b>${fmt(after)}</b></td></tr>`;
       }).join("")
     }</tbody></table></div>`);
+  m.classList.add("modal-event-result");
   m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
 }
 
@@ -2762,6 +2820,7 @@ function showEventOverallPlayback(q,onClose){
     let teams=q.relayTeams||[],label=q.stage==="relay_final"?"A決勝":"予選総合";
     let m=showModal(`<div class="row"><h2 style="margin-right:auto">${RELAY_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次へ</button></div>
       <div class="table-wrap"><table><thead><tr><th>順位</th><th>大学</th><th>記録</th><th>ラップ</th></tr></thead><tbody>${teams.map((t,i)=>`<tr class="${t.organization===state.playerUniversity?"result-own":""}"><td>${i+1}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</td></tr>`).join("")}</tbody></table></div>`);
+    m.classList.add("modal-event-result");
     m.querySelector("#nextEv").onclick=()=>closeModal(onClose);return;
   }
   let r=q.eventResult,rows=r.final?.length&&q.stage==="final"?r.final:r.prelim;
@@ -2770,6 +2829,7 @@ function showEventOverallPlayback(q,onClose){
     <div class="table-wrap"><table><thead><tr><th>順位</th><th>選手</th><th>所属</th><th>学年</th><th>PB</th><th>記録</th></tr></thead><tbody>${
       rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td>${esc(x.athlete.name)}</td><td>${esc(x.athlete.organization)}</td><td>${athleteGradeLabel(x.athlete)}</td><td>${fmt(x.athlete.bestTimes[q.event])}</td><td><b>${fmt(x.race.total)}</b></td></tr>`).join("")
     }</tbody></table></div>`);
+  m.classList.add("modal-event-result");
   m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
 }
 function playMeetSequence(result,selections,onComplete,preparedQueue=null){
@@ -2819,7 +2879,7 @@ function openRelayEditor(relaySel,done){
   const layer=document.createElement("div");
   layer.className="modal-back";
   layer.style.zIndex="80";
-  layer.innerHTML=`<div class="modal">
+  layer.innerHTML=`<div class="modal modal-relay-editor">
     <div class="row"><h2 style="margin-right:auto">リレー編成</h2><button id="relayClose">戻る</button></div>
     <div id="relayEditorBody"></div>
     <div class="row" style="margin-top:12px"><button id="relayOk" class="primary">確定して種目選択へ戻る</button></div>
@@ -2945,6 +3005,7 @@ function showMeetResults(result,onClose){
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[result.meet]} 結果</h2>${available.length?`<select id="resEv">${opts}</select>`:""}<button id="x">結果を閉じて次へ</button></div>
     <div class="notice"><b>レース終了</b>　自己ベストと新しい参加標準突破を色付きで表示しています。</div>
     <div id="resBody" style="margin-top:10px"></div><div id="scoreBody"></div>`,onClose);
+  m.classList.add("modal-meet-results");
 
   function badge(x,e){
     let a=x.achievement||{},parts=[];
@@ -3015,6 +3076,7 @@ function playRaceCanvas(event,rows,options={}){
       <button id="skipEvent" style="margin-left:auto">この種目をスキップ</button>
       <button id="nextRace" class="primary" disabled>${nextLabel}</button>
     </div>`);
+  m.classList.add("modal-race-live");
 
   let back=m.parentElement;
   back.addEventListener("click",e=>{if(e.target===back){e.stopImmediatePropagation();e.preventDefault()}},true);
@@ -3444,6 +3506,7 @@ function showTrainingGrowth(gains,onClose){
     ? `<div class="growth-list">${gains.map(g=>`<div class="growth-athlete"><strong>${esc(g.name)}</strong><div>${g.changes.map(c=>`<span class="growth-chip">${STAT_LABEL[c.stat]} ${c.before} → ${c.after} <b>+${c.up}</b></span>`).join("")}</div></div>`).join("")}</div>`
     : `<div class="notice">このターンは能力上昇なし</div>`;
   let m=showModal(`<div class="row" style="margin-bottom:12px"><h2 style="margin-right:auto">練習結果</h2><button id="next" class="primary">次へ</button></div>${body}`,onClose);
+  m.classList.add("modal-training-result");
   m.querySelector("#next").onclick=()=>closeModal(onClose);
 }
 function showToast(message,kind="info"){
