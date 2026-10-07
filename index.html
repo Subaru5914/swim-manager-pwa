@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.15</title>
+<title>大学競泳監督シミュレーション PWA版 v1.16</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -279,6 +279,43 @@ nav .nav-action:hover{background:#edf6ff}
 .std-new,.std-clear{white-space:nowrap}
 #autoSaveChip{font-variant-numeric:tabular-nums}
 
+
+/* v1.16 iPhone compact layout */
+@media(max-width:760px){
+  body{font-size:14px}
+  header{padding:8px 10px}
+  .title{font-size:18px}
+  .status{padding-top:4px;font-size:11px}
+  .pwa-status{gap:4px}
+  .pwa-chip{font-size:10px;padding:2px 6px}
+  nav{padding:7px 8px;gap:4px}
+  nav button{min-height:40px;padding:6px 9px;font-size:12px}
+  main{padding:7px}
+  .card{padding:9px;margin-bottom:9px;border-radius:10px}
+  .page-lead{margin-bottom:9px}
+  .page-lead h1{font-size:18px}
+  .page-lead p{font-size:12px}
+  .grid,.two{gap:8px}
+  .dashboard-card{min-height:90px}
+  .dashboard-card .big{font-size:24px}
+  button,.utility-summary,select,input[type=text],input[type=number]{min-height:40px}
+  button{padding:6px 9px}
+  th,td{padding:7px 8px}
+  table{font-size:12px}
+  .focus-grid{grid-template-columns:repeat(2,minmax(118px,1fr));gap:6px}
+  .focus-btn{min-height:56px;padding:6px 8px}
+  .focus-btn .stat-number{font-size:16px}
+  .stat-rank-badge{width:25px;min-width:25px;height:25px;font-size:12px}
+  .rank-legend-item{padding:3px 5px;font-size:10px}
+  .training-list-scroll{max-height:52vh}
+  .modal-back{padding:8px}
+  .modal{padding:8px;max-height:97vh;border-radius:11px}
+  .modal>.row:first-child{top:-8px}
+  .modal-actions{bottom:-8px}
+  .clock{font-size:24px}
+  .race-toolbar{gap:4px}
+}
+
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -293,7 +330,7 @@ nav .nav-action:hover{background:#edf6ff}
 <body>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.15</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.16</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -579,7 +616,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.15";
+  state.version="pwa-v1.16";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1128,7 +1165,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.15",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.16",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
