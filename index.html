@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.20</title>
+<title>大学競泳監督シミュレーション PWA版 v1.21</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -494,6 +494,102 @@ nav .nav-action:hover{background:#edf6ff}
   #historyTable{overflow-x:auto}
 }
 
+
+/* v1.21 landscape density pass: keep text size, tighten widths and gaps */
+@media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse){
+  #page-home.active{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:3px;row-gap:3px}
+  #page-home>.page-lead,#page-home>.grid,#page-home>.toolbar-card{grid-column:1/-1}
+  #page-home>.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+  #page-home>.grid .dashboard-card{min-height:58px;padding:4px 5px}
+  #page-home>.card:nth-of-type(2){grid-column:1/7}
+  #page-home>.card:nth-of-type(3){grid-column:7/13}
+  #page-home .toolbar-card{padding:3px 5px}
+  #page-home .growth-list{gap:3px}
+  #page-home .growth-athlete{padding:4px}
+  #page-home .growth-chip{margin:2px 2px 0 0;padding:2px 4px}
+
+  #page-training>.two{grid-template-columns:minmax(235px,.72fr) minmax(0,1.28fr);gap:3px}
+  #trainingPlayers table{table-layout:fixed;width:100%!important}
+  #trainingPlayers th,#trainingPlayers td{padding-left:2px!important;padding-right:2px!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+  #trainingPlayers th:nth-child(1),#trainingPlayers td:nth-child(1){width:42%}
+  #trainingPlayers th:nth-child(2),#trainingPlayers td:nth-child(2){width:13%;text-align:center}
+  #trainingPlayers th:nth-child(3),#trainingPlayers td:nth-child(3){width:18%;text-align:center}
+  #trainingPlayers th:nth-child(4),#trainingPlayers td:nth-child(4){width:27%}
+  #trainingPlayers .grade-pill{padding-left:4px;padding-right:4px}
+  #trainingPlayers .training-player-rank{gap:2px;justify-content:center}
+  #trainingPlayers .tag{padding-left:4px;padding-right:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+
+  #rosterTable th,#rosterTable td{padding-left:2px!important;padding-right:2px!important}
+  #rosterTable th:nth-child(1),#rosterTable td:nth-child(1){width:13%}
+  #rosterTable th:nth-child(2),#rosterTable td:nth-child(2){width:6%}
+  #rosterTable th:nth-child(3),#rosterTable td:nth-child(3){width:12%}
+  #rosterTable th:nth-child(4),#rosterTable td:nth-child(4){width:10%}
+  #rosterTable th:nth-child(5),#rosterTable td:nth-child(5){width:10%}
+  #rosterTable th:nth-child(6),#rosterTable td:nth-child(6){width:27%}
+  #rosterTable th:nth-child(7),#rosterTable td:nth-child(7){width:22%}
+  #rosterTable .grade-pill{padding-left:3px;padding-right:3px}
+  #rosterTable .athlete-name{display:block;line-height:1.15}
+
+  #rankingTable table{width:100%!important;table-layout:fixed}
+  #rankingTable th,#rankingTable td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  #rankingTable th:nth-child(1),#rankingTable td:nth-child(1){width:8%;text-align:center}
+  #rankingTable th:nth-child(2),#rankingTable td:nth-child(2){width:21%}
+  #rankingTable th:nth-child(3),#rankingTable td:nth-child(3){width:25%}
+  #rankingTable th:nth-child(4),#rankingTable td:nth-child(4){width:13%}
+  #rankingTable th:nth-child(5),#rankingTable td:nth-child(5){width:18%}
+  #rankingTable th:nth-child(6),#rankingTable td:nth-child(6){width:15%}
+  #rankingTable .rank-pill,#rankingTable .grade-pill{padding-left:3px;padding-right:3px}
+
+  #recordBook table,#archiveTable table,#meetHistory table{width:100%!important;min-width:0!important;table-layout:fixed}
+  #recordBook th,#recordBook td,#archiveTable th,#archiveTable td,#meetHistory th,#meetHistory td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  #recordBook th:nth-child(1),#recordBook td:nth-child(1){width:20%}
+  #recordBook th:nth-child(2),#recordBook td:nth-child(2){width:18%}
+  #recordBook th:nth-child(3),#recordBook td:nth-child(3){width:25%}
+  #recordBook th:nth-child(4),#recordBook td:nth-child(4){width:37%}
+  #meetHistory th:nth-child(1),#meetHistory td:nth-child(1){width:12%}
+  #meetHistory th:nth-child(2),#meetHistory td:nth-child(2){width:17%}
+  #meetHistory th:nth-child(3),#meetHistory td:nth-child(3){width:29%}
+  #meetHistory th:nth-child(4),#meetHistory td:nth-child(4){width:15%}
+  #meetHistory th:nth-child(5),#meetHistory td:nth-child(5){width:13%}
+  #meetHistory th:nth-child(6),#meetHistory td:nth-child(6){width:14%}
+  #meetHistory button{padding-left:3px;padding-right:3px}
+
+  #scoutTable table{width:100%!important;min-width:0!important;table-layout:fixed}
+  #scoutTable th,#scoutTable td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  #scoutTable th:nth-child(1),#scoutTable td:nth-child(1){width:17%}
+  #scoutTable th:nth-child(2),#scoutTable td:nth-child(2){width:21%}
+  #scoutTable th:nth-child(3),#scoutTable td:nth-child(3){width:20%}
+  #scoutTable th:nth-child(4),#scoutTable td:nth-child(4){width:21%}
+  #scoutTable th:nth-child(5),#scoutTable td:nth-child(5){width:10%}
+  #scoutTable th:nth-child(6),#scoutTable td:nth-child(6){width:11%}
+  #scoutTable button{padding-left:2px;padding-right:2px;width:100%}
+
+  #facilityGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  #facilityGrid .facility-card{min-height:102px;padding:4px;gap:3px}
+  #facilityGrid .facility-head{gap:3px}
+  #facilityGrid .facility-level{font-size:16px}
+  #facilityGrid .facility-meter{height:5px}
+  #facilityGrid button{padding-left:3px;padding-right:3px}
+
+  .compact-modal-table{width:100%;overflow-x:hidden}
+  .compact-modal-table table{width:100%!important;min-width:0!important;table-layout:fixed}
+  .compact-modal-table th,.compact-modal-table td{padding-left:2px!important;padding-right:2px!important;white-space:normal;overflow-wrap:anywhere}
+  .schedule-table th:nth-child(1),.schedule-table td:nth-child(1){width:29%}
+  .schedule-table th:nth-child(2),.schedule-table td:nth-child(2){width:43%}
+  .schedule-table th:nth-child(3),.schedule-table td:nth-child(3){width:14%}
+  .schedule-table th:nth-child(4),.schedule-table td:nth-child(4){width:14%}
+  .standards-table th:nth-child(1),.standards-table td:nth-child(1){width:16%}
+  .standards-table th:nth-child(n+2),.standards-table td:nth-child(n+2){width:21%}
+  .top10-table th:nth-child(1),.top10-table td:nth-child(1){width:9%}
+  .top10-table th:nth-child(2),.top10-table td:nth-child(2){width:16%}
+  .top10-table th:nth-child(3),.top10-table td:nth-child(3){width:39%}
+  .top10-table th:nth-child(4),.top10-table td:nth-child(4){width:14%}
+  .top10-table th:nth-child(5),.top10-table td:nth-child(5){width:22%}
+
+  #page-training .card,#page-roster .card,#page-rankings .card,#page-records .card,#page-scout .card,#page-facilities .card{padding-left:3px;padding-right:3px}
+  #page-roster #rosterTable,#page-rankings #rankingTable,#page-scout #scoutTable{margin-top:4px!important}
+}
+
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -515,7 +611,7 @@ nav .nav-action:hover{background:#edf6ff}
 </div>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.20</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.21</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -801,7 +897,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.20";
+  state.version="pwa-v1.21";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1292,7 +1388,7 @@ function showMeetSchedule(){
     return{month:+month,week:+week,half,meet,ord:order[month]*10+(+week)+(half==="後半"?.5:0)};
   }).sort((a,b)=>a.ord-b.ord);
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会日程</h2><button id="x">閉じる</button></div>
-    <div class="table-wrap"><table><thead><tr><th>時期</th><th>大会</th><th>参加標準</th><th>リレー</th></tr></thead><tbody>${
+    <div class="table-wrap compact-modal-table"><table class="schedule-table"><thead><tr><th>時期</th><th>大会</th><th>参加標準</th><th>リレー</th></tr></thead><tbody>${
       rows.map(x=>`<tr><td>${x.month}月 第${x.week}週${x.half}</td><td>${MEET_LABEL[x.meet]}</td><td>${RESTRICTED.has(x.meet)?"あり":"なし"}</td><td>${RELAY_MEETS.has(x.meet)?"あり":"なし"}</td></tr>`).join("")
     }</tbody></table></div>`);
   m.querySelector("#x").onclick=()=>closeModal();
@@ -1354,7 +1450,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.20",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.21",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2038,8 +2134,8 @@ function showModal(html,onClose){
   return root.querySelector(".modal");
 }
 function closeModal(cb){document.getElementById("modalRoot").innerHTML="";if(cb)cb()}
-function showStandards(){let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal()}
-function showTop10(){let opts=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")+RELAYS.map(e=>`<option value="${e}">${RELAY_LABEL[e]}</option>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><div id="t10body"></div>`);let render=()=>{let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];m.querySelector("#t10body").innerHTML=`<div class="table-wrap"><table><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>esc(state.players.find(p=>p.id===x.id)?.name||x.name)).join(" → "):esc(state.players.find(p=>p.id===r.athleteId)?.name||r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`).join("")||`<tr><td colspan="5">記録なし</td></tr>`}</tbody></table></div>`};m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render()}
+function showStandards(){let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal()}
+function showTop10(){let opts=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")+RELAYS.map(e=>`<option value="${e}">${RELAY_LABEL[e]}</option>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><div id="t10body"></div>`);let render=()=>{let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];m.querySelector("#t10body").innerHTML=`<div class="table-wrap compact-modal-table"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>esc(state.players.find(p=>p.id===x.id)?.name||x.name)).join(" → "):esc(state.players.find(p=>p.id===r.athleteId)?.name||r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`).join("")||`<tr><td colspan="5">記録なし</td></tr>`}</tbody></table></div>`};m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render()}
 function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER"){state.playerUniversity=n;state.players.forEach(p=>p.organization=n)}else state.universities.find(x=>x.id===id).name=n;state.world.forEach(a=>{if(a.organization===old)a.organization=n});closeModal();showUniversities();renderAll()})}
 
 function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.season,initialSelections=null,initialRelaySel=null){
