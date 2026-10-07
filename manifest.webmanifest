@@ -2,17 +2,32 @@
   "id": "./",
   "name": "大学競泳監督シミュレーション",
   "short_name": "大学競泳監督",
-  "description": "大学競泳部の監督として選手育成・大会・スカウトを進めるシミュレーションゲーム（PWA v1.17）",
+  "description": "大学競泳部の監督として選手育成・大会・スカウトを進めるシミュレーションゲーム（PWA v1.18）",
   "lang": "ja-JP",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef3f8",
   "theme_color": "#1769cf",
-  "orientation": "any",
+  "orientation": "landscape",
   "icons": [
-    {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"./icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
