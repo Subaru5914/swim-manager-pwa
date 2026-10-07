@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.24</title>
+<title>大学競泳監督シミュレーション PWA版 v1.25</title>
 <style>
 :root{--bg:#f3f7fb;--panel:#fff;--ink:#18212f;--muted:#657286;--line:#d8e1eb;--accent:#1367d1;--accent2:#0a4da5;--good:#12805c;--bad:#b64646;--pool:#d9f3ff;--lane:#f2c94c}
 *{box-sizing:border-box}button{touch-action:manipulation}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -1027,7 +1027,7 @@ nav .nav-action:hover{background:#edf6ff}
 </div>
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.24</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.25</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1312,7 +1312,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.24";
+  state.version="pwa-v1.25";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.reputationParticipation)state.reputationParticipation=[];
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
@@ -1590,16 +1590,30 @@ function sanitizeCpuPBs(a){
 
 const ELITE_JR_FACTOR=.99;
 const INTERCOLLEGE_A_FINAL_ANCHOR_ABILITY=163/200;
-const INTERCOLLEGE_A_FINAL_CUTOFF={
-  fr50:22.90,fr100:50.35,fr200:111.19,fr400:236.50,
-  ba100:56.00,ba200:123.50,br100:61.50,br200:132.21,
-  fly100:53.10,fly200:119.50,im200:121.00,im400:257.55
+/*
+  Aランク中央(163)を実際の日本学生選手権A決勝レベルに合わせる。
+  原則2025年A決勝5位、2025年値が欠ける2種目は2026年A決勝実績を使用。
+*/
+const INTERCOLLEGE_A_FINAL_REFERENCE={
+  fr50:22.67,
+  fr100:49.50,
+  fr200:108.77,
+  fr400:231.70,
+  ba100:54.88,
+  ba200:118.97,
+  br100:60.56,
+  br200:131.16,
+  fly100:53.03,
+  fly200:116.35,
+  im200:118.84,
+  im400:255.98
 };
 function expectedTime(p,e){
   let ability=abilityValue(p,e);
   let anchorAbility=INTERCOLLEGE_A_FINAL_ANCHOR_ABILITY;
   let jr=JAPAN_RECORD[e];
-  let anchorFactor=(INTERCOLLEGE_A_FINAL_CUTOFF[e]||jr*1.055)/jr;
+  let anchorTime=INTERCOLLEGE_A_FINAL_REFERENCE[e]||jr*1.055;
+  let anchorFactor=anchorTime/jr;
   let factor;
   if(ability>=anchorAbility){
     let t=(ability-anchorAbility)/Math.max(.0001,1-anchorAbility);
@@ -1848,9 +1862,10 @@ function applyProdigyBoost(p,year=1){
     for(let k of STATS){
       let specialtyBoost=(st!=="im"&&k.startsWith(st+"_"))?rand(3,10):0;
       if(st==="im"&&/(fr|ba|br|fly)_(speed|stamina)/.test(k))specialtyBoost=rand(2,7);
-      p.stats[k]=round2(clamp((p.stats[k]||avg)*factor+specialtyBoost+gauss(0,2.2),45,188));
+      p.stats[k]=round2(clamp((p.stats[k]||avg)*factor+specialtyBoost+gauss(0,2.2),45,175));
     }
   }
+  for(let k of STATS)p.stats[k]=round2(clamp(p.stats[k],0,175));
   p.prodigy=true;
   // Talented arrivals should also have a useful development curve, without raising the 200 cap.
   if(["ready","early"].includes(p.potentialType)){
@@ -1889,7 +1904,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.24",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
+  let s={version:"pwa-v1.25",season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:2,orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
