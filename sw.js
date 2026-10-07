@@ -1,4 +1,4 @@
-const CACHE_NAME="swim-manager-pwa-v1.15";
+const CACHE_NAME="swim-manager-pwa-v1.16";
 const APP_SHELL=[
   "./",
   "./index.html",
