@@ -28,7 +28,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.29', 'v1.28.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.29.1', 'v1.29'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -74,7 +74,11 @@ async function drainRaces(page,program=[]) {
       program.push(await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase})));
       await page.locator('#startProgramRace').click();continue;
     }
-    if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
+    if(await page.locator('#nextEv').count()){
+      assert.ok(await page.locator('.modal-event-result .result-own').count()>0,'CPU-only results must wait until the summary');
+      if(/予選総合/.test(await page.locator('.modal-event-result h2').innerText()))assert.equal(await page.locator('.modal-event-result .final-qualifier').count(),8);
+      await page.locator('#nextEv').click();continue;
+    }
     const title=await page.locator('.modal-race-live h2').innerText();races.push(title);
     const controls=await page.locator('#skipEvent').evaluate(el=>{let a=el.getBoundingClientRect(),m=el.closest('.modal').getBoundingClientRect();return {bottom:a.bottom,limit:m.bottom};});
     assert.ok(controls.bottom<=controls.limit+1,JSON.stringify(controls));
@@ -266,7 +270,7 @@ test('actual March championship selects a graduating swimmer and April/save/relo
   } finally { await context.close(); await app.close(); }
 });
 
-test('a world meet with no own representatives shows all four days as result tables and completes without race video', async () => {
+test('a world meet with no own representatives skips interim screens and shows every result in its summary', async () => {
   const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
@@ -274,10 +278,11 @@ test('a world meet with no own representatives shows all four days as result tab
     await page.locator('#goRace').click();
     const program=[],races=await drainRaces(page,program);
     assert.deepEqual(races,[]);
-    const days=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
-    assert.deepEqual(program,days.flatMap((events,i)=>['prelim','final'].flatMap(phase=>events.map(event=>({day:i+1,event,phase})))));
+    assert.deepEqual(program,[]);
     assert.equal(await page.locator('#resEv option').count(),12);
     assert.equal(await page.locator('.modal-meet-results .result-own').count(),0);
+    assert.equal(await page.locator('#resBody .final-qualifier').count(),8);
+    assert.equal(await page.locator('#scoreBody .final-qualifier').count(),24);
     await page.locator('.modal-meet-results #x').click();
     assert.equal(await page.evaluate(()=>state.activeCompetitionSlot),null);
     assert.deepEqual(errors,[]);
@@ -316,7 +321,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.28.1 cache to v1.29 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.29 cache to v1.29.1 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -325,7 +330,7 @@ test('PWA upgrades its v1.28.1 cache to v1.29 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.28.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -335,19 +340,19 @@ test('PWA upgrades its v1.28.1 cache to v1.29 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.29') && !keys.includes('swim-manager-pwa-v1.28.1');
+      return keys.includes('swim-manager-pwa-v1.29.1') && !keys.includes('swim-manager-pwa-v1.29');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.29/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29');
+    assert.match(await page.title(), /v1\.29\.1/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.1');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.29/);
+    assert.match(await page.title(), /v1\.29\.1/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -424,7 +429,9 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
       const original=buildMeetRaceQueue;
       buildMeetRaceQueue=(result,selections)=>{
         const queue=original(result,selections);
-        window.expectedRaces=queue.map(q=>({event:q.event,label:q.label,names:[...q.rows].sort((a,b)=>(a.heatLane||1)-(b.heatLane||1)).map(x=>x.athlete.name)}));
+        window.expectedRaces=queue.map(q=>({event:q.event,phase:q.phase,label:q.label,
+          names:[...q.rows].sort((a,b)=>(a.heatLane||1)-(b.heatLane||1)).map(x=>x.athlete.name),
+          ownNames:q.rows.filter(x=>x.source==='PLAYER').flatMap(x=>x.members?x.members.map(p=>p.name):[x.athlete.name])}));
         return queue;
       };
     });
@@ -449,14 +456,23 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
         if(await page.locator('.modal-meet-results').count())break;
         if(await page.locator('#startProgramRace').count()){
           const details=await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase,
-            listed:[...m.querySelectorAll('[data-program-event]')].map(r=>r.dataset.programEvent),
+            listed:[...m.querySelectorAll('[data-program-event]')].map(r=>({event:r.dataset.programEvent,phase:r.dataset.programPhase,label:r.querySelector('b').textContent})),
             current:m.querySelector('.program-current')?.dataset.programEvent,
-            names:m.querySelector('.program-current td:nth-child(3)').textContent,
+            currentPhase:m.querySelector('.program-current')?.dataset.programPhase,
+            names:m.querySelector('.program-current .program-entry').textContent,
+            finalNames:m.querySelector(`[data-program-event="${m.dataset.event}"][data-program-phase="final"] .program-entry`).textContent,
+            finalEntries:Object.fromEntries([...m.querySelectorAll('[data-program-phase="final"]')].map(r=>[r.dataset.programEvent,r.querySelector('.program-entry').textContent])),
             bounds:{modal:m.getBoundingClientRect().bottom,button:m.querySelector('#startProgramRace').getBoundingClientRect().bottom}}));
-          assert.equal(details.current,details.event);assert.ok(details.bounds.button<=details.bounds.modal+1,JSON.stringify(details));
+          assert.equal(details.current,details.event);assert.equal(details.currentPhase,details.phase);
+          assert.ok(details.bounds.button<=details.bounds.modal+1,JSON.stringify(details));
+          if(details.phase==='prelim')assert.equal(details.finalNames,'予選待ち');
           program.push(details);await page.locator('#startProgramRace').click();continue;
         }
-        if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
+        if(await page.locator('#nextEv').count()){
+          assert.ok(await page.locator('.modal-event-result .result-own').count()>0,`${meet}: unexpected CPU-only interim results`);
+          if(/予選総合/.test(await page.locator('.modal-event-result h2').innerText()))assert.equal(await page.locator('.modal-event-result .final-qualifier').count(),8);
+          await page.locator('#nextEv').click();continue;
+        }
         let next=expected[seen.length];assert.ok(next,`${meet}: extra race`);
         const title=await page.locator('.modal-race-live h2').innerText();assert.ok(title.includes(next.label),`${meet}: ${title}`);
         assert.deepEqual((await page.locator('.race-entrant strong').allTextContents()).map(n=>n.replace(/^(?:★ )?\d+ /,'')),next.names);
@@ -470,16 +486,31 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
       if(['kansai_college','intercollege','japan_open','japan_championship'].includes(meet)){
         const days=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
         const withRelays=['kansai_college','intercollege'].includes(meet);
-        const wanted=days.flatMap((events,i)=>['prelim','final'].flatMap(phase=>events.filter(e=>withRelays||!e.startsWith('4x')).map(event=>({day:i+1,event,phase}))));
+        const wanted=days.flatMap((events,i)=>['prelim','final'].flatMap(phase=>events.filter(e=>['fr100','fr200'].includes(e)||(withRelays&&e==='4x100fr')).map(event=>({day:i+1,event,phase}))));
         assert.deepEqual(program.map(({day,event,phase})=>({day,event,phase})),wanted,meet);
-        for(const p of program)assert.deepEqual(p.listed,days[p.day-1].filter(e=>withRelays||!e.startsWith('4x')),meet);
+        for(const p of program){
+          const events=days[p.day-1].filter(e=>withRelays||!e.startsWith('4x'));
+          assert.deepEqual(p.listed.map(({event,phase})=>({event,phase})),['prelim','final'].flatMap(phase=>events.map(event=>({event,phase}))),meet);
+          assert.ok(p.listed.every(r=>r.label.endsWith(r.phase==='prelim'?'予選':'決勝')),meet);
+        }
         const ownName=await page.evaluate(()=>state.players[0].name);
-        assert.ok(program.filter(p=>p.event==='fr100'||p.event==='fr200').every(p=>p.names.includes(ownName)),meet);
+        for(const p of program){
+          const ownNames=expected.filter(q=>q.event===p.event&&q.phase===p.phase).flatMap(q=>q.ownNames);
+          assert.ok(ownNames.length>0&&ownNames.every(name=>p.names.includes(name)),`${meet}: ${JSON.stringify(p)}`);
+        }
+        assert.ok(program.filter(p=>p.event==='4x100fr'&&p.phase==='prelim').every(p=>p.finalEntries.fr200.includes(ownName)),meet);
       }else assert.equal(program.length,0,meet);
       assert.ok(expected.some(q=>q.event==='fr100'),meet);
       assert.ok(expected.some(q=>q.event==='fr200'),meet);
       if(meet!=='team_trial')assert.ok(expected.some(q=>q.label==='A決勝'),meet);
       if(['kansai_college','intercollege','joint_record'].includes(meet))assert.ok(expected.some(q=>q.event==='4x100fr'&&q.label==='リレー A決勝'),meet);
+      assert.equal(await page.locator('#resEv option').count(),meet==='team_trial'?2:12,meet);
+      if(meet!=='team_trial'){
+        await page.locator('#resEv').selectOption('im400');
+        assert.match(await page.locator('#resBody').innerText(),/自チームの出場なし/);
+        assert.equal(await page.locator('#resBody .final-qualifier').count(),8,meet);
+        if(['kansai_college','intercollege'].includes(meet))assert.equal(await page.locator('#scoreBody h4').count(),3,meet);
+      }
       await page.locator('.modal-meet-results #x').click();
       assert.equal(await page.evaluate(()=>state.activeCompetitionSlot),null);
     }
@@ -548,7 +579,7 @@ test('results highlight own swimmers and first standards while top ten marks act
   }finally{await context.close();await app.close();}
 });
 
-test('a swimmer eliminated in prelim gets his race and group results, while CPU-only finals use tables', async () => {
+test('a swimmer eliminated in prelim gets his race and ranking, then CPU-only finals wait until the summary', async () => {
   const app=await fixture(),context=await testContext();
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
@@ -559,7 +590,11 @@ test('a swimmer eliminated in prelim gets his race and group results, while CPU-
     });
     await page.locator('#confirmEntry').click();await page.locator('#goRace').click();await page.locator('.modal-race-live').waitFor();
     assert.match(await page.locator('.modal-race-live h2').innerText(),/予選/);
-    const races=await drainRaces(page);assert.equal(races.length,1);
+    await page.locator('#skipEvent').click();await page.locator('#nextGroup').click();
+    await page.locator('.modal-event-result').waitFor();
+    assert.equal(await page.locator('.modal-event-result .final-qualifier').count(),8);
+    assert.equal(await page.locator('.modal-event-result .result-own .final-qualifier').count(),0);
+    await page.locator('#nextEv').click();await page.locator('.modal-meet-results').waitFor();
     assert.ok(await page.locator('#resBody h3').filter({hasText:'A決勝'}).count());
     assert.equal(await page.locator('#resBody .result-own').count(),2);
     await page.locator('.modal-meet-results #x').click();assert.deepEqual(errors,[]);

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.29</title>
+<title>大学競泳監督シミュレーション PWA版 v1.29.1</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1057,17 +1057,20 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .top10-active{background:#eaf4ff!important}
 .active-athlete{display:inline-block;color:#125faa;background:#d8eaff;border-radius:5px;font-size:11px;padding:1px 4px;font-weight:800;white-space:nowrap}
 .entrant-team{font-weight:700;color:#465d75}
-.modal-meet-program{width:min(1000px,calc(var(--game-vw) * 92));max-width:1000px}
+.modal-meet-program{width:min(1000px,calc(var(--game-vw) * 92));max-width:1000px;display:flex;flex-direction:column;overflow:hidden}
+.modal-meet-program>.row,.modal-meet-program>.notice{flex-shrink:0}
 .modal-meet-program h2{font-size:20px;margin-bottom:8px}
 .modal-meet-program .notice{padding:6px 10px;font-size:13px}
-.program-table-wrap{margin-top:10px}
+.program-table-wrap{margin-top:10px;min-height:0;overflow:auto;flex:0 1 auto}
 .program-table{min-width:0!important;width:100%;table-layout:fixed}
 .program-table th,.program-table td{padding:6px 8px;white-space:normal;font-size:13px}
 .program-table th:first-child{width:52px}
-.program-table th:nth-child(2){width:190px}
+.program-race{display:grid;grid-template-columns:220px minmax(0,1fr);gap:8px;align-items:start}
+.program-final-start td{border-top:2px solid #9eb5cd}
 .program-current{background:#fff1b8!important}
 .program-current td:first-child{border-left:4px solid #d78913}
 .program-athlete{display:inline-block}
+.final-qualifier{display:inline-block;border:1px solid #72ba96;border-radius:999px;background:#e3f7ed;color:#09633f;padding:2px 5px;font-size:11px;font-weight:800;white-space:nowrap}
 .modal-race-live{width:min(1240px,calc(var(--game-vw) * 96));max-width:1240px;display:flex;flex-direction:column;height:min(800px,calc(var(--game-vh) * 96));overflow:hidden}
 .modal-race-live>.row{flex-shrink:0}
 .modal-race-live .race-entrants{flex-shrink:0;max-height:calc(var(--game-vh) * 28);overflow:auto}
@@ -1099,7 +1102,8 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   .program-table-wrap{margin-top:6px}
   .program-table th,.program-table td{padding:4px 5px;font-size:11px}
   .program-table th:first-child{width:42px}
-  .program-table th:nth-child(2){width:150px}
+  .program-race{grid-template-columns:180px minmax(0,1fr);gap:6px}
+  .final-qualifier{font-size:9px;padding:1px 4px}
 }
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1116,7 +1120,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.29</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.29.1</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1421,7 +1425,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.29";
+  state.version="pwa-v1.29.1";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -2052,7 +2056,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.29",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.29.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -3120,7 +3124,7 @@ function buildMeetRaceQueue(result,selections){
   });
   return queue;
 }
-function meetProgramOwnNames(result,event,phase){
+function meetProgramOwnNames(result,event,phase,emptyLabel="出場なし"){
   let athletes;
   if(RELAYS.includes(event)){
     let entry=result.relays?.find(x=>x[0]===event);
@@ -3130,21 +3134,31 @@ function meetProgramOwnNames(result,event,phase){
     let r=result.events[event],rows=phase==="final"?r?.final:r?.prelim;
     athletes=(rows||[]).filter(x=>x.source==="PLAYER").map(x=>x.athlete);
   }
-  return athletes.map(p=>`<span class="program-athlete">★ ${esc(p.name)}（${athleteGradeLabel(p)}）</span>`).join(RELAYS.includes(event)?" → ":" / ")||'<span class="muted">出場なし</span>';
+  return athletes.map(p=>`<span class="program-athlete">★ ${esc(p.name)}（${athleteGradeLabel(p)}）</span>`).join(RELAYS.includes(event)?" → ":" / ")||`<span class="muted">${esc(emptyLabel)}</span>`;
 }
-function showMeetDayProgram(result,block,onNext){
+function showMeetDayProgram(result,block,onNext,completedPrelims=new Set()){
   let events=meetEventDays(result.meet)[block.day-1],final=block.phase==="final";
   let label=EVENT_LABEL[block.event]||RELAY_LABEL[block.event];
+  let rows=["prelim","final"].flatMap(phase=>events.map((e,i)=>{
+    let isFinal=phase==="final",ready=final||completedPrelims.has(e);
+    let names=isFinal&&!ready?'<span class="muted">予選待ち</span>':meetProgramOwnNames(result,e,phase,isFinal?"決勝進出なし":"出場なし");
+    let current=e===block.event&&phase===block.phase;
+    return `<tr data-program-event="${e}" data-program-phase="${phase}" class="${current?"program-current ":""}${isFinal&&i===0?"program-final-start":""}"><td>${i+1+(isFinal?events.length:0)}${current?" ▶":""}</td><td><div class="program-race"><b>${EVENT_LABEL[e]||RELAY_LABEL[e]} ${isFinal?"決勝":"予選"}</b><div class="program-entry">${names}</div></div></td></tr>`;
+  })).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[result.meet]} ${block.day}日目の大会種目一覧</h2></div>
     <div class="notice"><b>${final?"決勝":"予選"}：${label}</b>を開始します。同日の全種目の予選が終わってから、決勝を行います。</div>
-    <div class="table-wrap program-table-wrap"><table class="program-table"><thead><tr><th>順番</th><th>種目</th><th>自チームのエントリー</th>${final?"<th>自チームの決勝進出</th>":""}</tr></thead><tbody>${events.map((e,i)=>`<tr data-program-event="${e}" class="${e===block.event?"program-current":""}"><td>${i+1}${e===block.event?" ▶":""}</td><td><b>${EVENT_LABEL[e]||RELAY_LABEL[e]}</b></td><td>${meetProgramOwnNames(result,e,"prelim")}</td>${final?`<td>${meetProgramOwnNames(result,e,"final")}</td>`:""}</tr>`).join("")}</tbody></table></div>
-    <div class="row modal-actions"><button id="startProgramRace" class="primary" style="margin-left:auto">${block.hasOwnRace?"レースへ進む":"結果を見る"}</button></div>`);
+    <div class="table-wrap program-table-wrap"><table class="program-table"><thead><tr><th>順番</th><th>種目・自チームの出場選手</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="row modal-actions"><button id="startProgramRace" class="primary" style="margin-left:auto">レースへ進む</button></div>`);
   m.classList.add("modal-meet-program");
   m.dataset.day=block.day;m.dataset.event=block.event;m.dataset.phase=block.phase;
+  m.querySelector(".program-current")?.scrollIntoView({block:"nearest"});
   m.querySelector("#startProgramRace").onclick=()=>closeModal(onNext);
 }
+function finalQualificationTag(qualified){
+  return qualified?'<span class="final-qualifier">決勝進出</span>':"—";
+}
 function resultRankingRows(rows,event,qualifiers=null){
-  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeLabel(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${qualifiers.some(f=>f.athlete.id===x.athlete.id)?"進出":"—"}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
+  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeLabel(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
 }
 function resultRankingTable(rows,event,qualifiers=null){
   return `<div class="table-wrap"><table><thead><tr><th>順位</th><th>コース</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>記録</th>${qualifiers?"<th>決勝</th>":""}<th>PB・初突破</th></tr></thead><tbody>${resultRankingRows(rows,event,qualifiers)}</tbody></table></div>`;
@@ -3176,33 +3190,40 @@ function showTeamTrialEventResult(q,onClose){
 function showEventOverallPlayback(q,onClose){
   if(q.stage==="team_trial"){showTeamTrialEventResult(q,onClose);return}
   if(q.stage==="relay_prelim"||q.stage==="relay_final"){
-    let teams=q.relayTeams||[],label=q.stage==="relay_final"?"A決勝":"予選総合";
+    let teams=q.relayTeams||[],final=q.stage==="relay_final",label=final?"A決勝":"予選総合";
     let m=showModal(`<div class="row"><h2 style="margin-right:auto">${RELAY_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次へ</button></div>
-      <div class="table-wrap"><table><thead><tr><th>順位</th><th>コース</th><th>大学 / 国</th><th>記録</th><th>ラップ</th></tr></thead><tbody>${teams.map((t,i)=>`<tr class="${ownsRelayTeam(t)?"result-own":""}"><td>${i+1}</td><td class="result-course">${t.heatLane||"—"}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</td></tr>`).join("")}</tbody></table></div>`);
+      <div class="table-wrap"><table><thead><tr><th>順位</th><th>コース</th><th>大学 / 国</th><th>記録</th><th>ラップ</th>${final?"":"<th>決勝</th>"}</tr></thead><tbody>${teams.map((t,i)=>`<tr class="${ownsRelayTeam(t)?"result-own":""}"><td>${i+1}</td><td class="result-course">${t.heatLane||"—"}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</td>${final?"":`<td>${finalQualificationTag(i<8)}</td>`}</tr>`).join("")}</tbody></table></div>`);
     m.classList.add("modal-event-result");
     m.querySelector("#nextEv").onclick=()=>closeModal(onClose);return;
   }
   let r=q.eventResult,rows=r.final?.length&&q.stage==="final"?r.final:r.prelim;
   let label=r.final?.length&&q.stage==="final"?"A決勝":"予選総合";
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${EVENT_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次の種目へ</button></div>${resultRankingTable(rows,q.event)}`);
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${EVENT_LABEL[q.event]} ${label}</h2><button id="nextEv" class="primary">次の種目へ</button></div>${resultRankingTable(rows,q.event,q.stage==="final"?null:r.final)}`);
   m.classList.add("modal-event-result");
   m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
 }
 function playMeetSequence(result,selections,onComplete,preparedQueue=null){
   let program=buildMeetProgram(result,selections),queue=preparedQueue||buildMeetRaceQueue(result,selections);
-  let pi=0,raceNumber=0;
+  let pi=0,raceNumber=0,completedPrelims=new Set();
   const next=()=>{
+    while(pi<program.length&&!queue.some(q=>q.programIndex===pi)){
+      if(program[pi].phase==="prelim")completedPrelims.add(program[pi].event);
+      pi++;
+    }
     if(pi>=program.length){onComplete();return}
     let programIndex=pi++,block=program[programIndex],races=queue.filter(q=>q.programIndex===programIndex);
     const runGroup=gi=>{
-      if(gi>=races.length){showEventOverallPlayback(block,next);return}
+      if(gi>=races.length){showEventOverallPlayback(block,()=>{
+        if(block.phase==="prelim")completedPrelims.add(block.event);
+        next();
+      });return}
       let q=races[gi],label=`${block.showOverview?block.day+"日目 ":""}${q.label}　${++raceNumber}/${queue.length}`;
       const showGroup=()=>showRaceGroupResult(q,()=>runGroup(gi+1));
       setTimeout(()=>playRaceCanvas(q.event,q.rows,{
         stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup
       }),0);
     };
-    if(block.showOverview)showMeetDayProgram(result,{...block,hasOwnRace:races.length>0},()=>runGroup(0));
+    if(block.showOverview)showMeetDayProgram(result,block,()=>runGroup(0),completedPrelims);
     else runGroup(0);
   };
   next();
@@ -3343,9 +3364,9 @@ function executeWorldMeet(){
   return{meet:"world_championship",events,relays,teamScores:{},entries:own.individual,relayEntries:own.relays};
 }
 function showMeetResults(result,onClose){
-  let entered=EVENTS.filter(e=>(result.entries?.[e]||[]).length);
-  let available=result.meet!=="world_championship"&&entered.length?entered:EVENTS.filter(e=>(result.events[e].final.length||result.events[e].prelim.length));
-  let opts=available.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
+  let available=EVENTS.filter(e=>(result.events[e].final.length||result.events[e].prelim.length));
+  let first=available.find(e=>(result.entries?.[e]||[]).length)||available[0];
+  let opts=available.map(e=>`<option value="${e}" ${e===first?"selected":""}>${EVENT_LABEL[e]}</option>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[result.meet]} 結果</h2>${available.length?`<select id="resEv">${opts}</select>`:""}<button id="x">結果を閉じて次へ</button></div>
     <div class="notice"><b>レース終了</b>　自己ベストと新しい参加標準突破を色付きで表示しています。</div>
     <div id="resBody" style="margin-top:10px"></div><div id="scoreBody"></div>`,onClose);
@@ -3371,16 +3392,14 @@ function showMeetResults(result,onClose){
   if(result.relays?.length){
     extraHtml+=`<h3>リレー結果</h3>`;
     for(let [kind,finals,meta] of result.relays){
-      let ownEntered=(result.relayEntries?.[kind]||[]).length===4;
-      if(!ownEntered&&result.meet!=="world_championship")continue;
       let prelim=meta?.prelim||[],ownPre=prelim.find(ownsRelayTeam),ownFin=finals.find(ownsRelayTeam);
       extraHtml+=`<h4>${RELAY_LABEL[kind]}</h4>`;
       if(ownPre)extraHtml+=`<div class="notice"><b>自チーム予選</b>　${ownPre.prelimRank||prelim.indexOf(ownPre)+1}位 / ${prelim.length}チーム　${ownPre.heatLane||"—"}コース　${fmt(ownPre.race.total)}　${(ownPre.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join(" / ")}</div>`;
       if(ownPre&&!ownFin)extraHtml+=`<p class="muted">予選9位以下のためA決勝進出ならず。</p>`;
-      if(finals.length)extraHtml+=`<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>A決勝順位</th><th>コース</th><th>大学</th><th>記録</th><th>ラップタイム</th><th>メンバー</th></tr></thead><tbody>${
+      if(finals.length)extraHtml+=`<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>A決勝順位</th><th>コース</th><th>所属</th><th>記録</th><th>ラップタイム</th><th>メンバー</th></tr></thead><tbody>${
         finals.map((t,i)=>`<tr class="${ownsRelayTeam(t)?"result-own":""}"><td>${i+1}</td><td class="result-course">${t.heatLane||"—"}</td><td>${esc(t.organization)}</td><td><b>${fmt(t.race.total)}</b></td><td>${(t.race.legs||[]).map((x,j)=>`${j+1}泳 ${fmt(x)}`).join("<br>")}</td><td>${t.members.map(x=>esc(x.name)).join(" → ")}</td></tr>`).join("")
       }</tbody></table></div>`;
-      if(result.meet==="world_championship")extraHtml+=`<div class="table-wrap"><table><thead><tr><th>予選総合順位</th><th>コース</th><th>国</th><th>記録</th><th>決勝</th></tr></thead><tbody>${prelim.map((t,i)=>`<tr class="${ownsRelayTeam(t)?"result-own":""}"><td>${i+1}</td><td class="result-course">${t.heatLane||"—"}</td><td>${esc(t.organization)}</td><td>${fmt(t.race.total)}</td><td>${finals.some(f=>f.organization===t.organization)?"進出":"—"}</td></tr>`).join("")}</tbody></table></div>`;
+      if(prelim.length)extraHtml+=`<div class="table-wrap"><table><thead><tr><th>予選総合順位</th><th>コース</th><th>所属</th><th>記録</th><th>決勝</th></tr></thead><tbody>${prelim.map((t,i)=>`<tr class="${ownsRelayTeam(t)?"result-own":""}"><td>${i+1}</td><td class="result-course">${t.heatLane||"—"}</td><td>${esc(t.organization)}</td><td>${fmt(t.race.total)}</td><td>${finalQualificationTag(finals.some(f=>f.organization===t.organization))}</td></tr>`).join("")}</tbody></table></div>`;
     }
   }
   if(result.teamScores&&Object.keys(result.teamScores).length)extraHtml+=`<h3>大学対抗得点</h3><div class="table-wrap"><table><tbody>${Object.entries(result.teamScores).sort((a,b)=>b[1]-a[1]).map(([o,p],i)=>`<tr><td>${i+1}</td><td>${esc(o)}</td><td>${p}</td></tr>`).join("")}</tbody></table></div>`;
