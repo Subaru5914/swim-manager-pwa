@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.32.1</title>
+<title>大学競泳監督シミュレーション PWA版 v1.32.2</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1053,6 +1053,27 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .result-marks .pb-badge,.result-marks .std-new{font-size:11px;padding:2px 5px;margin:1px}
 .top10-active{background:#eaf4ff!important}
 .active-athlete{display:inline-block;color:#125faa;background:#d8eaff;border-radius:5px;font-size:11px;padding:1px 4px;font-weight:800;white-space:nowrap}
+.modal-training-result{width:min(1320px,calc(var(--game-vw) * 96))!important;max-width:1320px!important;max-height:calc(var(--game-vh) * 92)!important;display:flex;flex-direction:column;overflow:hidden}
+.modal-training-result>.row,.modal-training-result>.growth-table-note{flex-shrink:0}
+.growth-table-note{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.training-growth-wrap{min-height:0;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:8px}
+.training-growth-table{width:100%!important;min-width:1000px!important;table-layout:fixed!important;border-collapse:separate;border-spacing:0}
+.training-growth-table .growth-name-column{width:150px}
+.training-growth-table th,.training-growth-table td{padding:5px 3px;text-align:center;font-size:12px;white-space:nowrap}
+.training-growth-table thead{position:sticky;top:0;z-index:4}
+.training-growth-table thead th{background:#f4f7fb;border-bottom:1px solid var(--line)}
+.training-growth-table thead .focus-fr{background:#e5f4ff}
+.training-growth-table thead .focus-ba{background:#e8f8f5}
+.training-growth-table thead .focus-br{background:#fff0e7}
+.training-growth-table thead .focus-fly{background:#fceaf2}
+.training-growth-table .growth-name{position:sticky;left:0;z-index:2;text-align:left;padding-left:8px;white-space:normal;background:#fff;box-shadow:1px 0 0 var(--line)}
+.training-growth-table thead .growth-name{z-index:5;background:#f4f7fb}
+.training-growth-table .growth-grade{display:inline-block;margin-left:4px;font-size:11px;color:#465d75;white-space:nowrap}
+.training-growth-table .growth-grade-start>*{border-top:2px solid #acc3da}
+.training-growth-table .growth-changed{background:#eaf7ef;color:#106b46}
+.training-growth-table .growth-up{display:block;font-size:15px;font-weight:850;line-height:1.3}
+.training-growth-table .growth-values{display:block;color:#416652;font-size:10px}
+.training-growth-table .growth-unchanged{color:#a2adba}
 .record-ranking-table{width:100%!important;min-width:0!important;table-layout:auto!important}
 .record-ranking-table th,.record-ranking-table td{padding:6px 8px;white-space:normal}
 .record-ranking-table .record-time{white-space:nowrap;font-weight:800}
@@ -1135,7 +1156,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.32.1</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.32.2</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1453,7 +1474,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.32.1";
+  state.version="pwa-v1.32.2";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -2119,7 +2140,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.32.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.32.2",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2717,7 +2738,7 @@ function trainCommand(){
       let oldI=Math.round(before[k]),newI=Math.round(p.stats[k]);
       if(newI>oldI)changes.push({stat:k,before:oldI,after:newI,up:newI-oldI});
     }
-    if(changes.length)growth.push({id:p.id,name:p.name,changes});
+    if(changes.length)growth.push({id:p.id,name:p.name,year:p.year,changes});
   }
   // CPU development continues, but roster condition/fatigue is no longer a game mechanic.
   for(let a of state.world){
@@ -4077,8 +4098,19 @@ function renamePlayer(id){
 function doScout(id){let a=state.world.find(x=>x.id===id);if(!a)return;if(state.points<1){alert("ポイント不足です");return}let p=scoutProbability(a);state.points--;if(rng()<=p){a.scouted=true;if(!state.recruits.includes(id))state.recruits.push(id);alert(`${a.name}のスカウトに成功しました。翌年度加入予定です。`)}else alert(`${a.name}のスカウトに失敗しました。`);renderAll()}
 
 function showTrainingGrowth(gains,onClose){
-  let body=gains.length
-    ? `<div class="growth-list">${gains.map(g=>`<div class="growth-athlete"><strong>${esc(g.name)}</strong><div>${g.changes.map(c=>`<span class="growth-chip">${STAT_LABEL[c.stat]} ${c.before} → ${c.after} <b>+${c.up}</b></span>`).join("")}</div></div>`).join("")}</div>`
+  let rows=gains.map(g=>({...g,year:g.year??state.players.find(p=>p.id===g.id)?.year})).sort((a,b)=>(a.year??99)-(b.year??99));
+  let body=rows.length
+    ? `<p class="growth-table-note">緑：上昇量（下段は練習前→後） ／ —：整数表示での変化なし。表は上下・左右にスクロールできます。</p>
+      <div class="training-growth-wrap" tabindex="0" aria-label="選手とステータスごとの練習結果"><table class="training-growth-table">
+      <colgroup><col class="growth-name-column">${STATS.map(()=>'<col>').join("")}</colgroup>
+      <thead><tr><th rowspan="2" scope="col" class="growth-name">選手・学年</th><th rowspan="2" scope="col">スタート</th><th rowspan="2" scope="col">メンタル</th>${["fr","ba","br","fly"].map(s=>`<th colspan="3" scope="colgroup" class="focus-${s}">${s==="fly"?"Fly":s==="fr"?"Fr":s==="ba"?"Ba":"Br"}</th>`).join("")}</tr>
+      <tr>${["fr","ba","br","fly"].map(s=>["スピード","スタミナ","ターン"].map(label=>`<th scope="col" class="focus-${s}">${label}</th>`).join("")).join("")}</tr></thead>
+      <tbody>${rows.map((g,i)=>{
+        let changes=Object.fromEntries(g.changes.map(c=>[c.stat,c]));
+        return `<tr data-athlete-id="${esc(g.id)}" data-year="${g.year||""}" class="${i>0&&g.year!==rows[i-1].year?"growth-grade-start":""}"><th scope="row" class="growth-name">${esc(g.name)}<span class="growth-grade">${g.year?g.year+"年":"学年不明"}</span></th>${STATS.map(k=>{
+          let c=changes[k];return c?`<td class="growth-changed" data-stat="${k}"><span class="growth-up">+${c.up}</span><span class="growth-values">${c.before}→${c.after}</span></td>`:`<td class="growth-unchanged" data-stat="${k}">—</td>`;
+        }).join("")}</tr>`;
+      }).join("")}</tbody></table></div>`
     : `<div class="notice">このターンは能力上昇なし</div>`;
   let m=showModal(`<div class="row" style="margin-bottom:12px"><h2 style="margin-right:auto">練習結果</h2><button id="next" class="primary">次へ</button></div>${body}`,onClose);
   m.classList.add("modal-training-result");
