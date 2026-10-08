@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.31', 'v1.30.2'));
+      data = Buffer.from(data.toString().replaceAll('v1.31.1', 'v1.31'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -445,10 +445,10 @@ test('actual March championship selects a graduating swimmer and April/save/relo
       let p=state.players.find(p=>p.year===4);
       p.stats=Object.fromEntries(STATS.map(k=>[k,200]));p.bestTimes.fr100=expectedTime(p,'fr100');
       state.season=2026;state.slot=94;state.activeCompetitionSeason=2026;state.activeCompetitionSlot=94;
-      // Fix meet randomness independently of how many draws roster generation uses.
-      state.rngSeed=1;
       let entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
-      let result=executeMeet('japan_championship',entries,{});
+      // This case verifies selection persistence; poor races are covered separately.
+      const originalRng=rng;let result;
+      try{rng=()=>.5;result=executeMeet('japan_championship',entries,{})}finally{rng=originalRng}
       let selected=result.selection.individual.fr100.includes(p.id),year=state.japanTeam.year;
       state.activeCompetitionSeason=null;state.activeCompetitionSlot=null;newSeason();saveLocal();
       return {id:p.id,name:p.name,selected,year,season:state.season};
@@ -517,7 +517,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.30.2 cache to v1.31 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.31 cache to v1.31.1 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -526,7 +526,7 @@ test('PWA upgrades its v1.30.2 cache to v1.31 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30.2'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.31'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -536,19 +536,19 @@ test('PWA upgrades its v1.30.2 cache to v1.31 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.31') && !keys.includes('swim-manager-pwa-v1.30.2');
+      return keys.includes('swim-manager-pwa-v1.31.1') && !keys.includes('swim-manager-pwa-v1.31');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.31/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.31');
+    assert.match(await page.title(), /v1\.31\.1/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.31.1');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.31/);
+    assert.match(await page.title(), /v1\.31\.1/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
