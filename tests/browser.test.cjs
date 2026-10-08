@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.34', 'v1.33.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.35', 'v1.34'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -708,7 +708,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.33.1 cache to v1.34 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.34 cache to v1.35 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -717,7 +717,7 @@ test('PWA upgrades its v1.33.1 cache to v1.34 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.33.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.34'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -727,19 +727,19 @@ test('PWA upgrades its v1.33.1 cache to v1.34 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.34') && !keys.includes('swim-manager-pwa-v1.33.1');
+      return keys.includes('swim-manager-pwa-v1.35') && !keys.includes('swim-manager-pwa-v1.34');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.34/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.34');
+    assert.match(await page.title(), /v1\.35/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.35');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.34/);
+    assert.match(await page.title(), /v1\.35/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -976,6 +976,11 @@ test('results highlight own swimmers and first standards while top ten marks act
     await page.locator('#nav button[data-page="home"]').click();await page.locator('#reputationInfoBtn').click();
     assert.ok((await page.locator('.modal-reputation').boundingBox()).width<560);
     await page.locator('.modal-reputation #x').click();
+    assert.equal(await page.locator('#showTeamTop10Btn').evaluate(b=>b.parentElement.id==='nav'&&b.previousElementSibling.dataset.page==='records'),true);
+    await page.locator('#showTeamTop10Btn').click();
+    assert.equal(await page.locator('#page-home.active').count(),1);
+    assert.equal(await page.locator('#teamTop10Event').inputValue(),'4x100fr');
+    await page.locator('#closeTeamTop10').click();
     await page.locator('#nav button[data-page="records"]').click();
     assert.equal(await page.locator('#nav button[data-page="records"]').innerText(),'記録');
     assert.equal(await page.locator('#page-records h1').innerText(),'記録');
