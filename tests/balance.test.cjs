@@ -228,7 +228,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.28.1');
+  assert.equal(result.version, 'pwa-v1.29');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -334,7 +334,7 @@ test('standard badges are first-ever per swimmer, event and meet, surviving hist
     let reload=updateResultHistory(p,'fr100',49.7,'intercollege','A決勝',1);
     let legacy=state.players[1];legacy.bestTimes.fr100=49.8;delete legacy.standardAchievements;delete legacy.standardAchievementVersion;
     let oldSave=updateResultHistory(legacy,'fr100',49.75,'japan_championship','予選',1);
-    return {first:first.newlyCleared,second:second.newlyCleared,third:third.newlyCleared,repeated:repeated.newlyCleared,reload:reload.newlyCleared,oldSave:oldSave.newlyCleared,repeatHtml:achievementBadges({achievement:repeated},'fr100')};
+    return {first:first.newlyCleared,second:second.newlyCleared,third:third.newlyCleared,repeated:repeated.newlyCleared,reload:reload.newlyCleared,oldSave:oldSave.newlyCleared,repeatHtml:achievementBadges({source:'PLAYER',achievement:repeated},'fr100')};
   })())`));
   assert.deepEqual(result.first,['関西カレッジ']);
   assert.deepEqual(result.second,['インカレ']);

@@ -28,7 +28,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.28.1', 'v1.28'));
+      data = Buffer.from(data.toString().replaceAll('v1.29', 'v1.28.1'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -54,11 +54,26 @@ function runtimeErrors(page) {
 }
 
 
-async function drainRaces(page) {
+async function advanceToRace(page) {
+  for(let steps=0;steps<100;steps++){
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
+    if(await page.locator('#raceCanvas').count())return;
+    if(await page.locator('.modal-meet-results').count())throw Error('Meet ended before the expected own race');
+    if(await page.locator('#startProgramRace').count())await page.locator('#startProgramRace').click();
+    else await page.locator('#nextEv').click();
+  }
+  throw Error('Own race was not reached');
+}
+
+async function drainRaces(page,program=[]) {
   const races=[];
-  for(let steps=0;steps<100;steps++) {
-    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #nextEv, .modal-meet-results'));
+  for(let steps=0;steps<200;steps++) {
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
     if(await page.locator('.modal-meet-results').count())return races;
+    if(await page.locator('#startProgramRace').count()){
+      program.push(await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase})));
+      await page.locator('#startProgramRace').click();continue;
+    }
     if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
     const title=await page.locator('.modal-race-live h2').innerText();races.push(title);
     const controls=await page.locator('#skipEvent').evaluate(el=>{let a=el.getBoundingClientRect(),m=el.closest('.modal').getBoundingClientRect();return {bottom:a.bottom,limit:m.bottom};});
@@ -196,7 +211,7 @@ test('world meet automatically animates own swimmers and mixed national relay, e
     });
     assert.equal(await page.locator('#entryMatrix').count(), 0);
     await page.locator('#goRace').click();
-    await page.locator('.modal-race-live').waitFor({ timeout: 60000 });
+    await advanceToRace(page);
     assert.match(await page.locator('.modal-race-live h2').innerText(), /100mFr/);
     assert.match(await page.locator('.race-entrants .own').innerText(), /PB/);
     const races=await drainRaces(page);
@@ -251,6 +266,24 @@ test('actual March championship selects a graduating swimmer and April/save/relo
   } finally { await context.close(); await app.close(); }
 });
 
+test('a world meet with no own representatives shows all four days as result tables and completes without race video', async () => {
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.evaluate(()=>{state.season=2027;state.slot=36;state.japanTeam=null;openMeetEntry('world_championship',36,2027);});
+    await page.locator('#goRace').click();
+    const program=[],races=await drainRaces(page,program);
+    assert.deepEqual(races,[]);
+    const days=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
+    assert.deepEqual(program,days.flatMap((events,i)=>['prelim','final'].flatMap(phase=>events.map(event=>({day:i+1,event,phase})))));
+    assert.equal(await page.locator('#resEv option').count(),12);
+    assert.equal(await page.locator('.modal-meet-results .result-own').count(),0);
+    await page.locator('.modal-meet-results #x').click();
+    assert.equal(await page.evaluate(()=>state.activeCompetitionSlot),null);
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
 test('a training turn can enter and finish a record meet through the UI', async () => {
   const app = await fixture();
   const context = await testContext({ viewport: { width: 1440, height: 900 } });
@@ -283,7 +316,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.28 cache to v1.28.1 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.28.1 cache to v1.29 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -292,7 +325,7 @@ test('PWA upgrades its v1.28 cache to v1.28.1 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.28'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.28.1'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -302,19 +335,19 @@ test('PWA upgrades its v1.28 cache to v1.28.1 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.28.1') && !keys.includes('swim-manager-pwa-v1.28');
+      return keys.includes('swim-manager-pwa-v1.29') && !keys.includes('swim-manager-pwa-v1.28.1');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.28\.1/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.28.1');
+    assert.match(await page.title(), /v1\.29/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.28\.1/);
+    assert.match(await page.title(), /v1\.29/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -397,6 +430,7 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
     });
     for(const meet of ['team_trial','kansai_college','intercollege','japan_open','joint_record','japan_championship']){
       await page.evaluate(meet=>{
+        delete window.expectedRaces;
         state=createState();state.points=10000;state.rngSeed=12345;
         for(let p of state.players.slice(0,4)){
           p.stats=Object.fromEntries(STATS.map(k=>[k,200]));
@@ -407,12 +441,21 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
         openMeetEntry(meet,8,2026,entries,relays);
       },meet);
       await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
-      await page.locator('.modal-race-live').waitFor({timeout:60000});
+      await page.waitForFunction(()=>Array.isArray(window.expectedRaces));
       const expected=await page.evaluate(()=>window.expectedRaces);
-      const seen=[];
-      for(let steps=0;steps<60;steps++){
-        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #nextEv, .modal-meet-results'));
+      const seen=[],program=[];
+      for(let steps=0;steps<200;steps++){
+        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
         if(await page.locator('.modal-meet-results').count())break;
+        if(await page.locator('#startProgramRace').count()){
+          const details=await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase,
+            listed:[...m.querySelectorAll('[data-program-event]')].map(r=>r.dataset.programEvent),
+            current:m.querySelector('.program-current')?.dataset.programEvent,
+            names:m.querySelector('.program-current td:nth-child(3)').textContent,
+            bounds:{modal:m.getBoundingClientRect().bottom,button:m.querySelector('#startProgramRace').getBoundingClientRect().bottom}}));
+          assert.equal(details.current,details.event);assert.ok(details.bounds.button<=details.bounds.modal+1,JSON.stringify(details));
+          program.push(details);await page.locator('#startProgramRace').click();continue;
+        }
         if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
         let next=expected[seen.length];assert.ok(next,`${meet}: extra race`);
         const title=await page.locator('.modal-race-live h2').innerText();assert.ok(title.includes(next.label),`${meet}: ${title}`);
@@ -424,6 +467,15 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
         await page.locator('#nextGroup').click();
       }
       assert.equal(seen.length,expected.length,meet);
+      if(['kansai_college','intercollege','japan_open','japan_championship'].includes(meet)){
+        const days=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
+        const withRelays=['kansai_college','intercollege'].includes(meet);
+        const wanted=days.flatMap((events,i)=>['prelim','final'].flatMap(phase=>events.filter(e=>withRelays||!e.startsWith('4x')).map(event=>({day:i+1,event,phase}))));
+        assert.deepEqual(program.map(({day,event,phase})=>({day,event,phase})),wanted,meet);
+        for(const p of program)assert.deepEqual(p.listed,days[p.day-1].filter(e=>withRelays||!e.startsWith('4x')),meet);
+        const ownName=await page.evaluate(()=>state.players[0].name);
+        assert.ok(program.filter(p=>p.event==='fr100'||p.event==='fr200').every(p=>p.names.includes(ownName)),meet);
+      }else assert.equal(program.length,0,meet);
       assert.ok(expected.some(q=>q.event==='fr100'),meet);
       assert.ok(expected.some(q=>q.event==='fr200'),meet);
       if(meet!=='team_trial')assert.ok(expected.some(q=>q.label==='A決勝'),meet);
@@ -462,11 +514,14 @@ test('results highlight own swimmers and first standards while top ten marks act
   const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
-    await page.evaluate(()=>{
+    const cpuPBCount=await page.evaluate(()=>{
       let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,200]));p.bestTimes.fr100=70;p.standardAchievementVersion=1;p.standardAchievements={};
       const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
       let result=executeMeet('joint_record',entries,{});result.entries=entries;showMeetResults(result,()=>{});
+      return [...result.events.fr100.prelim,...result.events.fr100.final].filter(x=>x.source==='CPU'&&x.achievement?.pb).length;
     });
+    assert.ok(cpuPBCount>0);
+    assert.equal(await page.locator('#resBody tr:not(.result-own) .pb-badge').count(),0);
     assert.ok(await page.locator('#resBody .result-own').count()>=4);
     assert.ok(await page.locator('#resBody .pb-badge').count()>0);
     assert.equal(await page.locator('#resBody .std-clear').count(),0);

@@ -187,7 +187,8 @@ test('a complete world meet keeps automatic Japan entries and animates only owne
     let mixedRelay=queue.some(q=>q.event==='4x100medley'&&q.rows.some(x=>x.athlete.organization==='日本'&&x.source==='PLAYER'));
     state.japanTeam.athletes.forEach(a=>a.ownAtSelection=false);state.players=[];
     let cpuOnly=worldOwnEntries(2027),empty=buildMeetRaceQueue({...meet,relayEntries:cpuOnly.relays},cpuOnly.individual);
-    return {groups,onlyOwn,mixedRelay,empty:empty.length,history:state.meetHistory.at(-1).meet,points:state.points};
+    let cpuProgram=buildMeetProgram({...meet,relayEntries:cpuOnly.relays},cpuOnly.individual);
+    return {groups,onlyOwn,mixedRelay,empty:empty.length,cpuProgram:cpuProgram.length,history:state.meetHistory.at(-1).meet,points:state.points};
   })()`);
   for (const row of result.groups) {
     assert.equal(row.count, row.expected);
@@ -197,8 +198,48 @@ test('a complete world meet keeps automatic Japan entries and animates only owne
   assert.equal(result.onlyOwn, true);
   assert.equal(result.mixedRelay, true);
   assert.equal(result.empty, 0);
+  assert.equal(result.cpuProgram, 30);
   assert.equal(result.history, 'world_championship');
   assert.equal(result.points, 0);
+});
+
+test('four-day meets finish every daily prelim before finals and place all three relays on the requested days', () => {
+  const run=game();
+  const rows=json(run,`(()=>{
+    const athlete=state.players[0],members=state.players.slice(0,4),race={total:60,trajectory:[{t:0,distance:0}],legs:[15,15,15,15]};
+    const individual={source:'PLAYER',athlete,heatLane:4,race};
+    const team={organization:state.playerUniversity,members,heatLane:4,race};
+    const selections=Object.fromEntries(EVENTS.map(e=>[e,[athlete.id]]));
+    return ['kansai_college','intercollege','japan_open','japan_championship','world_championship','joint_record','team_trial'].map(meet=>{
+      const result={meet,events:Object.fromEntries(EVENTS.map(e=>[e,{prelim:[individual],final:meet==='team_trial'?[]:[individual],heats:[[individual]]}])),
+        relays:RELAY_MEETS.has(meet)?RELAYS.map(e=>[e,[team],{prelim:[team],heats:[[team]]}]):[],
+        relayEntries:RELAY_MEETS.has(meet)?Object.fromEntries(RELAYS.map(e=>[e,members.map(p=>p.id)])):{} };
+      const program=buildMeetProgram(result,selections),queue=buildMeetRaceQueue(result,selections);
+      return {meet,program:program.map(({day,event,phase,showOverview})=>({day,event,phase,showOverview})),
+        races:queue.map(({day,event,phase,eventEnd})=>({day,event,phase,eventEnd})),days:meetEventDays(meet)};
+    });
+  })()`);
+  const fourDays=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
+  const singles=['fr50','fr100','fr200','fr400','ba100','ba200','br100','br200','fly100','fly200','im200','im400'];
+  for(const row of rows){
+    const four=!['joint_record','team_trial'].includes(row.meet),relays=['kansai_college','intercollege','world_championship','joint_record'].includes(row.meet);
+    const days=four?fourDays.map(events=>events.filter(e=>relays||!e.startsWith('4x'))):[[...singles,...(relays?['4x100fr','4x200fr','4x100medley']:[])]];
+    const phases=row.meet==='team_trial'?['team_trial']:['prelim','final'];
+    const expected=days.flatMap((events,i)=>phases.flatMap(phase=>events.map(event=>({day:i+1,event,phase}))));
+    assert.deepEqual(row.days,days,row.meet);
+    assert.deepEqual(row.program.map(({day,event,phase})=>({day,event,phase})),expected,row.meet);
+    assert.ok(row.program.every(p=>p.showOverview===four),row.meet);
+    assert.deepEqual(row.races.map(({day,event,phase})=>({day,event,phase})),expected,row.meet);
+    assert.ok(row.races.every(r=>r.eventEnd),row.meet);
+  }
+});
+
+test('race result PB badges are shown only for owned swimmers while standard badges remain independent', () => {
+  const run=game();
+  const rows=json(run,`['PLAYER','CPU'].map(source=>({source,html:achievementBadges({source,achievement:{pb:true,newlyCleared:['日本選手権']}},'fr100')}))`);
+  assert.match(rows[0].html,/自己PB/);
+  assert.doesNotMatch(rows[1].html,/自己PB/);
+  assert.ok(rows.every(row=>row.html.includes('初突破')));
 });
 
 test('dispatch data matches all twelve user-provided 2026 Pan Pacific standards', () => {
