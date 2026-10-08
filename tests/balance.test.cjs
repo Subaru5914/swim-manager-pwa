@@ -110,16 +110,18 @@ test('secondary growth sometimes occurs and sometimes leaves all untrained stats
   assert.ok(counts.secondary > 200 && counts.secondary < 400, JSON.stringify(counts));
 });
 
-test('all growth respects the 200 cap; no-focus training still works', () => {
+test('all growth respects the 200 cap; empty legacy focus becomes one specialty item', () => {
   const run = game();
   const result = JSON.parse(run(`JSON.stringify((()=>{
     let p={id:'test',name:'test',year:1,stats:Object.fromEntries(STATS.map(k=>[k,80])),growthProfile:{1:1}};
     state={players:[p],world:[],slot:1,rngSeed:1234,facilities:{},trainingFocus:{}};
-    trainCommand();let balanced=STATS.every(k=>p.stats[k]>80);
+    trainCommand();let focus=state.trainingFocus.test,primary=p.stats.fr_speed>80,unrelated=STATS.filter(k=>!k.startsWith('fr_')).every(k=>p.stats[k]===80);
     p.stats=Object.fromEntries(STATS.map(k=>[k,200]));state.trainingFocus.test=['fr_speed'];
-    trainCommand();return {balanced,cap:STATS.every(k=>p.stats[k]===200)};
+    trainCommand();return {focus,primary,unrelated,cap:STATS.every(k=>p.stats[k]===200)};
   })())`));
-  assert.equal(result.balanced, true);
+  assert.deepEqual(result.focus, ['fr_speed']);
+  assert.equal(result.primary, true);
+  assert.equal(result.unrelated, true);
   assert.equal(result.cap, true);
 });
 
@@ -225,7 +227,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.26');
+  assert.equal(result.version, 'pwa-v1.27');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
