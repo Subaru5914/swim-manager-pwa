@@ -244,7 +244,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.30');
+  assert.equal(result.version, 'pwa-v1.30.1');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -357,6 +357,21 @@ test('standard badges are first-ever per swimmer, event and meet, surviving hist
   assert.deepEqual(result.third,['ジャパンオープン','日本選手権']);
   assert.deepEqual(result.repeated,[]);assert.deepEqual(result.reload,[]);assert.deepEqual(result.oldSave,[]);
   assert.match(result.repeatHtml,/自己PB/);assert.doesNotMatch(result.repeatHtml,/突破/);
+});
+
+test('higher mental abilities progressively reduce actual poor races, including a mental value of zero',()=>{
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify([0,50,100,150,200].map(mental=>{
+    let p={stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:173])),bestTimes:{}};
+    p.bestTimes.fr100=expectedTime(p,'fr100')+8;
+    state.rngSeed=7654321;
+    let poor=0;
+    for(let i=0;i<8000;i++)if(raceTarget(p,'fr100')>p.bestTimes.fr100)poor++;
+    return {mental,rate:poor/8000};
+  }))`));
+  assert.ok(rows[0].rate>.18);
+  assert.ok(rows.at(-1).rate>.10&&rows.at(-1).rate<.14);
+  for(let i=1;i<rows.length;i++)assert.ok(rows[i].rate<rows[i-1].rate,JSON.stringify(rows));
 });
 
 test('poor races miss PB by distance-scaled margins even when abilities improve', () => {

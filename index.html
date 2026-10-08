@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.30</title>
+<title>大学競泳監督シミュレーション PWA版 v1.30.1</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -50,6 +50,11 @@ canvas{display:block;width:100%;background:#eaf8ff;border:1px solid var(--line);
 .growth-list{display:grid;gap:8px}.growth-athlete{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fbfdff}
 .growth-athlete strong{font-size:15px}.growth-chip{display:inline-block;margin:4px 4px 0 0;padding:5px 8px;border-radius:8px;background:#eaf7ef;color:#106b46;font-weight:800}
 .specialty{background:#e8f1ff;color:#155ba8;font-weight:800}
+.specialty-fr{background:#e5f4ff;color:#155b87;border-color:#6ab5e6}
+.specialty-ba{background:#e8f8f5;color:#186756;border-color:#61b9a9}
+.specialty-br{background:#fff0e7;color:#884716;border-color:#e9a16d}
+.specialty-fly{background:#fceaf2;color:#8f325d;border-color:#d989ad}
+.specialty-im{background:#f2ebff;color:#624095;border-color:#aa8be8}
 .pb-badge{display:inline-block;background:#fff0b8;color:#735800;border:1px solid #efcf58;border-radius:999px;padding:4px 9px;font-weight:900}
 .std-new{display:inline-block;background:#dff8eb;color:#086942;border:1px solid #66c89c;border-radius:999px;padding:4px 9px;font-weight:900;margin:2px}
 .std-clear{display:inline-block;background:#eaf3ff;color:#155ba8;border:1px solid #8db9ec;border-radius:999px;padding:3px 8px;margin:2px}
@@ -975,7 +980,6 @@ nav .nav-action:hover{background:#edf6ff}
 
   .modal-schedule{width:56%!important;max-width:540px!important;padding:5px!important}
   .modal-standards{width:66%!important;max-width:640px!important;padding:5px!important}
-  .modal-top10{width:68%!important;max-width:660px!important;padding:5px!important}
   .schedule-table-wrap{width:88%!important;max-width:88%!important}
   .standards-table-wrap{width:94%!important;max-width:94%!important}
   .top10-table-wrap{width:94%!important;max-width:94%!important}
@@ -1049,6 +1053,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .result-marks .pb-badge,.result-marks .std-new{font-size:11px;padding:2px 5px;margin:1px}
 .top10-active{background:#eaf4ff!important}
 .active-athlete{display:inline-block;color:#125faa;background:#d8eaff;border-radius:5px;font-size:11px;padding:1px 4px;font-weight:800;white-space:nowrap}
+#page-records .top10-table-wrap{width:100%!important;max-width:100%!important}
+#page-records .top10-table{width:100%!important;min-width:0!important;table-layout:auto!important}
+#page-records .top10-table th,#page-records .top10-table td{padding:6px 8px}
 .entrant-team{font-weight:700;color:#465d75}
 .modal-meet-program{width:min(1000px,calc(var(--game-vw) * 92));max-width:1000px;display:flex;flex-direction:column;overflow:hidden}
 .modal-meet-program>.row,.modal-meet-program>.notice{flex-shrink:0}
@@ -1112,7 +1119,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.30</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.30.1</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1142,7 +1149,6 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   <button data-page="facilities">施設</button>
   <button id="scheduleBtn" class="nav-action">大会日程</button>
   <button id="standardsBtn" class="nav-action">参加標準</button>
-  <button id="top10Btn" class="nav-action">自チーム10傑</button>
 </nav>
 
 <main>
@@ -1248,11 +1254,13 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 </section>
 
 <section id="page-records" class="page">
-  <div class="page-lead"><div><h1>記録</h1><p>歴代記録と卒業後の進路を確認できます。</p></div></div>
-  <div class="grid">
-    <div class="card"><h2>ゲーム内歴代記録</h2><div id="recordBook" class="table-wrap"></div></div>
-    <div class="card"><h2>卒業・進路アーカイブ</h2><div id="archiveTable" class="table-wrap"></div></div>
+  <div class="page-lead"><div><h1>記録</h1><p>自チームの歴代10傑と卒業後の進路を確認できます。</p></div></div>
+  <div class="card records-top10">
+    <div class="row"><h2 style="margin-right:auto">自チーム10傑</h2><label>種目 <select id="teamTop10Event"></select></label></div>
+    <p class="muted small">現役の自チーム選手を青色と学年で表示しています。</p>
+    <div id="teamTop10Body"></div>
   </div>
+  <div class="card"><h2>卒業・進路アーカイブ</h2><div id="archiveTable" class="table-wrap"></div></div>
 </section>
 
 <section id="page-scout" class="page">
@@ -1299,6 +1307,7 @@ const JAPAN_RECORD = {"fr50":21.67,"fr100":47.87,"fr200":104.54,"fr400":223.9,"b
 const EVENTS=["fr50","fr100","fr200","fr400","ba100","ba200","br100","br200","fly100","fly200","im200","im400"];
 const EVENT_LABEL={fr50:"50mFr",fr100:"100mFr",fr200:"200mFr",fr400:"400mFr",ba100:"100mBa",ba200:"200mBa",br100:"100mBr",br200:"200mBr",fly100:"100mFly",fly200:"200mFly",im200:"200mIM",im400:"400mIM"};
 const STATS=["start","mental","fr_speed","fr_stamina","fr_turn","ba_speed","ba_stamina","ba_turn","br_speed","br_stamina","br_turn","fly_speed","fly_stamina","fly_turn"];
+const DETAIL_STATS=["start","mental","fr_speed","fr_stamina","ba_speed","ba_stamina","br_speed","br_stamina","fly_speed","fly_stamina","fr_turn","ba_turn","fly_turn","br_turn"];
 const STAT_LABEL={
  start:"スタート",mental:"メンタル",
  fr_speed:"Fr スピード",fr_stamina:"Fr スタミナ",fr_turn:"Fr ターン",
@@ -1418,7 +1427,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.30";
+  state.version="pwa-v1.30.1";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -1634,6 +1643,7 @@ function recruitValue(a){
 
 function distanceOf(e){return +(e.match(/\d+/)||[100])[0]}
 function strokeForEvent(e){if(e.startsWith("fly"))return"fly";if(e.startsWith("im"))return"im";return e.slice(0,2)}
+function specialtyTag(e,prefix=""){let stroke=EVENTS.includes(e)?strokeForEvent(e):"fr";return `<span class="tag specialty specialty-${stroke}">${esc(prefix)}${EVENT_LABEL[e]||"—"}</span>`}
 function strokeAtDistance(event,d,total){let b=strokeForEvent(event);if(b!=="im")return b;let q=total/4;return ["fly","ba","br","fr"][Math.min(3,Math.floor(clamp(d,0,total-1e-7)/q))]}
 function statTriplet(p,stroke){return [p.stats[`${stroke}_speed`],p.stats[`${stroke}_stamina`],p.stats[`${stroke}_turn`]]}
 function eventProfile(p,e){
@@ -1685,7 +1695,7 @@ function expectedTime(p,e){
   return anchors[anchors.length-1][1];
 }
 function raceTarget(p,e,champ=true){
-  let base=expectedTime(p,e),mental=p.stats.mental||100,ability=abilityValue(p,e)*200;
+  let base=expectedTime(p,e),mental=clamp(Number.isFinite(p.stats.mental)?p.stats.mental:100,0,200),ability=abilityValue(p,e)*200;
   let effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;
   // Upper A can swim a dispatch-standard race on a good day; S remains stable.
   let upperA=clamp((ability-163)/2,0,1)*clamp((188-ability)/12,0,1);
@@ -2050,7 +2060,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.30",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.30.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2640,7 +2650,7 @@ function showFreshmenWelcome(){
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">新入生が入部しました！</h2><button id="freshClose" class="primary">歓迎して閉じる</button></div>
     <div class="notice"><b>${state.season}年度 4月前半</b>　新しい仲間を迎えました。</div>
     <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>選手</th><th>注目</th><th>専門種目</th><th>専門種目PB</th></tr></thead><tbody>${
-      rows.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${x.prodigy?'<span class="tag gold">逸材候補</span>':"-"}</td><td><span class="tag specialty">${EVENT_LABEL[x.specialty]}</span></td><td><b>${fmt(x.specialtyPB)}</b></td></tr>`).join("")
+      rows.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td>${x.prodigy?'<span class="tag gold">逸材候補</span>':"-"}</td><td>${specialtyTag(x.specialty)}</td><td><b>${fmt(x.specialtyPB)}</b></td></tr>`).join("")
     }</tbody></table></div>`);
   m.classList.add("modal-freshmen-welcome");
   m.querySelector("#freshClose").onclick=()=>{state.pendingFreshmenWelcome=[];closeModal();renderAll()};
@@ -2891,18 +2901,12 @@ function top10AthleteName(id,name){
   let p=state.players.find(p=>p.id===id);
   return p?`<b>${esc(p.name)}</b> <span class="active-athlete">現役 ${p.year}年</span>`:esc(name);
 }
-function showTop10(){
-  let opts=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><select id="t10ev">${opts}</select><button id="x">閉じる</button></div><p class="muted">現役の自チーム選手を青色と学年で表示しています。</p><div id="t10body"></div>`);
-  m.classList.add("modal-top10");
-  let render=()=>{
-    let e=m.querySelector("#t10ev").value,rows=state.teamTop10[e]||[];
-    m.querySelector("#t10body").innerHTML=`<div class="table-wrap compact-modal-table top10-table-wrap"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>{
+function renderTeamTop10(){
+    let e=document.getElementById("teamTop10Event").value,rows=state.teamTop10[e]||[];
+    document.getElementById("teamTop10Body").innerHTML=`<div class="table-wrap top10-table-wrap"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>{
       let active=r.kind==="relay"?r.members.some(x=>state.players.some(p=>p.id===x.id)):state.players.some(p=>p.id===r.athleteId);
       return `<tr class="${active?"top10-active":""}"><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>top10AthleteName(x.id,x.name)).join(" → "):top10AthleteName(r.athleteId,r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`;
     }).join("")||'<tr><td colspan="5">記録なし</td></tr>'}</tbody></table></div>`;
-  };
-  m.querySelector("#t10ev").onchange=render;m.querySelector("#x").onclick=()=>closeModal();render();
 }
 function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER"){state.playerUniversity=n;state.players.forEach(p=>p.organization=n)}else state.universities.find(x=>x.id===id).name=n;state.world.forEach(a=>{if(a.organization===old)a.organization=n});closeModal();showUniversities();renderAll()})}
 
@@ -3611,7 +3615,7 @@ function renderTrainingPlayers(){
         <td><span class="athlete-name">${esc(p.name)}</span></td>
         <td><span class="grade-pill">${p.year}年</span></td>
         <td><div class="training-player-rank"><span class="stat-rank-badge ${statRankClass(overall)}">${statRank(overall)}</span><b>${Math.round(overall)}</b></div></td>
-        <td><span class="tag specialty">${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span></td>
+        <td>${specialtyTag(ensurePlayerSpecialty(p))}</td>
       </tr>`;
     }).join("")
   }</tbody></table>`;
@@ -3665,7 +3669,7 @@ function renderRoster(){
         <td><span class="athlete-name">${esc(p.name)}</span></td>
         <td><span class="grade-pill">${p.year}年</span></td>
         <td><div class="player-overall"><span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span><span class="player-overall-meta"><b>${Math.round(overall)}</b><small class="muted">14能力平均</small></span></div></td>
-        <td><span class="tag specialty">${displayEvent?EVENT_LABEL[displayEvent]:EVENT_LABEL[p.specialty]}</span></td>
+        <td>${specialtyTag(displayEvent||p.specialty)}</td>
         <td><b>${fmt(displayEvent?p.bestTimes[displayEvent]:p.bestTimes[p.specialty])}</b></td>
         <td><div class="top-stat-list">${top.map(k=>`<span class="top-stat-chip"><span class="stat-rank-badge ${statRankClass(p.stats[k])}">${statRank(p.stats[k])}</span>${STAT_LABEL[k]} ${Math.round(p.stats[k])}</span>`).join("")}</div></td>
         <td><div class="action-group"><button data-detail="${p.id}">詳細</button><button data-specialty="${p.id}">専門変更</button><button data-rename="${p.id}">改名</button></div></td>
@@ -3692,8 +3696,10 @@ function renderRankings(){
     }).join("")||'<tr><td colspan="6"><div class="empty-state">まだ記録がありません。</div></td></tr>'}</tbody></table>`;
 }
 function renderRecords(){
-  refreshRecordBook();
-  document.getElementById("recordBook").innerHTML=`<table><thead><tr><th>種目</th><th>記録</th><th>選手</th><th>所属</th></tr></thead><tbody>${EVENTS.map(e=>{let r=state.recordBook[e];return`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(r?.time)}</td><td>${esc(r?.name||"-")}</td><td>${esc(r?.organization||"-")}</td></tr>`}).join("")}</tbody></table>`;
+  let selector=document.getElementById("teamTop10Event"),selected=selector.value||"fr100";
+  selector.innerHTML=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
+  selector.value=[...EVENTS,...RELAYS].includes(selected)?selected:"fr100";
+  selector.onchange=renderTeamTop10;renderTeamTop10();
 
   let career=(state.alumniCareer||[]).slice().reverse();
   let retired=state.retiredArchive.slice().reverse().filter(a=>a.organization===state.playerUniversity&&!career.some(c=>c.id===a.id));
@@ -3716,7 +3722,7 @@ function renderScout(){
         <td><span class="athlete-name">${esc(a.name)}</span></td>
         <td>${esc(a.organization)} <span class="grade-pill">高${a.grade}</span></td>
         <td>${titleText}</td>
-        <td><span class="tag specialty">${EVENT_LABEL[e]}</span> <b>${fmt(a.bestTimes[e])}</b></td>
+        <td>${specialtyTag(e)} <b>${fmt(a.bestTimes[e])}</b></td>
         <td><span class="prob-pill ${pc}">${pct.toFixed(1)}%</span></td>
         <td><button data-scout="${a.id}" class="primary">1ptで勧誘</button></td>
       </tr>`;
@@ -3767,16 +3773,17 @@ function showPlayerDetail(id){
   let historyOptions=`<option value="recent">新しい順</option><option value="event">種目順</option>`+
     EVENTS.map(e=>`<option value="only_${e}">${EVENT_LABEL[e]}のみ</option>`).join("");
   let overall=overallStatValue(p);
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} 選手詳細</h2><button id="x">閉じる</button></div>
-    <p><span class="tag specialty">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span> <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></p>
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)}</h2><button id="x">閉じる</button></div>
+    <p>${specialtyTag(ensurePlayerSpecialty(p),"専門 ")} <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></p>
     <div>${statRankLegendHtml()}</div>
     <div class="detail-stats-pb">
       <div class="detail-stat-section">
-        <h3>14能力</h3>
-        <div class="detail-stat-grid">${STATS.map(k=>{
+        <h3>ステータス</h3>
+        <div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
           let v=Math.round(p.stats[k]||0);
-          return`<div class="stat-detail-row ${statRankClass(v)}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
+          return`<div class="stat-detail-row ${statRankClass(v)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
         }).join("")}</div>
+        <p class="small muted">メンタルが高いほど、不調になりにくくなります。</p>
       </div>
       <div class="detail-pb-section">
         <h3>PB</h3>
@@ -3807,7 +3814,9 @@ function showSpecialtyPicker(id){
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} の専門種目</h2><button id="x">閉じる</button></div>
     <div class="row"><select id="spec">${options}</select><button id="ok" class="primary">決定</button></div>`);
   m.classList.add("modal-specialty-picker");
-  m.querySelector("#ok").onclick=()=>{p.specialty=m.querySelector("#spec").value;closeModal();renderRoster()};
+  let select=m.querySelector("#spec");
+  select.onchange=()=>{select.className="specialty-"+strokeForEvent(select.value)};select.onchange();
+  m.querySelector("#ok").onclick=()=>{p.specialty=select.value;closeModal();renderAll()};
   m.querySelector("#x").onclick=()=>closeModal();
 }
 
@@ -4088,7 +4097,6 @@ document.getElementById("advanceBtn").onclick=()=>{
   });
 };
 document.getElementById("standardsBtn").onclick=showStandards;
-document.getElementById("top10Btn").onclick=showTop10;
 document.getElementById("scheduleBtn").onclick=showMeetSchedule;
 document.getElementById("reputationInfoBtn").onclick=showReputationInfo;
 document.getElementById("universitiesBtn").onclick=()=>{

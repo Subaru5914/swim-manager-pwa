@@ -21,15 +21,16 @@ async function testContext(options) {
   return context;
 }
 
-async function fixture(legacy = false) {
+async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''}) {
   let oldVersion = legacy;
   const server = http.createServer((request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
     const name = pathname === '/' ? 'index.html' : pathname.slice(1);
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
+    if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.30', 'v1.29.3'));
+      data = Buffer.from(data.toString().replaceAll('v1.30.1', 'v1.30'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -68,7 +69,7 @@ async function cloudContext(server,options){
 }
 
 test('PC and iPhone account screens share real game saves, handle offline conflicts and retain login after reload',async()=>{
-  const app=await fixture(),server=cloudBackend(),pcContext=await cloudContext(server),phoneContext=await cloudContext(server,{viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  const app=await fixture(false,cloudConfig),server=cloudBackend(),pcContext=await cloudContext(server),phoneContext=await cloudContext(server,{viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
     const pc=await pcContext.newPage(),phone=await phoneContext.newPage(),errors=[runtimeErrors(pc),runtimeErrors(phone)];
     await pc.goto(app.url);await pc.waitForFunction(()=>cloudSync?.config);
@@ -396,7 +397,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.29.3 cache to v1.30 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.30 cache to v1.30.1 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -405,7 +406,7 @@ test('PWA upgrades its v1.29.3 cache to v1.30 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.3'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -415,19 +416,19 @@ test('PWA upgrades its v1.29.3 cache to v1.30 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.30') && !keys.includes('swim-manager-pwa-v1.29.3');
+      return keys.includes('swim-manager-pwa-v1.30.1') && !keys.includes('swim-manager-pwa-v1.30');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.30/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30');
+    assert.match(await page.title(), /v1\.30\.1/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30.1');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.30/);
+    assert.match(await page.title(), /v1\.30\.1/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -650,21 +651,23 @@ test('results highlight own swimmers and first standards while top ten marks act
       upsertIndividualTop10('fr100',graduate,48.4,'intercollege','決勝');
       upsertRelayTop10('4x100fr',[p,state.players[1],state.players[2],graduate],200,'intercollege');
     });
-    await page.locator('#top10Btn').click();await page.locator('#t10ev').selectOption('fr100');
+    await page.locator('#nav button[data-page="records"]').click();await page.locator('#teamTop10Event').selectOption('fr100');
     assert.ok(await page.locator('.top10-active .active-athlete').count()>0);
     const former=page.locator('.top10-table tr').filter({hasText:'卒業した選手'});
     assert.equal(await former.locator('.active-athlete').count(),0);
-    await page.locator('#t10ev').selectOption('4x100fr');assert.equal(await page.locator('.active-athlete').count(),3);
-    await page.locator('.modal-top10 #x').click();await page.locator('#reputationInfoBtn').click();
+    await page.locator('#teamTop10Event').selectOption('4x100fr');assert.equal(await page.locator('.active-athlete').count(),3);
+    await page.locator('#nav button[data-page="home"]').click();await page.locator('#reputationInfoBtn').click();
     assert.ok((await page.locator('.modal-reputation').boundingBox()).width<560);
     await page.locator('.modal-reputation #x').click();
     await page.locator('#nav button[data-page="records"]').click();
     assert.equal(await page.locator('#nav button[data-page="records"]').innerText(),'記録');
     assert.equal(await page.locator('#page-records h1').innerText(),'記録');
     assert.equal(await page.locator('#meetHistory,[data-podium]').count(),0);
-    assert.equal(await page.locator('#recordBook tbody tr').count(),12);
+    assert.equal(await page.locator('#teamTop10Event option').count(),15);
+    assert.equal(await page.locator('#teamTop10Event').inputValue(),'4x100fr');
+    assert.equal(await page.locator('#recordBook,#top10Btn').count(),0);
     assert.equal(await page.locator('#archiveTable').count(),1);
-    assert.doesNotMatch(await page.locator('#page-records').innerText(),/大会履歴|表彰台/);
+    assert.doesNotMatch(await page.locator('#page-records').innerText(),/大会履歴|表彰台|ゲーム内歴代記録/);
     assert.deepEqual(errors,[]);
   }finally{await context.close();await app.close();}
 });
