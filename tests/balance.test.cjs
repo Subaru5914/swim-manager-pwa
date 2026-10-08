@@ -173,6 +173,64 @@ test('distance still changes the speed/stamina balance', () => {
   assert.ok(result.short > result.long);
 });
 
+test('balanced A speed and stamina reach medley championship pace while weak strokes still cost time',()=>{
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify((()=>{
+    const p={stats:Object.fromEntries(STATS.map(k=>[k,80]))};
+    const swimming=['fr','ba','br','fly'].flatMap(s=>['speed','stamina'].map(k=>s+'_'+k));
+    swimming.forEach(k=>p.stats[k]=163);
+    return ['im200','im400'].map(e=>{
+      const base=expectedTime(p,e),champion=Math.max(JAPAN_RECORD[e]*1.01,INTERCOLLEGE_A_FINAL_REFERENCE[e]*.985);
+      const gains=swimming.map(k=>{const raised=deepClone(p);raised.stats[k]+=10;return base-expectedTime(raised,e)});
+      const weak=deepClone(p);weak.stats.br_speed=80;weak.stats.br_stamina=80;
+      const technique=deepClone(p);technique.stats.start=200;['fr','ba','br','fly'].forEach(s=>technique.stats[s+'_turn']=200);
+      const zero=deepClone(p);swimming.forEach(k=>zero.stats[k]=0);
+      const oldAbility=(()=>{const [sp,st,tr,d]=eventProfile(p,e,true),sw={200:.28,400:.40}[d],vw=.72-sw*.35;return (vw*sp+sw*st+.11*tr+.07*p.stats.start)/(vw*200+sw*200+.11*200+.07*200)})();
+      return {e,base,champion,gains,weak:expectedTime(weak,e),technique:expectedTime(technique,e),zero:expectedTime(zero,e),legacyAbility:abilityValue(p,e,true),oldAbility,
+        nonMedley:EVENTS.filter(x=>!x.startsWith('im')).map(x=>({x,current:abilityValue(p,x),legacy:abilityValue(p,x,true)}))};
+    });
+  })())`));
+  for(const row of rows){
+    assert.ok(row.base<=row.champion*1.002,JSON.stringify(row));
+    assert.ok(row.gains.every(g=>g>0),JSON.stringify(row));
+    assert.ok(row.weak>row.base*1.01,JSON.stringify(row));
+    assert.ok(row.technique<row.base&&row.base-row.technique<row.champion*.003,JSON.stringify(row));
+    assert.ok(Number.isFinite(row.zero)&&row.zero>row.weak,JSON.stringify(row));
+    assert.ok(Math.abs(row.legacyAbility-row.oldAbility)<1e-12,row.e);
+    for(const event of row.nonMedley)assert.equal(event.current,event.legacy,event.x);
+  }
+});
+
+test('balanced A medley swimmers can win against the strongest college entrants and share the CPU race clock',()=>{
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify((()=>{
+    const p={id:'medley-A-player',stats:Object.fromEntries(STATS.map(k=>[k,80])),bestTimes:{}};
+    for(const s of ['fr','ba','br','fly'])for(const k of ['speed','stamina'])p.stats[s+'_'+k]=163;
+    const cpu={...deepClone(p),id:'medley-A-cpu',category:'university'};
+    state.players.push(p);
+    const entries=buildCpuCollegeEntries('intercollege'),byId=new Map(state.world.map(a=>[a.id,a]));
+    return ['im200','im400'].map(e=>{
+      p.bestTimes[e]=expectedTime(p,e);
+      const field=entries[e].map(id=>byId.get(id)).sort((a,b)=>expectedTime(a,e)-expectedTime(b,e)).slice(0,7);
+      let wins=0,own=[],sameClock=true;
+      for(let trial=0;trial<12;trial++){
+        state.rngSeed=1234+trial;const race=simulateMeetRace(p,e,'intercollege',false);own.push(race.total);
+        state.rngSeed=1234+trial;const match=simulateMeetRace(cpu,e,'intercollege',false);
+        sameClock&&=race.total===match.total&&race.physics.targetTime===match.physics.targetTime;
+        const rivals=field.map(a=>simulateMeetRace(a,e,'intercollege',false).total);
+        if(race.total<Math.min(...rivals))wins++;
+      }
+      return {e,wins,sameClock,field:field.length,own,pb:p.bestTimes[e]};
+    });
+  })())`));
+  for(const row of rows){
+    assert.equal(row.field,7);assert.equal(row.sameClock,true,row.e);
+    assert.ok(row.wins>=6,JSON.stringify(row));
+    assert.ok(row.own.some(time=>time>row.pb+.8),JSON.stringify(row));
+    assert.ok(new Set(row.own).size>=8,JSON.stringify(row));
+  }
+});
+
 test('prodigy stats are random and capped at low A, including already strong arrivals', () => {
   const run = game();
   const result = JSON.parse(run(`JSON.stringify((()=>{
@@ -349,7 +407,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.33.1');
+  assert.equal(result.version, 'pwa-v1.34');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);

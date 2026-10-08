@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.33.1', 'v1.33'));
+      data = Buffer.from(data.toString().replaceAll('v1.34', 'v1.33.1'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -459,6 +459,64 @@ test('compact details have close labels, narrow stat boxes and right-aligned num
   } finally { await app.close(); }
 });
 
+test('roster specialty PB groups follow event order and detail/training edits persist together',async()=>{
+  const app=await fixture();
+  try{
+    for(const mobile of [false,true]){
+      const context=await testContext({viewport:mobile?{width:390,height:844}:{width:1440,height:900},isMobile:mobile,hasTouch:mobile});
+      try{
+        const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+        const fixture=await page.evaluate(()=>{
+          const athletes=[];
+          EVENTS.forEach((e,i)=>{
+            for(const suffix of ['slow','fast','missing']){
+              const p=deepClone(state.players[i]);p.id='sort-'+e+'-'+suffix;p.name=e+' '+suffix;p.specialty=e;
+              p.bestTimes[e]=suffix==='missing'?null:1000-i*50+(suffix==='slow'?1:0);athletes.push(p);
+            }
+          });
+          state.players=athletes.reverse();renderAll();
+          return {expected:EVENTS.flatMap(e=>['fast','slow','missing'].map(s=>'sort-'+e+'-'+s)),original:state.players.map(p=>p.id),
+            stable:JSON.stringify(state.players.map(p=>({id:p.id,stats:p.stats,bestTimes:p.bestTimes})))};
+        });
+        await page.locator('#nav [data-page="roster"]').click();await page.locator('#rosterSortMode').selectOption('specialty_pb');
+        assert.deepEqual(await page.locator('#rosterTable [data-detail]').evaluateAll(buttons=>buttons.map(b=>b.dataset.detail)),fixture.expected);
+        assert.deepEqual(await page.evaluate(()=>state.players.map(p=>p.id)),fixture.original);
+        const id='sort-fr100-fast';
+        const others=await page.evaluate(id=>JSON.stringify(Object.fromEntries(Object.entries(state.trainingFocus).filter(([key])=>key!==id))),id);
+        await page.locator(`#rosterTable [data-detail="${id}"]`).click();
+        await page.locator('[data-detail-focus="fly_stamina"]').click();
+        assert.equal(await page.locator('[data-detail-focus][aria-checked="true"]').count(),1);
+        assert.deepEqual(await page.evaluate(id=>state.trainingFocus[id],id),['fly_stamina']);
+        assert.equal(await page.evaluate(()=>selectedTrainingId),id);
+        assert.equal(await page.evaluate(id=>JSON.stringify(Object.fromEntries(Object.entries(state.trainingFocus).filter(([key])=>key!==id))),id),others);
+        await page.locator('[data-detail-focus="fly_stamina"]').click();
+        assert.deepEqual(await page.evaluate(id=>state.trainingFocus[id],id),['fly_stamina']);
+        await page.locator('#detailSpecialtyBtn').click();await page.locator('#spec').selectOption('br200');await page.locator('.modal-specialty-picker #ok').click();
+        assert.equal(await page.locator('.modal-player-detail .specialty-br').count(),1);
+        assert.equal(await page.locator('[data-detail-focus="fly_stamina"][aria-checked="true"]').count(),1);
+        await page.locator('#detailSpecialtyBtn').click();await page.locator('#spec').selectOption('fr50');await page.locator('.modal-specialty-picker #x').click();
+        assert.equal(await page.locator('.modal-player-detail .specialty-br').count(),1);
+        assert.equal(await page.evaluate(id=>state.players.find(p=>p.id===id).specialty,id),'br200');
+        await page.locator('.modal-player-detail #x').click();await page.locator('#nav [data-page="training"]').click();
+        assert.equal(await page.locator('#trainingSpecialty .specialty-br').count(),1);
+        assert.equal(await page.locator('#trainingPlan [data-focus="fly_stamina"].selected').count(),1);
+        await page.locator('#trainingSpecialtyBtn').click();await page.locator('#spec').selectOption('im400');await page.locator('.modal-specialty-picker #ok').click();
+        assert.equal(await page.locator('#page-training.active').count(),1);
+        assert.match(await page.locator('#trainingSpecialty').innerText(),/400mIM/);
+        assert.equal(await page.locator('#trainingPlan [data-focus="fly_stamina"].selected').count(),1);
+        await page.locator('#saveBtn').click();await page.reload();
+        assert.equal(await page.evaluate(id=>state.players.find(p=>p.id===id).specialty,id),'im400');
+        assert.deepEqual(await page.evaluate(id=>state.trainingFocus[id],id),['fly_stamina']);
+        assert.equal(await page.evaluate(()=>JSON.stringify(state.players.map(p=>({id:p.id,stats:p.stats,bestTimes:p.bestTimes})))),fixture.stable);
+        await page.locator('#nav [data-page="roster"]').click();await page.locator(`#rosterTable [data-detail="${id}"]`).click();
+        assert.equal(await page.locator('[data-detail-focus="fly_stamina"][aria-checked="true"]').count(),1);
+        assert.equal(await page.locator('.modal-player-detail .specialty-im').count(),1);
+        assert.deepEqual(errors,[]);
+      }finally{await context.close();}
+    }
+  }finally{await app.close();}
+});
+
 test('training requires one item, reset chooses specialty, and specialty popup stays narrow', async () => {
   const app = await fixture();
   try {
@@ -650,7 +708,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.33 cache to v1.33.1 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.33.1 cache to v1.34 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -659,7 +717,7 @@ test('PWA upgrades its v1.33 cache to v1.33.1 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.33'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.33.1'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -669,19 +727,19 @@ test('PWA upgrades its v1.33 cache to v1.33.1 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.33.1') && !keys.includes('swim-manager-pwa-v1.33');
+      return keys.includes('swim-manager-pwa-v1.34') && !keys.includes('swim-manager-pwa-v1.33.1');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.33\.1/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.33.1');
+    assert.match(await page.title(), /v1\.34/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.34');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.33\.1/);
+    assert.match(await page.title(), /v1\.34/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

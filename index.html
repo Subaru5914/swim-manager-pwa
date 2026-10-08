@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.33.1</title>
+<title>大学競泳監督シミュレーション PWA版 v1.34</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -992,6 +992,8 @@ nav .nav-action:hover{background:#edf6ff}
 }
 .modal-player-detail .stat-detail-value{display:grid;grid-template-columns:22px 3ch;gap:5px;align-items:center}
 .modal-player-detail .stat-number{min-width:0;width:3ch;text-align:right;font-variant-numeric:tabular-nums}
+.modal-player-detail button.stat-detail-row{min-height:0;text-align:left}
+.modal-player-detail .detail-training-selected{outline:2px solid #172236;outline-offset:-2px}
 .modal-player-detail .pb-detail-row{
   grid-template-columns:max-content max-content;justify-content:start;column-gap:8px;
 }
@@ -1161,7 +1163,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.33.1</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.34</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1229,6 +1231,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
         <div>
           <h2 id="trainingPlayerTitle" style="margin-bottom:2px">重点練習</h2>
           <div id="trainingFocusNote" class="muted small">練習する能力は必ず1項目を選択します。</div>
+          <div id="trainingSpecialty" class="row" style="margin-top:4px"></div>
         </div>
         <button id="clearFocusBtn" style="margin-left:auto">専門に合わせる</button>
         <button id="copyPlanBtn">この重点設定を全選手へコピー</button>
@@ -1474,7 +1477,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.33.1";
+  state.version="pwa-v1.34";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -1707,13 +1710,26 @@ function strokeForEvent(e){if(e.startsWith("fly"))return"fly";if(e.startsWith("i
 function specialtyTag(e,prefix=""){let stroke=EVENTS.includes(e)?strokeForEvent(e):"fr";return `<span class="tag specialty specialty-${stroke}">${esc(prefix)}${EVENT_LABEL[e]||"—"}</span>`}
 function strokeAtDistance(event,d,total){let b=strokeForEvent(event);if(b!=="im")return b;let q=total/4;return ["fly","ba","br","fr"][Math.min(3,Math.floor(clamp(d,0,total-1e-7)/q))]}
 function statTriplet(p,stroke){return [p.stats[`${stroke}_speed`],p.stats[`${stroke}_stamina`],p.stats[`${stroke}_turn`]]}
-function eventProfile(p,e){
+function eventProfile(p,e,legacyIm=false){
   let d=distanceOf(e),s=strokeForEvent(e);
   if(s!=="im"){let [sp,st,tr]=statTriplet(p,s);return [sp,st,tr,d]}
   let ss=["fr","ba","br","fly"];let avg=k=>ss.reduce((a,x)=>a+p.stats[`${x}_${k}`],0)/4;
-  return [avg("speed"),avg("stamina"),avg("turn"),d];
+  // A weak stroke limits medley performance even when the other three are strong.
+  let balanced=k=>ss.some(x=>p.stats[`${x}_${k}`]<=0)?0:4/ss.reduce((a,x)=>a+1/p.stats[`${x}_${k}`],0);
+  return [legacyIm?avg("speed"):balanced("speed"),legacyIm?avg("stamina"):balanced("stamina"),avg("turn"),d];
 }
-function abilityValue(p,e){let [sp,st,tr,d]=eventProfile(p,e),sw={50:.05,100:.15,200:.28,400:.40}[d],vw=.72-sw*.35;let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;return clamp(raw/mx,0,1)}
+function abilityValue(p,e,legacyIm=false){
+  let [sp,st,tr,d]=eventProfile(p,e,legacyIm);
+  if(strokeForEvent(e)==="im"&&!legacyIm){
+    // Four-stroke speed and stamina set the rank; technique makes a small adjustment.
+    let speedWeight=d===200?.60:.45,surface=sp*speedWeight+st*(1-speedWeight);
+    let technique=tr*.65+p.stats.start*.35;
+    return clamp((surface+clamp((technique-surface)*.02,-2,2))/200,0,1);
+  }
+  let sw={50:.05,100:.15,200:.28,400:.40}[d],vw=.72-sw*.35;
+  let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;
+  return clamp(raw/mx,0,1);
+}
 function entryEventSpeedStamina(p,e){
   let [speed,stamina]=eventProfile(p,e);
   return{speed:Math.round(speed),stamina:Math.round(stamina)};
@@ -1738,8 +1754,8 @@ const INTERCOLLEGE_A_FINAL_REFERENCE={
   im200:118.84,
   im400:255.98
 };
-function expectedTime(p,e,legacyUpperA=false){
-  let ability=abilityValue(p,e)*200;
+function expectedTime(p,e,legacyModel=false){
+  let ability=abilityValue(p,e,legacyModel)*200;
   let jr=JAPAN_RECORD[e];
   let finalTime=INTERCOLLEGE_A_FINAL_REFERENCE[e];
   // Regional final / national final / national champion / Japanese record.
@@ -1748,7 +1764,7 @@ function expectedTime(p,e,legacyUpperA=false){
   // Spread late A across its full ability range instead of reaching near-S at 167.
   let upperA=Math.min(champion*.9975,Math.max(jr*1.004,dispatchStandard(e)*1.005));
   let anchors=[[0,jr*1.50],[113,KANSAI_COLLEGE_WIN_TARGET[e]*1.02],
-    [138,finalTime],[163,champion],[legacyUpperA?167:175,upperA],
+    [138,finalTime],[163,champion],[legacyModel?167:175,upperA],
     [188,jr],[200,Math.min(jr*ELITE_JR_FACTOR,WORLD_REFERENCE.individual[e])]];
   for(let i=1;i<anchors.length;i++){
     let [hi,time]=anchors[i],[lo,prev]=anchors[i-1];
@@ -2167,7 +2183,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.33.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:3,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.34",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:3,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3939,12 +3955,14 @@ function renderTrainingPlayers(){
 }
 function renderTrainingPlan(){
   let p=state.players.find(x=>x.id===selectedTrainingId),box=document.getElementById("trainingPlan");
-  if(!p){box.innerHTML="";return}
+  if(!p){box.innerHTML="";document.getElementById("trainingSpecialty").innerHTML="";return}
   if(!state.trainingFocus)state.trainingFocus={};
   let focus=ensureTrainingFocus(p);
   let overall=overallStatValue(p);
   document.getElementById("trainingPlayerTitle").innerHTML=`${esc(p.name)} の重点練習 <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span>`;
   document.getElementById("trainingFocusNote").textContent=`重点1項目: ${STAT_LABEL[focus[0]]} ／ 施設Lv.${state.facilities[focus[0]]||0}`;
+  document.getElementById("trainingSpecialty").innerHTML=`${specialtyTag(ensurePlayerSpecialty(p),"専門 ")} <button id="trainingSpecialtyBtn">専門変更</button>`;
+  document.getElementById("trainingSpecialtyBtn").onclick=()=>showSpecialtyPicker(p.id);
   box.setAttribute("role","radiogroup");box.setAttribute("aria-label","練習する能力を1つ選択");
   box.innerHTML=STATS.map(k=>{
     let v=Math.round(p.stats[k]||0);
@@ -3965,7 +3983,7 @@ function renderRoster(){
   if(mode==="grade_asc")rows.sort((a,b)=>a.year-b.year||a.name.localeCompare(b.name,"ja"));
   else if(mode==="grade_desc")rows.sort((a,b)=>b.year-a.year||a.name.localeCompare(b.name,"ja"));
   else if(mode==="overall_desc")rows.sort((a,b)=>overallStatValue(b)-overallStatValue(a)||a.year-b.year);
-  else if(mode==="specialty_pb")rows.sort((a,b)=>(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:99999)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:99999));
+  else if(mode==="specialty_pb")rows.sort((a,b)=>EVENTS.indexOf(a.specialty)-EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja"));
   else if(mode.startsWith("event_")){
     displayEvent=mode.slice(6);
     rows.sort((a,b)=>(Number.isFinite(a.bestTimes[displayEvent])?a.bestTimes[displayEvent]:99999)-(Number.isFinite(b.bestTimes[displayEvent])?b.bestTimes[displayEvent]:99999)||a.year-b.year);
@@ -4106,14 +4124,16 @@ function showPlayerDetail(id){
     EVENTS.map(e=>`<option value="only_${e}">${EVENT_LABEL[e]}のみ</option>`).join("");
   let overall=overallStatValue(p);
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)}</h2><button id="x">閉じる</button></div>
-    <p>${specialtyTag(ensurePlayerSpecialty(p),"専門 ")} <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></p>
+    <div class="row" style="margin:8px 0">${specialtyTag(ensurePlayerSpecialty(p),"専門 ")} <button id="detailSpecialtyBtn">専門変更</button> <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></div>
     <div>${statRankLegendHtml()}</div>
     <div class="detail-stats-pb">
       <div class="detail-stat-section">
         <h3>ステータス</h3>
-        <div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
+        <p class="small muted">ステータスを押して重点練習を1項目選択</p>
+        <div id="detailTrainingNote" class="small" style="margin-bottom:6px"></div>
+        <div class="detail-stat-grid" role="radiogroup" aria-label="練習する能力を1つ選択">${DETAIL_STATS.map(k=>{
           let v=Math.round(p.stats[k]||0);
-          return`<div class="stat-detail-row ${statRankClass(v)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><div class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div></div>`;
+          return`<button type="button" role="radio" class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" data-detail-focus="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></button>`;
         }).join("")}</div>
         <p class="small muted">メンタルが高いほど、不調になりにくくなります。</p>
       </div>
@@ -4125,6 +4145,17 @@ function showPlayerDetail(id){
     <div class="row" style="margin-top:14px"><h3 style="margin-right:auto">戦績</h3><select id="historySort">${historyOptions}</select></div>
     <div id="historyTable" class="table-wrap"></div>`);
   m.classList.add("modal-player-detail");
+  const renderDetailFocus=()=>{
+    let focus=ensureTrainingFocus(p)[0];
+    m.querySelector("#detailTrainingNote").textContent=`重点練習：${STAT_LABEL[focus]} ／ 施設Lv.${state.facilities[focus]||0}`;
+    m.querySelectorAll("[data-detail-focus]").forEach(b=>{let selected=b.dataset.detailFocus===focus;b.classList.toggle("detail-training-selected",selected);b.setAttribute("aria-checked",String(selected))});
+  };
+  m.querySelectorAll("[data-detail-focus]").forEach(b=>b.onclick=()=>{
+    state.trainingFocus[p.id]=[b.dataset.detailFocus];selectedTrainingId=p.id;
+    renderDetailFocus();renderTrainingPlayers();scheduleAutoSave();
+  });
+  m.querySelector("#detailSpecialtyBtn").onclick=()=>showSpecialtyPicker(id,()=>showPlayerDetail(id));
+  renderDetailFocus();
   const body=m.querySelector("#historyTable"),sortSel=m.querySelector("#historySort");
   function renderHistory(){
     let mode=sortSel.value,rows=[...p.raceHistory];
@@ -4140,7 +4171,7 @@ function showPlayerDetail(id){
   sortSel.onchange=renderHistory;renderHistory();
   m.querySelector("#x").onclick=()=>closeModal();
 }
-function showSpecialtyPicker(id){
+function showSpecialtyPicker(id,onReturn=null){
   let p=state.players.find(x=>x.id===id);if(!p)return;
   let options=EVENTS.map(e=>`<option value="${e}" ${p.specialty===e?"selected":""}>${EVENT_LABEL[e]}</option>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} の専門種目</h2><button id="x">閉じる</button></div>
@@ -4148,8 +4179,8 @@ function showSpecialtyPicker(id){
   m.classList.add("modal-specialty-picker");
   let select=m.querySelector("#spec");
   select.onchange=()=>{select.className="specialty-"+strokeForEvent(select.value)};select.onchange();
-  m.querySelector("#ok").onclick=()=>{p.specialty=select.value;closeModal();renderAll()};
-  m.querySelector("#x").onclick=()=>closeModal();
+  m.querySelector("#ok").onclick=()=>{p.specialty=select.value;closeModal();renderAll();if(onReturn)onReturn()};
+  m.querySelector("#x").onclick=()=>closeModal(onReturn);
 }
 
 function applyPlayerRename(id,newName){
