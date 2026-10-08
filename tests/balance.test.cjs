@@ -109,7 +109,7 @@ test('v2 CPU saves gain event differences once while player, alumni, awards and 
       own:JSON.stringify(state.players)===own,alumni:JSON.stringify(state.world.find(a=>a.id===alumni.id))===savedAlumni,
       records:JSON.stringify(state.recordRankings)===records,titles:JSON.stringify(state.world.filter(a=>!a.alumni).flatMap(a=>a.accolades))===titles};
   })())`));
-  assert.equal(result.version,4);assert.ok(result.profiles&&result.once&&result.own&&result.alumni&&result.records&&result.titles&&result.titlesValid,JSON.stringify(result));
+  assert.equal(result.version,5);assert.ok(result.profiles&&result.once&&result.own&&result.alumni&&result.records&&result.titles&&result.titlesValid,JSON.stringify(result));
   for(const row of result.eventSpreads)assert.ok(row.relativeSD>.012,JSON.stringify(row));
 });
 
@@ -409,7 +409,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.35');
+  assert.equal(result.version, 'pwa-v1.36');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -572,7 +572,7 @@ test('CPU universities and swimmers have wider differences and legacy diversity 
     return {repRange:Math.max(...teams.map(u=>u.rep))-Math.min(...teams.map(u=>u.rep)),abilityRange:Math.max(...teams.map(u=>u.mean))-Math.min(...teams.map(u=>u.mean)),preserved:own===JSON.stringify(state.players[0]),alumniPreserved:JSON.stringify(state.world.find(a=>a.id===alumni.id))===oldAlumni,once:first===JSON.stringify(state.world)&&reps===JSON.stringify(state.universities),version:state.cpuDiversityVersion};
   })())`));
   assert.ok(result.repRange>280,JSON.stringify(result));assert.ok(result.abilityRange>28,JSON.stringify(result));
-  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,4);
+  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,5);
 });
 
 test('school swimmers have lower overall levels and category leaders vary between close races and standouts',()=>{
@@ -582,7 +582,7 @@ test('school swimmers have lower overall levels and category leaders vary betwee
     samples.push(JSON.parse(run(`JSON.stringify(['middle','high','university','adult'].map(category=>{
       const athletes=state.world.filter(a=>a.category===category),values=athletes.map(overallStatValue).sort((a,b)=>a-b);
       return {category,mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
-        events:EVENTS.map(e=>{const times=athletes.map(a=>a.bestTimes[e]).sort((a,b)=>a-b);return{e,close:(times[2]-times[0])/times[0],gap:(times[1]-times[0])/times[0],spread:(times[19]-times[0])/times[0],mean:times.reduce((a,b)=>a+b)/times.length}})};
+        events:EVENTS.map(e=>{const times=athletes.map(a=>a.bestTimes[e]).sort((a,b)=>a-b),mean=times.reduce((a,b)=>a+b)/times.length;return{e,close:(times[2]-times[0])/times[0],gap:(times[1]-times[0])/times[0],relativeSD:Math.sqrt(times.reduce((s,t)=>s+(t-mean)**2,0)/times.length)/mean,mean}})};
     }))`)));
   }
   for(const rows of samples){
@@ -597,21 +597,24 @@ test('school swimmers have lower overall levels and category leaders vary betwee
     const fields=samples.flatMap(rows=>rows[i].events);
     const close=fields.filter(e=>e.close<.004).length,standouts=fields.filter(e=>e.gap>.008).length;
     assert.ok(close>=2&&standouts>=3,JSON.stringify({category:samples[0][i].category,close,standouts}));
-    assert.ok(fields.reduce((sum,e)=>sum+e.spread,0)/fields.length>.02,samples[0][i].category);
+    // A crowded top 20 is allowed; the complete category must still have a broad field.
+    assert.ok(fields.reduce((sum,e)=>sum+e.relativeSD,0)/fields.length>.02,samples[0][i].category);
   }
 });
 
-test('generated high-school finals have ordered titles and both close and dominant podiums',()=>{
+test('generated high-school finals vary level, front-group size and gaps while keeping ordered titles',()=>{
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
-    const original=rng;
-    let close,dominant;
-    try{rng=()=>.5;close=interhighFinalTargets('fr100');rng=()=>.1;dominant=interhighFinalTargets('fr100')}finally{rng=original}
+    const editions=Array.from({length:100},()=>interhighFinalTargets('fr100'));
     const titles=EVENTS.map(e=>state.world.flatMap(a=>a.accolades.filter(t=>t.event===e&&t.competitionId==='interhigh_'+state.season).map(t=>({rank:t.rank,time:t.time,pb:a.bestTimes[e]}))).sort((a,b)=>a.rank-b.rank));
-    return {close,dominant,titles,reference:INTERHIGH.events.fr100.times[0]};
+    return {editions,titles,reference:INTERHIGH.events.fr100.times[0]};
   })())`));
-  assert.ok(result.close[2]-result.close[0]<result.reference*.004);
-  assert.ok(result.dominant[1]-result.dominant[0]>result.reference*.009);
+  const frontSizes=new Set(result.editions.map(times=>times.filter(t=>t-times[0]<result.reference*.005).length));
+  assert.ok(frontSizes.size>=4,JSON.stringify([...frontSizes]));
+  assert.ok(result.editions.some(times=>times[1]-times[0]>result.reference*.015));
+  assert.ok(result.editions.some(times=>times[3]-times[0]<result.reference*.004));
+  assert.ok(new Set(result.editions.map(times=>times[0])).size>30);
+  for(const times of result.editions)for(let i=1;i<times.length;i++)assert.ok(times[i]>times[i-1]);
   for(const titles of result.titles){
     assert.equal(titles.length,8);
     for(let i=0;i<titles.length;i++){
@@ -619,6 +622,61 @@ test('generated high-school finals have ordered titles and both close and domina
       if(i)assert.ok(titles[i].time>titles[i-1].time);
     }
   }
+});
+
+test('continuous CPU fields generate weak cohorts, numerous strong contenders and a lone standout without year inflation',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const savedSeed=state.cpuCompetitionSeed,fields={},samples=[];
+    for(let seed=1;seed<=4000&&Object.keys(fields).length<3;seed++){
+      state.cpuCompetitionSeed=seed;
+      const f=cpuCompetitionField('university','fr100');
+      if(f.level < -8 && !fields.weak)fields.weak={seed,...f};
+      if(f.level > 8 && f.contenderRate>.09 && !fields.crowded)fields.crowded={seed,...f};
+      if(Math.abs(f.level)<3&&f.contenderRate<.015&&f.eliteRate>.0032&&f.eliteRate<.0036&&f.upperShift>0&&!fields.standout)fields.standout={seed,...f};
+    }
+    for(const [kind,f] of Object.entries(fields)){
+      state.cpuCompetitionSeed=f.seed;
+      const athletes=Array.from({length:500},(_,i)=>{
+        const a={id:'field-comparison-'+i,category:'university',organization:'分布比較大学',grade:2,specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,113]))};
+        applyCpuCompetitionProfile(a);return a;
+      });
+      const values=athletes.map(a=>abilityValue(a,'fr100')*200).sort((a,b)=>b-a);
+      samples.push({kind,mean:values.reduce((a,b)=>a+b)/values.length,leaders:values.filter(v=>v>=163).length,gap:values[0]-values[1],values:values.slice(0,10)});
+    }
+    state.cpuCompetitionSeed=savedSeed;
+    const original=JSON.stringify(cpuCompetitionField('university','fr100'));
+    state=JSON.parse(JSON.stringify(state));migrateState();
+    const reload=original===JSON.stringify(cpuCompetitionField('university','fr100'));
+    const centuries=Array.from({length:120},(_,i)=>cpuCompetitionField('university','fr100',2026+i));
+    return {samples,reload,centuries};
+  })())`));
+  assert.equal(result.samples.length,3);assert.equal(result.reload,true);
+  const byKind=Object.fromEntries(result.samples.map(row=>[row.kind,row]));
+  assert.ok(byKind.crowded.mean-byKind.weak.mean>15,JSON.stringify(result.samples));
+  assert.ok(byKind.crowded.leaders>=15,JSON.stringify(result.samples));
+  assert.ok(byKind.standout.leaders>=1&&byKind.standout.leaders<=3&&byKind.standout.gap>3,JSON.stringify(result.samples));
+  for(const f of result.centuries){
+    assert.ok(Math.abs(f.level)<=14&&f.spread>=.45&&f.spread<=1.6);
+    assert.ok(f.contenderRate>=.005&&f.contenderRate<=.15&&f.eliteRate>=.0003&&f.eliteRate<=.0233);
+  }
+  assert.ok(result.centuries.slice(0,20).some(f=>f.level>5)&&result.centuries.slice(-20).some(f=>f.level< -5));
+});
+
+test('v4 CPU saves receive new distributions once without changing own players, alumni, records or titles',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),titles=JSON.stringify(state.world.flatMap(a=>a.accolades));
+    const alumni={...deepClone(state.players[0]),id:'v4-preserved-alumni',category:'adult',age:26,alumni:true};state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
+    for(const a of state.world.filter(a=>!a.alumni))a.cpuCompetitionProfileVersion=1;
+    state.cpuDiversityVersion=4;delete state.cpuCompetitionSeed;migrateState();
+    const first=JSON.stringify(state),profiles=state.world.filter(a=>!a.alumni).every(a=>a.cpuCompetitionProfileVersion===2);
+    migrateState();return {profiles,once:JSON.stringify(state)===first,own:JSON.stringify(state.players)===own,
+      alumni:JSON.stringify(state.world.find(a=>a.id===alumni.id))===savedAlumni,records:JSON.stringify(state.recordRankings)===records,
+      titles:JSON.stringify(state.world.filter(a=>!a.alumni).flatMap(a=>a.accolades))===titles,
+      titlePBs:state.world.every(a=>a.accolades.every(t=>a.bestTimes[t.event]<=t.time))};
+  })())`));
+  assert.ok(Object.values(result).every(Boolean),JSON.stringify(result));
 });
 
 test('v3 CPU saves gain competition profiles once and preserve own players, alumni, historical records and title PBs',()=>{
@@ -633,7 +691,7 @@ test('v3 CPU saves gain competition profiles once and preserve own players, alum
     }
     state.cpuDiversityVersion=3;migrateState();
     const first=JSON.stringify(state.world),schoolMeans=['middle','high'].map(c=>{const rows=state.world.filter(a=>a.category===c);return rows.reduce((s,a)=>s+overallStatValue(a),0)/rows.length});
-    const profiles=state.world.filter(a=>!a.alumni).every(a=>a.cpuCompetitionProfileVersion===1&&a.cpuCompetitionCategory===a.category);
+    const profiles=state.world.filter(a=>!a.alumni).every(a=>a.cpuCompetitionProfileVersion===2&&a.cpuCompetitionCategory===a.category);
     const titlePBs=state.world.every(a=>a.accolades.every(t=>a.bestTimes[t.event]<=t.time));
     migrateState();return {profiles,titlePBs,schoolMeans,once:JSON.stringify(state.world)===first,
       own:JSON.stringify(state.players)===own,alumni:JSON.stringify(state.world.find(a=>a.id===alumni.id))===savedAlumni,

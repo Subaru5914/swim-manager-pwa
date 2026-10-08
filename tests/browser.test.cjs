@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.35', 'v1.34'));
+      data = Buffer.from(data.toString().replaceAll('v1.36', 'v1.35'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -471,14 +471,21 @@ test('roster specialty PB groups follow event order and detail/training edits pe
           EVENTS.forEach((e,i)=>{
             for(const suffix of ['slow','fast','missing']){
               const p=deepClone(state.players[i]);p.id='sort-'+e+'-'+suffix;p.name=e+' '+suffix;p.specialty=e;
+              p.year=suffix==='fast'?1:suffix==='slow'?2:3;
               p.bestTimes[e]=suffix==='missing'?null:1000-i*50+(suffix==='slow'?1:0);athletes.push(p);
             }
           });
           state.players=athletes.reverse();renderAll();
-          return {expected:EVENTS.flatMap(e=>['fast','slow','missing'].map(s=>'sort-'+e+'-'+s)),original:state.players.map(p=>p.id),
+          return {expected:EVENTS.flatMap(e=>['fast','slow','missing'].map(s=>'sort-'+e+'-'+s)),
+            ascending:['fast','slow','missing'].flatMap(s=>EVENTS.map(e=>'sort-'+e+'-'+s)),
+            descending:['missing','slow','fast'].flatMap(s=>EVENTS.map(e=>'sort-'+e+'-'+s)),original:state.players.map(p=>p.id),
             stable:JSON.stringify(state.players.map(p=>({id:p.id,stats:p.stats,bestTimes:p.bestTimes})))};
         });
-        await page.locator('#nav [data-page="roster"]').click();await page.locator('#rosterSortMode').selectOption('specialty_pb');
+        await page.locator('#nav [data-page="roster"]').click();
+        for(const [mode,key] of [['grade_asc','ascending'],['grade_desc','descending'],['specialty_pb','expected']]){
+          await page.locator('#rosterSortMode').selectOption(mode);
+          assert.deepEqual(await page.locator('#rosterTable [data-detail]').evaluateAll(buttons=>buttons.map(b=>b.dataset.detail)),fixture[key]);
+        }
         assert.deepEqual(await page.locator('#rosterTable [data-detail]').evaluateAll(buttons=>buttons.map(b=>b.dataset.detail)),fixture.expected);
         assert.deepEqual(await page.evaluate(()=>state.players.map(p=>p.id)),fixture.original);
         const id='sort-fr100-fast';
@@ -511,6 +518,13 @@ test('roster specialty PB groups follow event order and detail/training edits pe
         await page.locator('#nav [data-page="roster"]').click();await page.locator(`#rosterTable [data-detail="${id}"]`).click();
         assert.equal(await page.locator('[data-detail-focus="fly_stamina"][aria-checked="true"]').count(),1);
         assert.equal(await page.locator('.modal-player-detail .specialty-im').count(),1);
+        await page.locator('.modal-player-detail #x').click();
+        await page.locator('#nav [data-page="rankings"]').click();
+        for(const category of ['all','middle','high','university','adult']){
+          await page.locator('#rankCategory').selectOption(category);
+          assert.equal(await page.locator('#rankingTable tbody tr').count(),50,category);
+          assert.equal(await page.locator('#rankingTable .rank-pill').last().innerText(),'50');
+        }
         assert.deepEqual(errors,[]);
       }finally{await context.close();}
     }
@@ -708,7 +722,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.34 cache to v1.35 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.35 cache to v1.36 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -717,7 +731,7 @@ test('PWA upgrades its v1.34 cache to v1.35 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.34'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.35'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -727,19 +741,19 @@ test('PWA upgrades its v1.34 cache to v1.35 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.35') && !keys.includes('swim-manager-pwa-v1.34');
+      return keys.includes('swim-manager-pwa-v1.36') && !keys.includes('swim-manager-pwa-v1.35');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.35/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.35');
+    assert.match(await page.title(), /v1\.36/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.36');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.35/);
+    assert.match(await page.title(), /v1\.36/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
