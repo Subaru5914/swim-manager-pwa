@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.32</title>
+<title>大学競泳監督シミュレーション PWA版 v1.32.1</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1135,7 +1135,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.32</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.32.1</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1453,7 +1453,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.32";
+  state.version="pwa-v1.32.1";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -2119,7 +2119,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.32",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.32.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2227,21 +2227,32 @@ function recordRelayResult(kind,team,meet,stage){
   if(category!=="japan"&&team.members.every(a=>athleteRecordCategory(a)===category&&a.organization===team.organization))upsertRecordRanking(category,deepClone(record));
 }
 function initializeRecordRankings(){
-  if(state.recordRankingVersion===1)return;
-  for(let a of activeAthletes()){
-    for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))recordIndividualResult(a,e,a.bestTimes[e],"PB集計","PB");
+  if(state.recordRankingVersion>=2)return;
+  if(state.recordRankingVersion!==1){
+    for(let a of activeAthletes()){
+      for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))recordIndividualResult(a,e,a.bestTimes[e],"PB集計","PB");
+    }
+    // School-era results retain their category even when the athlete has moved on.
+    for(let a of [...activeAthletes(),...(state.retiredArchive||[])])for(let title of a.accolades||[]){
+      if(title.competition==="全国高校総体"&&EVENTS.includes(title.event)&&Number.isFinite(title.time))recordIndividualResult(a,title.event,title.time,"全国高校総体","決勝",{
+        category:"high",organization:a.category==="high"?a.organization:"高校在籍時",season:title.season,slot:null});
+    }
+    // Preserve university records from legacy own-team archives, including graduates.
+    for(let [event,rows] of Object.entries(state.teamTop10||{}))for(let r of rows){
+      let saved={...deepClone(r),event,organization:state.playerUniversity};
+      upsertRecordRanking("university",saved);upsertRecordRanking("japan",deepClone(saved));
+    }
   }
-  // School-era results retain their category even when the athlete has moved on.
-  for(let a of [...activeAthletes(),...(state.retiredArchive||[])])for(let title of a.accolades||[]){
-    if(title.competition==="全国高校総体"&&EVENTS.includes(title.event)&&Number.isFinite(title.time))recordIndividualResult(a,title.event,title.time,"全国高校総体","決勝",{
-      category:"high",organization:a.category==="high"?a.organization:"高校在籍時",season:title.season,slot:null});
+  // Repair v1.32 saves too, without reseeding current PBs into new age categories.
+  for(let a of state.retiredArchive||[])for(let e of EVENTS){
+    if(Number.isFinite(a.bestTimes?.[e]))recordIndividualResult(a,e,a.bestTimes[e],"引退時PB","PB",{
+      category:a.reason==="大学卒業・競技終了"?"university":"japan",season:a.season,slot:null});
   }
-  // Preserve university records from legacy own-team archives, including graduates.
-  for(let [event,rows] of Object.entries(state.teamTop10||{}))for(let r of rows){
-    let saved={...deepClone(r),event,organization:state.playerUniversity};
-    upsertRecordRanking("university",saved);upsertRecordRanking("japan",deepClone(saved));
+  for(let e of EVENTS){
+    let r=state.recordBook?.[e];
+    if(r&&!WORLD_COUNTRIES.includes(r.organization)&&!String(r.athleteId).startsWith("INT"))upsertRecordRanking("japan",{...deepClone(r),kind:"individual",event:e,stage:r.stage||"PB",slot:r.slot??null});
   }
-  state.recordRankingVersion=1;
+  state.recordRankingVersion=2;
 }
 function ranking(e,cat="all",limit=100){return activeAthletes().filter(a=>a.bestTimes[e]!=null&&(cat==="all"||(cat==="player"?state.players.includes(a):(!state.players.includes(a)&&a.category===cat)))).sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]).slice(0,limit)}
 function refreshRecordBook(){EVENTS.forEach(e=>{let a=ranking(e,"all",1)[0];if(!a)return;let old=state.recordBook[e],t=a.bestTimes[e];if(!old||t<old.time)state.recordBook[e]={event:e,time:t,athleteId:a.id,name:a.name,organization:a.organization,season:state.season,meet:"PB集計"}})}
@@ -4159,12 +4170,28 @@ function saveLocal(){
     alert("ブラウザ保存を使用できません。セーブ書出を使用してください。");
   }
 }
+function applyLoadedSave(next,render=false){
+  const object=value=>value&&typeof value==="object"&&!Array.isArray(value);
+  if(!object(next)||!Array.isArray(next.players)||!next.players.length||(next.world!=null&&!Array.isArray(next.world))||
+    !Number.isInteger(next.season)||next.season<1||!Number.isInteger(next.slot)||next.slot<1||next.slot>96||
+    !Number.isFinite(next.points)||!Number.isFinite(next.reputation)||!object(next.facilities)||
+    !next.players.every(p=>object(p)&&p.id&&object(p.stats)&&(!p.bestTimes||object(p.bestTimes))))throw new Error("ゲームのセーブ形式が正しくありません。");
+  let previous=state,previousTrainingId=selectedTrainingId;
+  try{
+    state=next;migrateState();selectedTrainingId=null;
+    if(render)renderAll();
+  }catch(error){
+    state=previous;selectedTrainingId=previousTrainingId;
+    if(render&&previous)renderAll();
+    throw error;
+  }
+}
 function loadLocal(showMessage=false){
   try{
     let s=localStorage.getItem("swimManagerSave")||localStorage.getItem("swimManagerHtmlV13");
     if(!s){if(showMessage)showToast("セーブデータがありません","warn");return false}
-    state=JSON.parse(s);migrateState();selectedTrainingId=null;try{lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){};
-    if(showMessage){renderAll();showToast("ロードしました","good")}
+    applyLoadedSave(JSON.parse(s),showMessage);try{lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){};
+    if(showMessage)showToast("ロードしました","good");
     return true;
   }catch(e){
     console.warn("Save load failed:",e);
@@ -4191,7 +4218,7 @@ function importJson(file){
   let r=new FileReader();
   r.onload=()=>{
     try{
-      state=JSON.parse(r.result);migrateState();selectedTrainingId=null;renderAll();
+      applyLoadedSave(JSON.parse(r.result),true);
       showToast("セーブデータを読み込みました","good");
     }catch(e){
       console.error(e);alert("JSONを読み込めませんでした");
@@ -4256,12 +4283,12 @@ async function initializeCloudSync(){
   cloudSync=new SwimCloudSync({getSave:()=>JSON.stringify(state),online:()=>navigator.onLine!==false,
     canApply:()=>!document.querySelector("#modalRoot .modal:not(.modal-cloud)"),
     applySave:next=>{
-      let previous=state;
+      let previous=state,previousTrainingId=selectedTrainingId;
       try{
-        state=next;migrateState();selectedTrainingId=null;
-        if(!writeSaveSilently("cloud"))throw new Error("セーブを端末へ保存できません。セーブ書出で容量を確認してください。");
+        applyLoadedSave(next);
         initSelectors();renderAll();
-      }catch(error){state=previous;throw error}
+        if(!writeSaveSilently("cloud"))throw new Error("セーブを端末へ保存できません。セーブ書出で容量を確認してください。");
+      }catch(error){state=previous;selectedTrainingId=previousTrainingId;renderAll();throw error}
     },onStatus:cloudStatusChanged});
   let defaults=null;
   try{let response=await fetch("./cloud-config.json",{cache:"no-store"});if(response.ok)defaults=await response.json()}catch(error){}

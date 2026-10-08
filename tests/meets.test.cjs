@@ -83,6 +83,37 @@ test('legacy records migrate once with high-school medals and graduate universit
   assert.ok(result.unchanged);assert.equal(result.count,10);
 });
 
+test('historic record migration recovers retired PBs and old Japanese records while excluding foreign records',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    delete state.recordRankings;delete state.recordRankingVersion;
+    state.retiredArchive.push({id:'retired-student-record',name:'引退学生',organization:state.playerUniversity,season:2025,reason:'大学卒業・競技終了',bestTimes:{fr100:45},accolades:[]});
+    state.recordBook.fr100={event:'fr100',time:44,athleteId:'legacy-record',name:'旧記録保持者',organization:state.universities[0].name,season:2024,meet:'PB集計'};
+    state.recordBook.fr50={event:'fr50',time:19,athleteId:'INT-foreign-record',name:'Foreign Swimmer',organization:WORLD_COUNTRIES[0],season:2024,meet:'world_championship'};
+    migrateState();
+    return{student:state.recordRankings.university.fr100.find(r=>r.athleteId==='retired-student-record'),
+      national:state.recordRankings.japan.fr100.slice(0,2),foreign:state.recordRankings.japan.fr50.some(r=>r.athleteId==='INT-foreign-record')};
+  })()`);
+  assert.equal(result.student.time,45);assert.equal(result.student.season,2025);
+  assert.deepEqual(result.national.map(r=>[r.athleteId,r.time,r.season]),[['legacy-record',44,2024],['retired-student-record',45,2025]]);
+  assert.equal(result.foreign,false);
+});
+
+test('v1.32 record repairs retain existing categories and run only once without reseeding current PBs',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};state.recordBook={};
+    let own=state.players[0];recordIndividualResult(own,'fr100',48,'intercollege','決勝');
+    state.recordRankingVersion=1;own.bestTimes.fr100=40;
+    state.retiredArchive.push({id:'retired-adult-record',name:'引退社会人',organization:state.playerUniversity,season:2025,reason:'社会人引退',bestTimes:{fr100:47},accolades:[]});
+    migrateState();let first=JSON.stringify(state.recordRankings);migrateState();
+    return{version:state.recordRankingVersion,once:first===JSON.stringify(state.recordRankings),
+      student:state.recordRankings.university.fr100,national:state.recordRankings.japan.fr100};
+  })()`);
+  assert.equal(result.version,2);assert.ok(result.once);assert.deepEqual(result.student.map(r=>r.time),[48]);
+  assert.deepEqual(result.national.map(r=>r.time),[47,48]);
+});
+
 test('all relay finals can change swimmers without altering prelims, lane seeding or abandoned top-ten records',()=>{
   const run=game();
   const result=json(run,`(()=>{

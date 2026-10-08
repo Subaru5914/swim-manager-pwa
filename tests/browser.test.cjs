@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.32', 'v1.31.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.32.1', 'v1.32'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -105,6 +105,24 @@ test('PC and iPhone account screens share real game saves, handle offline confli
     assert.ok(!await phone.evaluate(()=>JSON.stringify(state).includes('test-password')));
     for(const list of errors)assert.deepEqual(list,[]);
   }finally{await pcContext.close();await phoneContext.close();await app.close()}
+});
+
+test('a cloud save that fails to render cannot replace the local backup or leave stale game screens',async()=>{
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>cloudSync);
+    const result=await page.evaluate(()=>{
+      state.points=543;renderAll();autoSaveNow();
+      const original=JSON.stringify(state),stored=localStorage.getItem('swimManagerSave');
+      let damaged=deepClone(state);damaged.points=999;damaged.recordRankings.japan.fr100=[{kind:'relay',event:'fr100',time:45}];
+      let rejected=false;try{cloudSync.options.applySave(damaged)}catch(error){rejected=true}
+      return{rejected,progressKept:JSON.stringify(state)===original,backupKept:localStorage.getItem('swimManagerSave')===stored,
+        points:JSON.parse(localStorage.getItem('swimManagerSave')).points,status:document.getElementById('status').textContent};
+    });
+    assert.ok(result.rejected&&result.progressKept);assert.equal(result.backupKept,true,JSON.stringify(result));
+    assert.equal(result.points,543);assert.match(result.status,/pt 543/);
+    await page.reload();assert.equal(await page.evaluate(()=>state.points),543);assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close()}
 });
 
 test('unconfigured cloud setup keeps local play working and exposes configuration instructions',async()=>{
@@ -239,6 +257,43 @@ test('game reset retains every configured organization name, resets progress and
   }finally{await context.close();await app.close()}
 });
 
+
+test('failed file imports and local loads preserve playable progress and records on PC and portrait iPhone',async()=>{
+  const app=await fixture();
+  try{
+    for(const options of [{viewport:{width:1280,height:800}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+      const context=await testContext(options);
+      try{
+        const page=await context.newPage(),errors=[],dialogs=[];
+        page.on('pageerror',error=>errors.push(error.message));
+        page.on('dialog',async dialog=>{dialogs.push(dialog.message());await dialog.accept()});
+        await page.goto(app.url);
+        const original=await page.evaluate(()=>{
+          state.points=543;state.players[0].bestTimes.fr100=48.13;
+          recordIndividualResult(state.players[0],'fr100',48.13,'intercollege','決勝');renderAll();saveLocal();
+          let broken=deepClone(state);broken.recordRankings.japan.fr100=[{kind:'relay',event:'fr100',time:45}];
+          return{state:JSON.stringify(state),broken:JSON.stringify(broken)};
+        });
+        for(const [i,payload] of ['{}',original.broken].entries()){
+          const rejected=page.waitForEvent('dialog');
+          await page.locator('#importFile').setInputFiles({name:`broken-${i}.json`,mimeType:'application/json',buffer:Buffer.from(payload)});
+          await rejected;
+          await page.waitForFunction(()=>document.getElementById('importFile').value==='');
+          assert.equal(dialogs.length,i+1);assert.match(dialogs.at(-1),/JSONを読み込めませんでした/);
+          assert.equal(await page.evaluate(()=>JSON.stringify(state)),original.state);
+        }
+        await page.evaluate(()=>{localStorage.setItem('swimManagerSave','{"players":null}');loadLocal(true)});
+        assert.match(dialogs.at(-1),/セーブデータを読み込めませんでした/);
+        assert.equal(await page.evaluate(()=>JSON.stringify(state)),original.state);
+        await page.locator('#nav button[data-page="records"]').click();
+        assert.ok(await page.locator('#recordRankingBody .record-ranking-own').count());
+        await page.evaluate(()=>autoSaveNow());await page.reload();
+        assert.equal(await page.evaluate(()=>JSON.stringify(state)),original.state);
+        assert.equal(await page.evaluate(()=>state.points),543);assert.deepEqual(errors,[]);
+      }finally{await context.close()}
+    }
+  }finally{await app.close()}
+});
 
 async function acceptCollegeRanking(page){
   assert.match(await page.locator('.modal-college-ranking .notice').innerText(),/全4日間/);
@@ -585,7 +640,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.31.1 cache to v1.32 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.32 cache to v1.32.1 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -594,7 +649,7 @@ test('PWA upgrades its v1.31.1 cache to v1.32 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.31.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.32'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -604,19 +659,19 @@ test('PWA upgrades its v1.31.1 cache to v1.32 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.32') && !keys.includes('swim-manager-pwa-v1.31.1');
+      return keys.includes('swim-manager-pwa-v1.32.1') && !keys.includes('swim-manager-pwa-v1.32');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.32/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32');
+    assert.match(await page.title(), /v1\.32\.1/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32.1');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.32/);
+    assert.match(await page.title(), /v1\.32\.1/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
