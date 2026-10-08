@@ -16,6 +16,59 @@ function game(seed = 12345) {
 }
 const json = (run, code) => JSON.parse(run(`JSON.stringify(${code})`));
 
+test('all relay finals can change swimmers without altering prelims, lane seeding or abandoned top-ten records',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.players.slice(0,4).forEach(p=>{p.stats=Object.fromEntries(STATS.map(k=>[k,200]));EVENTS.forEach(e=>p.bestTimes[e]=expectedTime(p,e))});
+    state.players.slice(4,8).forEach(p=>p.stats=Object.fromEntries(STATS.map(k=>[k,50])));
+    const original=state.players.slice(0,4).map(p=>p.id),replacements=state.players.slice(4,8).map(p=>p.id);
+    const entries=Object.fromEntries(RELAYS.map(k=>[k,[...original]]));
+    const relays=runRelays('intercollege',entries,true),events=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[]} ]));
+    const result={meet:'intercollege',events,relays,relayEntries:entries,historyEntry:{},teamScoreEntry:{}};
+    return RELAYS.map(kind=>{
+      const entry=relays.find(r=>r[0]===kind),own=entry[1].find(ownsRelayTeam),prelim=JSON.stringify(entry[2].prelim);
+      const lane=own.heatLane,abandonedTime=own.race.total;
+      let rejected=false;try{setRelayFinalEntry(result,kind,[original[0],original[0],original[1],original[2]])}catch(e){rejected=true}
+      let unchangedAfterReject=prelim===JSON.stringify(entry[2].prelim)&&entry[2].finalEntryPending;
+      setRelayFinalEntry(result,kind,replacements);
+      return {kind,rejected,unchangedAfterReject,prelimUnchanged:prelim===JSON.stringify(entry[2].prelim),
+        initial:entries[kind],members:own.members.map(p=>p.id),replacements,lane,finalLane:own.heatLane,rank:own.rank,
+        ranks:entry[1].map(t=>t.rank),scoresAgree:JSON.stringify(result.teamScores)===JSON.stringify(result.historyEntry.teamScores)&&JSON.stringify(result.teamScores)===JSON.stringify(result.teamScoreEntry.scores),
+        pending:entry[2].finalEntryPending,abandonedSaved:state.teamTop10[kind].some(r=>r.memberKey===original.join('|')&&r.time===abandonedTime),
+        replacementSaved:state.teamTop10[kind].some(r=>r.memberKey===replacements.join('|')&&r.time===own.race.total)};
+    });
+  })()`);
+  for(const row of result){
+    assert.ok(row.rejected&&row.unchangedAfterReject&&row.prelimUnchanged&&row.scoresAgree);
+    assert.deepEqual(row.members,row.replacements);assert.notDeepEqual(row.initial,row.replacements);
+    assert.equal(row.finalLane,row.lane);assert.equal(row.pending,false);assert.equal(row.rank,8);
+    assert.deepEqual(row.ranks,[1,2,3,4,5,6,7,8]);
+    assert.equal(row.abandonedSaved,false);assert.equal(row.replacementSaved,true);
+  }
+});
+
+test('world relay final replacements are restricted to selected Japanese representatives and can remove the own race',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    let own=state.players[0],cpu=state.world.filter(p=>p.category==='university').slice(0,7),members=[own,...cpu.slice(0,3)];
+    state.japanTeam={year:2027,athletes:[own,...cpu].map(p=>({id:p.id,snapshot:deepClone(p),ownAtSelection:p.id===own.id}))};
+    let preliminary={organization:'日本',members:[...members],heatLane:4,race:{total:210}},final={...preliminary,members:[...members],race:simulateRelay(members,'4x100fr',false)};
+    let meta={prelim:[preliminary],heats:[[preliminary]],finalEntryPending:true};
+    let result={meet:'world_championship',events:Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[]} ])),relays:[['4x100fr',[final],meta]],relayEntries:{'4x100fr':members.map(p=>p.id)}};
+    let rejected=false;try{setRelayFinalEntry(result,'4x100fr',state.players.slice(0,4).map(p=>p.id))}catch(e){rejected=true}
+    let qualified=meta.finalEntryPending&&ownsRelayTeam(final),prelim=JSON.stringify(preliminary);
+    setRelayFinalEntry(result,'4x100fr',cpu.slice(3,7).map(p=>p.id));
+    let program=buildMeetProgram(result,{}),queue=buildMeetRaceQueue(result,{});
+    return{rejected,qualified,prelimUnchanged:prelim===JSON.stringify(preliminary),
+      members:final.members.map(p=>p.id),wanted:cpu.slice(3,7).map(p=>p.id),
+      finalOwn:ownsRelayTeam(final),finalShown:queue.some(q=>q.phase==='final'),prelimShown:queue.some(q=>q.phase==='prelim'),
+      finalExists:program.some(p=>p.phase==='final'),pending:meta.finalEntryPending};
+  })()`);
+  assert.ok(result.rejected&&result.qualified&&result.prelimUnchanged);
+  assert.deepEqual(result.members,result.wanted);assert.equal(result.finalOwn,false);
+  assert.equal(result.finalShown,false);assert.equal(result.prelimShown,true);assert.equal(result.finalExists,true);assert.equal(result.pending,false);
+});
+
 test('domestic heats use 6/5/4 groups, world heats use 4/3/2, each with at most eight lanes', () => {
   const run = game();
   const rows = json(run, `['joint_record','kansai_college','intercollege','japan_open','japan_championship','world_championship'].flatMap(meet=>EVENTS.map(e=>{

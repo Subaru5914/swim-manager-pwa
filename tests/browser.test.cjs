@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.30.2', 'v1.30.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.31', 'v1.30.2'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -122,6 +122,66 @@ test('unconfigured cloud setup keeps local play working and exposes configuratio
   }finally{await context.close();await app.close()}
 });
 
+test('relay final entry screens change all three lineups, preserve prelims and use the confirmed swimmers in races and scores',async()=>{
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    const fixtures=await page.evaluate(()=>{
+      for(const p of state.players.slice(0,8)){
+        p.stats=Object.fromEntries(STATS.map(k=>[k,p===state.players[0]||state.players.indexOf(p)<4?200:145]));
+        for(const e of EVENTS)p.bestTimes[e]=expectedTime(p,e);
+      }
+      const original=state.players.slice(0,4).map(p=>p.id),next=state.players.slice(4,8).map(p=>p.id);
+      const execute=executeMeet;executeMeet=(...args)=>{const result=execute(...args);window.relayTestResult=result;return result};
+      const play=playRaceCanvas;playRaceCanvas=(event,rows,options)=>{
+        const own=rows.find(row=>row.source==='PLAYER');window.relayTestRace={event,final:options.stageLabel.includes('A決勝'),members:own?.members?.map(p=>p.id)};
+        return play(event,rows,options);
+      };
+      const entries=Object.fromEntries(EVENTS.map(e=>[e,[]])),relays=Object.fromEntries(RELAYS.map(k=>[k,[...original]]));
+      openMeetEntry('intercollege',43,2026,entries,relays);
+      return {original,next,kinds:RELAYS,labels:RELAY_LABEL};
+    });
+    // Leaving the preliminary editor must discard its unconfirmed draft.
+    await page.locator('#relayBtn').click();
+    await page.locator('select[data-kind="4x100fr"][data-i="0"]').selectOption(fixtures.next[0]);
+    await page.locator('#relayClose').click();await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
+    const seen=[],edited=[];
+    for(let step=0;step<100;step++){
+      await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
+      if(await page.locator('.modal-meet-results').count())break;
+      if(await page.locator('#relayOk').count()){
+        const kind=await page.locator('#relayEditorBody select').first().getAttribute('data-kind');
+        assert.equal(await page.locator('#relayEditorBody select').count(),4);
+        assert.deepEqual(await page.locator('#relayEditorBody select').evaluateAll(selects=>selects.map(s=>s.value)),fixtures.original);
+        assert.ok((await page.locator('.modal-relay-editor h2').innerText()).includes(fixtures.labels[kind]));
+        const wanted=kind==='4x100medley'?[...fixtures.next].reverse():fixtures.next;
+        for(let leg=0;leg<4;leg++)await page.locator(`select[data-kind="${kind}"][data-i="${leg}"]`).selectOption(wanted[leg]);
+        edited.push(kind);await page.locator('#relayOk').click();continue;
+      }
+      if(await page.locator('#startProgramRace').count()){await page.locator('#startProgramRace').click();continue}
+      if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue}
+      const race=await page.evaluate(()=>window.relayTestRace),wanted=race.final?(race.event==='4x100medley'?[...fixtures.next].reverse():fixtures.next):fixtures.original;
+      assert.deepEqual(race.members,wanted);seen.push({event:race.event,final:race.final});
+      await page.locator('#skipEvent').click();await page.locator('#nextGroup').click();
+    }
+    assert.deepEqual([...edited].sort(),[...fixtures.kinds].sort());
+    assert.equal(seen.length,6);assert.equal(seen.filter(r=>r.final).length,3);
+    const saved=await page.evaluate(()=>{
+      const result=window.relayTestResult;
+      return {relays:result.relays.map(([kind,finals,meta])=>({kind,prelim:meta.prelim.find(ownsRelayTeam).members.map(p=>p.id),
+        final:finals.find(ownsRelayTeam).members.map(p=>p.id),pending:meta.finalEntryPending})),
+        actual:result.teamScores[state.playerUniversity],wanted:result.relays.reduce((sum,r)=>sum+[24,20,16,12,8,6,4,2][r[1].find(ownsRelayTeam).rank-1],0),
+        history:JSON.parse(localStorage.getItem('swimManagerSave')).teamScoreHistory.at(-1).scores[state.playerUniversity]};
+    });
+    for(const row of saved.relays){
+      assert.deepEqual(row.prelim,fixtures.original);
+      assert.deepEqual(row.final,row.kind==='4x100medley'?[...fixtures.next].reverse():fixtures.next);assert.equal(row.pending,false);
+    }
+    assert.equal(saved.actual,saved.wanted);assert.equal(saved.history,saved.actual);assert.deepEqual(errors,[]);
+    await page.locator('.modal-meet-results #x').click();
+  }finally{await context.close();await app.close()}
+});
+
 test('game reset retains every configured organization name, resets progress and survives reload',async()=>{
   const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
@@ -181,8 +241,9 @@ test('game reset retains every configured organization name, resets progress and
 
 async function advanceToRace(page) {
   for(let steps=0;steps<100;steps++){
-    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
     if(await page.locator('#raceCanvas').count())return;
+    if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
     if(await page.locator('.modal-meet-results').count())throw Error('Meet ended before the expected own race');
     if(await page.locator('#startProgramRace').count())await page.locator('#startProgramRace').click();
     else await page.locator('#nextEv').click();
@@ -193,8 +254,9 @@ async function advanceToRace(page) {
 async function drainRaces(page,program=[]) {
   const races=[];
   for(let steps=0;steps<200;steps++) {
-    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
     if(await page.locator('.modal-meet-results').count())return races;
+    if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
     if(await page.locator('#startProgramRace').count()){
       program.push(await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase})));
       await page.locator('#startProgramRace').click();continue;
@@ -383,6 +445,8 @@ test('actual March championship selects a graduating swimmer and April/save/relo
       let p=state.players.find(p=>p.year===4);
       p.stats=Object.fromEntries(STATS.map(k=>[k,200]));p.bestTimes.fr100=expectedTime(p,'fr100');
       state.season=2026;state.slot=94;state.activeCompetitionSeason=2026;state.activeCompetitionSlot=94;
+      // Fix meet randomness independently of how many draws roster generation uses.
+      state.rngSeed=1;
       let entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
       let result=executeMeet('japan_championship',entries,{});
       let selected=result.selection.individual.fr100.includes(p.id),year=state.japanTeam.year;
@@ -453,7 +517,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.30.1 cache to v1.30.2 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.30.2 cache to v1.31 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -462,7 +526,7 @@ test('PWA upgrades its v1.30.1 cache to v1.30.2 and retains saved progress offli
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30.2'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -472,19 +536,19 @@ test('PWA upgrades its v1.30.1 cache to v1.30.2 and retains saved progress offli
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.30.2') && !keys.includes('swim-manager-pwa-v1.30.1');
+      return keys.includes('swim-manager-pwa-v1.31') && !keys.includes('swim-manager-pwa-v1.30.2');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.30\.2/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30.2');
+    assert.match(await page.title(), /v1\.31/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.31');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.30\.2/);
+    assert.match(await page.title(), /v1\.31/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -584,8 +648,9 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
       const expected=await page.evaluate(()=>window.expectedRaces);
       const seen=[],program=[];
       for(let steps=0;steps<200;steps++){
-        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, .modal-meet-results'));
+        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
         if(await page.locator('.modal-meet-results').count())break;
+        if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
         if(await page.locator('#startProgramRace').count()){
           const details=await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase,
             listed:[...m.querySelectorAll('[data-program-event]')].map(r=>({event:r.dataset.programEvent,phase:r.dataset.programPhase,label:r.querySelector('b').textContent})),

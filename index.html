@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.30.2</title>
+<title>大学競泳監督シミュレーション PWA版 v1.31</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -213,13 +213,13 @@ button,.utility-summary{min-height:40px}
 .stat-rank-badge{width:28px;min-width:28px;height:28px;border-radius:8px;font-size:14px}
 .stat-number{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
 .overall-rank{width:34px;height:34px;border-radius:10px;font-size:18px}
-.rank-s{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
-.rank-a{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
-.rank-b{background:#e3f7f2!important;border-color:#46b6a4!important;color:#0a7061!important}
-.rank-c{background:#edf7df!important;border-color:#86b94a!important;color:#527a1d!important}
-.rank-d{background:#fff7d4!important;border-color:#dfb735!important;color:#755900!important}
-.rank-e{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
-.rank-f{background:#ffe6e3!important;border-color:#e77b72!important;color:#9a352e!important}
+.rank-s{background:#fff4bd!important;border-color:#dfb735!important;color:#755900!important}
+.rank-a{background:#ffe8f1!important;border-color:#df8eb5!important;color:#95355f!important}
+.rank-b{background:#ffe4e4!important;border-color:#df7373!important;color:#a32d32!important}
+.rank-c{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
+.rank-d{background:#e6f5de!important;border-color:#86b94a!important;color:#3f7326!important}
+.rank-e{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
+.rank-f{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
 .rank-g{background:#eef1f5!important;border-color:#aab5c3!important;color:#526173!important}
 .stat-detail-row.rank-s,.stat-detail-row.rank-a,.stat-detail-row.rank-b,.stat-detail-row.rank-c,
 .stat-detail-row.rank-d,.stat-detail-row.rank-e,.stat-detail-row.rank-f,.stat-detail-row.rank-g{
@@ -257,13 +257,13 @@ nav .nav-action:hover{background:#edf6ff}
 .focus-btn.rank-d,.focus-btn.rank-e,.focus-btn.rank-f,.focus-btn.rank-g{
   background:inherit;
 }
-.focus-btn.rank-s{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
-.focus-btn.rank-a{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
-.focus-btn.rank-b{background:#e3f7f2!important;border-color:#46b6a4!important;color:#0a7061!important}
-.focus-btn.rank-c{background:#edf7df!important;border-color:#86b94a!important;color:#527a1d!important}
-.focus-btn.rank-d{background:#fff7d4!important;border-color:#dfb735!important;color:#755900!important}
-.focus-btn.rank-e{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
-.focus-btn.rank-f{background:#ffe6e3!important;border-color:#e77b72!important;color:#9a352e!important}
+.focus-btn.rank-s{background:#fff4bd!important;border-color:#dfb735!important;color:#755900!important}
+.focus-btn.rank-a{background:#ffe8f1!important;border-color:#df8eb5!important;color:#95355f!important}
+.focus-btn.rank-b{background:#ffe4e4!important;border-color:#df7373!important;color:#a32d32!important}
+.focus-btn.rank-c{background:#fff0df!important;border-color:#e59a55!important;color:#884410!important}
+.focus-btn.rank-d{background:#e6f5de!important;border-color:#86b94a!important;color:#3f7326!important}
+.focus-btn.rank-e{background:#e6f0ff!important;border-color:#63a0eb!important;color:#1859aa!important}
+.focus-btn.rank-f{background:#f0e8ff!important;border-color:#9a6df0!important;color:#5c2ca5!important}
 .focus-btn.rank-g{background:#eef1f5!important;border-color:#aab5c3!important;color:#526173!important}
 .focus-btn.selected{box-shadow:inset 0 0 0 3px #172236!important}
 .focus-btn.selected::after{background:#172236}
@@ -1119,7 +1119,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.30.2</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.31</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1432,7 +1432,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.30.2";
+  state.version="pwa-v1.31";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -1468,6 +1468,7 @@ function migrateState(){
     }
     state.cpuUniversityRepModelVersion=3;
   }
+  state.universities.forEach(u=>u.reputation=boundedCpuReputation(u,u.reputation));
   state.kansaiIds=state.universities.filter(u=>u.region==="kansai").map(u=>u.id);
   state.interIds=[...state.universities].sort((a,b)=>(b.reputation||0)-(a.reputation||0)).slice(0,30).map(u=>u.id);
 
@@ -1476,6 +1477,7 @@ function migrateState(){
 
   for(let p of state.players||[]){
     fixedCapNormalize(p);ensurePlayerSpecialty(p);
+    if(!Number.isFinite(p.age))p.age=18+(p.year||1);
     if(!Array.isArray(state.trainingFocus[p.id])){
       let plan=state.trainingPlans?.[p.id]||{},vals=STATS.map(k=>+plan[k]||0),mx=Math.max(0,...vals),mn=Math.min(...vals);
       state.trainingFocus[p.id]=(mx-minSafe(mn)>.5)?STATS.filter(k=>(+plan[k]||0)>=mx*.85):[];
@@ -1812,19 +1814,21 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65){
   if(grade==null&&category!=="adult")grade={middle:age-12,high:age-15,university:age-18}[category];
   let team=cpuTeamProfile(category,org);
   strength=clamp(strength+team.offset+gauss(0,3.5),45,91);
+  let talent=clamp(gauss(0,9),-22,18),peak=rng()<.015?rand(178,185):rand(166,175);
+  let cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(clamp(peak+rand(-2,2),164,187))]));
   let specialty=choice(rng()<.38?EVENTS.filter(e=>strokeForEvent(e)===team.stroke):EVENTS),stroke=specialty.startsWith("fly")?"fly":specialty.slice(0,2),stats={};
   STATS.forEach(k=>{
-    let base=clamp(gauss(strength*1.5+5,11),40,165);
+    let base=clamp(gauss(strength*1.5+5+talent,12),40,165);
     if(k==="mental")base+=rand(-5,8);
     if(["fr","ba","br","fly"].includes(stroke)&&k.startsWith(stroke+"_"))base+=rand(8,18);
     if(k==="start"&&(specialty.endsWith("50")||specialty.endsWith("100")))base+=rand(4,10);
-    stats[k]=round2(clamp(base,40,188));
+    stats[k]=round2(clamp(base,40,cpuStatCeilings[k]));
   });
   let types=["early","normal","late","ready","raw"],pt=types[Math.floor(rng()*types.length)];
-  if(pt==="ready")STATS.forEach(k=>stats[k]=round2(Math.min(188,stats[k]+rand(6,12))));
+  if(pt==="ready")STATS.forEach(k=>stats[k]=round2(Math.min(cpuStatCeilings[k],stats[k]+rand(6,12))));
   if(pt==="raw")STATS.forEach(k=>stats[k]=round2(Math.max(40,stats[k]-rand(8,18))));
   let potential=Object.fromEntries(STATS.map(k=>[k,200]));
-  let a={id:uid("W"),name:newName(used),gender:"M",category,age,grade,organization:org,stats,potential,condition:65,fatigue:0,bestTimes:{},retired:false,scouted:false,discovered:false,potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),accolades:[],raceHistory:[],specialty};
+  let a={id:uid("W"),name:newName(used),gender:"M",category,age,grade,organization:org,stats,potential,cpuStatCeilings,condition:65,fatigue:0,bestTimes:{},retired:false,scouted:false,discovered:false,potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),accolades:[],raceHistory:[],specialty};
   diversifyStrokeStats(a);
   refreshCpuPBs(a);
   return a;
@@ -1862,7 +1866,7 @@ function diversifyStrokeStats(a){
   let mean=strokes.reduce((sum,s)=>sum+offsets[s],0)/4;
   for(let s of strokes)for(let component of ["speed","stamina","turn"]){
     let k=`${s}_${component}`,old=a.stats[k],cap=old>=176?188:175;
-    a.stats[k]=round2(clamp(old+(offsets[s]-mean),40,cap));
+    a.stats[k]=round2(clamp(old+(offsets[s]-mean),40,Math.min(cap,a.cpuStatCeilings?.[k]??cap)));
   }
   a.strokeProfileVersion=1;
 }
@@ -1880,26 +1884,38 @@ function cpuTeamProfile(category,organization){
   return profiles[key];
 }
 function diversifyLegacyCpuRoster(){
-  if(state.cpuDiversityVersion===1)return;
+  if(state.cpuDiversityVersion===2)return;
   for(let a of state.world||[]){
     if(a.alumni)continue;
     let before=Object.fromEntries(EVENTS.map(e=>[e,expectedTime(a,e)]));
     let team=cpuTeamProfile(a.category,a.organization),talent=((profileHash(a.id)%2001)/1000-1)*4;
-    let avg=overallStatValue(a),shift=team.offset+talent;
-    if(a.category==="university")shift+=(universityStrengthFromReputation(universityReputationByName(a.organization))*1.5+8-avg)*.30;
-    shift=clamp(shift,-14,9);
+    let avg=overallStatValue(a),shift=0;
+    if(state.cpuDiversityVersion!==1){
+      shift=team.offset+talent;
+      if(a.category==="university")shift+=(universityStrengthFromReputation(universityReputationByName(a.organization))*1.5+8-avg)*.30;
+      shift=clamp(shift,-14,9);
+    }
+    shift+=(profileHash(a.id+":individual-v2")%2001/1000-1)*9;
     for(let k of STATS){let old=a.stats[k];a.stats[k]=round2(clamp(old+shift,40,old>=176?188:175))}
     for(let title of a.accolades||[])if(EVENTS.includes(title.event)&&Number.isFinite(title.time))calibrateToTime(a,title.event,title.time);
     for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))a.bestTimes[e]=round2(a.bestTimes[e]*expectedTime(a,e)/before[e]);
     for(let title of a.accolades||[])if(EVENTS.includes(title.event)&&Number.isFinite(title.time))a.bestTimes[title.event]=Math.min(a.bestTimes[title.event]??Infinity,title.time);
+    if(!a.cpuStatCeilings){
+      let peak=166+(profileHash(a.id+":peak")%901)/100;
+      a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(Math.max(a.stats[k],peak+(profileHash(a.id+k)%401)/100-2))]));
+    }
   }
-  state.cpuDiversityVersion=1;
+  state.cpuDiversityVersion=2;
 }
 function initialUniversityReputation(strength){
   return round2(25+330*Math.pow(clamp((strength-65)/26,0,1),1.45));
 }
 function universityStrengthFromReputation(rep){
   return clamp(57+rep*.083,58,91);
+}
+function boundedCpuReputation(u,value){
+  let base=u.baseReputation??initialUniversityReputation(u.strength);
+  return round2(clamp(value,Math.max(15,base-25),Math.min(550,base+25)));
 }
 function universityObjectByName(name){
   return state.universities?.find(u=>u.name===name)||null;
@@ -1911,7 +1927,9 @@ function universityReputationByName(name){
 function chooseCpuUniversityForRecruit(a){
   let avg=STATS.reduce((s,k)=>s+(a.stats[k]||0),0)/STATS.length;
   let desired=clamp(70+(avg-90)*4.2,35,500);
-  let ranked=[...state.universities].sort((x,y)=>Math.abs((x.reputation??80)-desired)-Math.abs((y.reputation??80)-desired));
+  let available=state.universities.filter(u=>state.world.filter(p=>p.category==="university"&&p.organization===u.name&&p.grade===1&&!p.retired).length<5);
+  if(!available.length)return null;
+  let ranked=available.sort((x,y)=>Math.abs((x.reputation??80)-desired)-Math.abs((y.reputation??80)-desired));
   let pool=ranked.slice(0,Math.min(4,ranked.length));
   let weights=pool.map((u,i)=>Math.max(.05,1/(1+i*.8))*Math.max(.4,(u.reputation??80)/180));
   let total=weights.reduce((a,b)=>a+b,0),r=rng()*total;
@@ -1970,7 +1988,7 @@ function updateCpuUniversityReputations(meet,eventResults){
     let n=orgAthletes[u.name]?.size||0,delta=0;
     if(meet==="kansai_college")delta=n?Math.min(7,n*.45):-1.5;
     else delta=n?Math.min(12,n*1.15)+(n>=5?2:0):-3;
-    u.reputation=round2(clamp((u.reputation??initialUniversityReputation(u.strength))+delta,15,550));
+    u.reputation=boundedCpuReputation(u,(u.reputation??initialUniversityReputation(u.strength))+delta);
   }
 }
 function reputationRuleHtml(){
@@ -2068,7 +2086,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.30.2",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.31",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2135,9 +2153,9 @@ function upsertIndividualTop10(e,p,t,meet,stage){
   if(i<0)rows.push(r);else if(r.time<rows[i].time)rows[i]=r;
   rows.sort((a,b)=>a.time-b.time);rows.splice(10);
 }
-function upsertRelayTop10(kind,members,t,meet){
+function upsertRelayTop10(kind,members,t,meet,stage="決勝"){
   let rows=state.teamTop10[kind]||(state.teamTop10[kind]=[]),ids=members.map(x=>x.id).join("|"),i=rows.findIndex(x=>x.memberKey===ids),
-      r={kind:"relay",event:kind,time:round2(t),memberKey:ids,members:members.map(x=>({id:x.id,name:x.name})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage:"決勝"};
+      r={kind:"relay",event:kind,time:round2(t),memberKey:ids,members:members.map(x=>({id:x.id,name:x.name})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage};
   if(i<0)rows.push(r);else if(r.time<rows[i].time)rows[i]=r;
   rows.sort((a,b)=>a.time-b.time);rows.splice(10);
 }
@@ -2290,7 +2308,7 @@ function runWorldEvent(event,year){
   let entrants=japanese.map(a=>({source:ownJapanAthlete(a.id)?"PLAYER":"CPU",athlete:a,entryPB:a.bestTimes[event],nationality:"日本"})).concat(foreign.map(a=>({source:"CPU",athlete:a,entryPB:a.bestTimes[event],nationality:a.nationality})));
   return raceEventField("world_championship",event,entrants);
 }
-function runWorldRelays(year){
+function runWorldRelays(year,deferFinalEntries=false){
   let international=ensureInternationalWorld(year),automatic=worldAutoEntries(year),out=[];
   for(let kind of RELAYS){
     let entries=WORLD_COUNTRIES.map(country=>({organization:country,members:international.relayTeams[country][kind].map(id=>international.athletes.find(a=>a.id===id))}));
@@ -2302,7 +2320,7 @@ function runWorldRelays(year){
     let heats=seedRelayHeats(entries,kind,"world_championship").map(h=>h.map(t=>({...t,race:simulateRelay(t.members,kind,ownsRelayTeam(t))})).sort((a,b)=>a.race.total-b.race.total));
     let prelim=heats.flat().sort((a,b)=>a.race.total-b.race.total);prelim.forEach((t,i)=>t.prelimRank=i+1);
     let finals=assignSeededLanes(prelim.slice(0,8),t=>t.race.total).map(t=>({organization:t.organization,members:t.members,heatLane:t.heatLane,race:simulateRelay(t.members,kind,ownsRelayTeam(t))})).sort((a,b)=>a.race.total-b.race.total);finals.forEach((t,i)=>t.rank=i+1);
-    out.push([kind,finals,{prelim,heats}]);
+    out.push([kind,finals,{prelim,heats,finalEntryPending:deferFinalEntries&&finals.some(ownsRelayTeam)}]);
   }
   return out;
 }
@@ -2491,7 +2509,7 @@ function relayPlaybackRow(team,kind){
   };
 }
 
-function runRelays(meet,manual){
+function runRelays(meet,manual,deferFinalEntries=false){
   if(!RELAY_MEETS.has(meet))return[];
   let orgs=meetUniversities(meet),out=[];
   for(let kind of RELAYS){
@@ -2499,7 +2517,7 @@ function runRelays(meet,manual){
     for(let org of orgs){
       let roster=org===state.playerUniversity?state.players:state.world.filter(a=>a.category==="university"&&a.organization===org&&!a.retired),members;
       if(org===state.playerUniversity){
-        if((manual[kind]||[]).length!==4)continue;
+        if((manual[kind]||[]).length!==4||new Set(manual[kind]).size!==4)continue;
         members=manual[kind].map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
       }else{
         members=bestRelayMembers(roster,kind);
@@ -2529,11 +2547,11 @@ function runRelays(meet,manual){
     finals.forEach((t,i)=>t.rank=i+1);
 
     let ownPrelim=prelim.find(x=>x.organization===state.playerUniversity);
-    if(ownPrelim)upsertRelayTop10(kind,ownPrelim.members,ownPrelim.race.total,meet);
+    if(ownPrelim)upsertRelayTop10(kind,ownPrelim.members,ownPrelim.race.total,meet,"予選");
     let ownFinal=finals.find(x=>x.organization===state.playerUniversity);
-    if(ownFinal)upsertRelayTop10(kind,ownFinal.members,ownFinal.race.total,meet);
+    if(ownFinal&&!deferFinalEntries)upsertRelayTop10(kind,ownFinal.members,ownFinal.race.total,meet);
 
-    out.push([kind,finals,{prelim,heats}]);
+    out.push([kind,finals,{prelim,heats,finalEntryPending:deferFinalEntries&&!!ownFinal}]);
   }
   return out;
 }
@@ -2608,8 +2626,9 @@ function trainCommand(){
       let mult=a.growthProfile?.[Math.min(4,Math.max(1,a.grade||1))]||1;
       let teamMult=a.category==="university"?clamp(.82+universityReputationByName(a.organization)/1200,.84,1.22):1;
       STATS.forEach(k=>{
-        let gap=Math.max(0,200-a.stats[k]),gain=gap*rand(.000025,.00011)*mult*statGrowthMultiplier(a.stats[k])*teamMult;
-        a.stats[k]=round2(Math.min(200,a.stats[k]+gain));
+        let ceiling=Math.max(a.stats[k],a.cpuStatCeilings?.[k]??175);
+        let gap=Math.max(0,ceiling-a.stats[k]),gain=(200-a.stats[k])*rand(.000025,.00011)*mult*statGrowthMultiplier(a.stats[k])*teamMult;
+        a.stats[k]=round2(Math.min(ceiling,a.stats[k]+Math.min(gap,gain)));
       })
     }else if(a.age>=26){
       let dd=(a.age-25)*rand(.002,.006);STATS.forEach(k=>a.stats[k]=round2(clamp(a.stats[k]-dd,35,200)))
@@ -2753,9 +2772,12 @@ function newSeason(){
   state.players.forEach(p=>{p.year++;p.age++});
 
   let used=new Set(activeAthletes().map(a=>a.name)),survive=[];
+  // Age every existing cohort before assigning new school/university places.
   for(let a of state.world){
-    // Alumni added above are already at the correct post-graduation age this spring.
     if(!(a.alumni&&a.graduationSeason===state.season))a.age++;
+    if(a.category!=="adult")a.grade=(a.grade||0)+1;
+  }
+  for(let a of state.world){
     if(a.category==="adult"){
       if(a.age>=30&&rng()<Math.min(.92,.35+(a.age-30)*.18)){
         // Only own-team alumni need retirement tracking.
@@ -2767,11 +2789,14 @@ function newSeason(){
         continue;
       }
     }else{
-      a.grade=(a.grade||0)+1;
       if(a.category==="middle"&&a.grade>3){
-        a.category="high";a.grade=1;a.organization=choice(organizationNames().high);
+        let schools=organizationNames().high.filter(org=>state.world.filter(p=>p.category==="high"&&p.organization===org&&p.grade===1&&!p.retired).length<3);
+        if(!schools.length)continue;
+        a.category="high";a.grade=1;a.organization=choice(schools);
       }else if(a.category==="high"&&a.grade>3){
-        a.category="university";a.grade=1;a.organization=chooseCpuUniversityForRecruit(a);
+        let university=readyScoutIds.includes(a.id)?state.playerUniversity:chooseCpuUniversityForRecruit(a);
+        if(!university)continue;
+        a.category="university";a.grade=1;a.organization=university;
       }else if(a.category==="university"&&a.grade>4){
         // Most CPU university swimmers leave competitive swimming after graduation.
         if(rng()<.22){
@@ -2834,7 +2859,7 @@ function newSeason(){
   for(let u of state.universities){
     let base=u.baseReputation??initialUniversityReputation(u.strength);
     u.baseReputation=base;
-    u.reputation=round2(clamp((u.reputation??base)*.97+base*.03,15,550));
+    u.reputation=boundedCpuReputation(u,(u.reputation??base)*.80+base*.20);
   }
 
   state.season++;state.slot=1;
@@ -2944,7 +2969,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" style="min-width:1320px">
       <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${EVENTS.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
     </table></div>
-    <div class="row modal-actions"><button id="clearAll">個人種目を全解除</button>${RELAY_MEETS.has(meet)?'<button id="relayBtn">リレー編成</button>':""}<button id="confirmEntry" class="primary">エントリー確認へ</button></div>
+    <div class="row modal-actions"><button id="clearAll">個人種目を全解除</button>${RELAY_MEETS.has(meet)?'<button id="relayBtn">リレー予選編成</button>':""}<button id="confirmEntry" class="primary">エントリー確認へ</button></div>
     <div id="entrySummary" class="small muted" style="margin-top:8px"></div>`);
   m.classList.add("modal-meet-entry");
 
@@ -3021,7 +3046,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
     ${meet==="world_championship"?`<div class="notice">3月の日本選手権で選出された日本代表を自動登録しています。自チーム選手が出場するレースは映像、それ以外は結果を表示します。${state.japanTeam?.year===calendarYear(competitionSeason,competitionSlot)?"":"<br>この年の代表選考データがありません。日本代表の出場はありません。"}</div>`:""}
     ${FOUR_DAY_MEETS.has(meet)?'<p class="small">4日間の日程で進めます。各日の全種目の予選後に決勝を行い、各種目の開始前にその日のエントリー一覧を表示します。</p>':""}
     <h3>個人種目</h3><div class="entry-summary-grid">${cards}</div>
-    ${relayCards?`<h3 style="margin-top:14px">リレー</h3><div class="entry-summary-grid">${relayCards}</div>`:""}
+    ${relayCards?`<h3 style="margin-top:14px">リレー予選</h3><p class="small">決勝に進むと、決勝レース前に4名と泳順を変更できます。</p><div class="entry-summary-grid">${relayCards}</div>`:""}
     <div class="row modal-actions">
       ${meet==="world_championship"?'<button id="std">参加・派遣標準</button>':'<button id="backEntry">エントリーへ戻る</button>'}
       <button id="goRace" class="primary">この内容でレースへ進む</button>
@@ -3047,7 +3072,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
       try{
         state.activeCompetitionSlot=competitionSlot;
         state.activeCompetitionSeason=competitionSeason;
-        let result=executeMeet(meet,selections,relaySel);
+        let result=executeMeet(meet,selections,relaySel,{deferRelayFinalEntries:true});
         let own=meet==="world_championship"?worldOwnEntries(calendarYear(competitionSeason,competitionSlot)):{individual:selections,relays:relaySel};
         result.entries=deepClone(own.individual);
         result.relayEntries=deepClone(own.relays);
@@ -3117,7 +3142,7 @@ function buildMeetProgram(result,selections){
         let [,finals,meta]=entry;
         rows=phase==="final"?finals:meta?.prelim||[];
         heats=meta?.heats||[];relayTeams=rows;
-        ownIds=result.relayEntries?.[e]||[];
+        ownIds=(phase==="final"?result.relayFinalEntries?.[e]:null)??result.relayEntries?.[e]??[];
         stage=phase==="final"?"relay_final":"relay_prelim";
       }else{
         eventResult=result.events[e];if(!eventResult)continue;
@@ -3131,11 +3156,10 @@ function buildMeetProgram(result,selections){
   });
   return program;
 }
-function buildMeetRaceQueue(result,selections){
-  let queue=[],program=buildMeetProgram(result,selections);
-  program.forEach((block,programIndex)=>{
+function buildMeetBlockRaceQueue(block,programIndex){
+  let queue=[];
     let {event:e,phase,stage,ownIds}=block,relay=RELAYS.includes(e);
-    if(relay?ownIds.length!==4:!ownIds.length)return;
+    if(relay?ownIds.length!==4:!ownIds.length)return queue;
     let start=queue.length,groups=phase==="final"?[block.rows]:block.heats;
     groups.forEach((group,hi)=>{
       let own=relay?group.some(ownsRelayTeam):group.some(x=>x.source==="PLAYER"||ownIds.includes(x.athlete.id));
@@ -3146,8 +3170,10 @@ function buildMeetRaceQueue(result,selections){
       queue.push({event:e,label,rows,stage,day:block.day,phase,programIndex,heatNo:hi+1,heatCount:groups.length,eventResult:block.eventResult,relayTeams:block.relayTeams});
     });
     if(queue.length>start)queue[queue.length-1].eventEnd=true;
-  });
   return queue;
+}
+function buildMeetRaceQueue(result,selections){
+  return buildMeetProgram(result,selections).flatMap((block,i)=>buildMeetBlockRaceQueue(block,i));
 }
 function meetProgramOwnNames(result,event,phase,emptyLabel="出場なし"){
   let athletes;
@@ -3248,20 +3274,63 @@ function playMeetSequence(result,selections,onComplete,preparedQueue=null){
         stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup
       }),0);
     };
-    if(block.showOverview)showMeetDayProgram(result,block,()=>runGroup(0),completedPrelims);
-    else runGroup(0);
+    const beginBlock=()=>{
+      if(!races.length){next();return}
+      if(block.showOverview)showMeetDayProgram(result,block,()=>runGroup(0),completedPrelims);
+      else runGroup(0);
+    };
+    let relayEntry=result.relays?.find(x=>x[0]===block.event);
+    if(block.stage==="relay_final"&&relayEntry?.[2]?.finalEntryPending){
+      let team=relayEntry[1].find(ownsRelayTeam),initialIds=team.members.map(p=>p.id),draft={[block.event]:[...initialIds]};
+      const enterFinal=ids=>{
+        setRelayFinalEntry(result,block.event,ids);
+        Object.assign(block,buildMeetProgram(result,selections)[programIndex]);
+        queue=queue.filter(q=>q.programIndex!==programIndex).concat(buildMeetBlockRaceQueue(block,programIndex));
+        races=queue.filter(q=>q.programIndex===programIndex);
+        autoSaveNow();beginBlock();
+      };
+      openRelayEditor(draft,()=>enterFinal(draft[block.event]),{
+        kinds:[block.event],roster:relayFinalRoster(result),required:true,
+        title:`${RELAY_LABEL[block.event]} 決勝エントリー`,confirmLabel:"このメンバーで決勝へ",
+        cancelLabel:"予選の編成で決勝へ",onCancel:()=>enterFinal(initialIds),
+        notice:result.meet==="world_championship"?"予選を通過しました。選出済みの日本代表から決勝の4名と泳順を選んでください。":"予選を通過しました。自チームから決勝の4名と泳順を選んでください。"
+      });
+    }else beginBlock();
   };
   next();
 }
-function openRelayEditor(relaySel,done){
+function relayFinalRoster(result){
+  return result.meet==="world_championship"?(state.japanTeam?.athletes||[]).map(x=>japanTeamAthlete(x.id)).filter(Boolean):state.players;
+}
+function setRelayFinalEntry(result,kind,ids){
+  let entry=result.relays?.find(x=>x[0]===kind),team=entry?.[1].find(ownsRelayTeam);
+  if(!team||!entry[2]?.finalEntryPending)throw new Error("このリレーの決勝エントリーは変更できません。");
+  let roster=relayFinalRoster(result),members=ids.map(id=>roster.find(p=>p.id===id)).filter(Boolean);
+  if(ids.length!==4||new Set(ids).size!==4||members.length!==4)throw new Error("決勝は出場可能な選手を重複なく4名選んでください。");
+  let unchanged=team.members.every((p,i)=>p.id===ids[i]);
+  if(!unchanged){team.members=members;team.race=simulateRelay(members,kind,true)}
+  entry[1].sort((a,b)=>a.race.total-b.race.total).forEach((t,i)=>t.rank=i+1);
+  entry[2].finalEntryPending=false;
+  if(!result.relayFinalEntries)result.relayFinalEntries={};
+  result.relayFinalEntries[kind]=result.meet==="world_championship"&&!members.some(p=>ownJapanAthlete(p.id))?[]:[...ids];
+  if(result.meet!=="world_championship")upsertRelayTop10(kind,team.members,team.race.total,result.meet);
+  result.teamScores=teamScoring(result.meet,result.events,result.relays);
+  if(result.historyEntry)result.historyEntry.teamScores=result.teamScores;
+  if(result.teamScoreEntry)result.teamScoreEntry.scores=result.teamScores;
+  refreshRecordBook();
+  return team;
+}
+function openRelayEditor(relaySel,done,options={}){
   const root=document.getElementById("modalRoot");
+  const kinds=options.kinds||RELAYS,roster=options.roster||state.players,draft=deepClone(relaySel);
   const layer=document.createElement("div");
   layer.className="modal-back";
   layer.style.zIndex="80";
   layer.innerHTML=`<div class="modal modal-relay-editor">
-    <div class="row"><h2 style="margin-right:auto">リレー編成</h2><button id="relayClose">戻る</button></div>
+    <div class="row"><h2 style="margin-right:auto">${esc(options.title||"リレー予選編成")}</h2><button id="relayClose">${esc(options.cancelLabel||"戻る")}</button></div>
+    ${options.notice?`<p class="notice">${esc(options.notice)}</p>`:""}
     <div id="relayEditorBody"></div>
-    <div class="row" style="margin-top:12px"><button id="relayOk" class="primary">確定して種目選択へ戻る</button></div>
+    <div class="row" style="margin-top:12px"><button id="relayOk" class="primary">${esc(options.confirmLabel||"確定して種目選択へ戻る")}</button></div>
   </div>`;
   root.appendChild(layer);
   const m=layer.querySelector(".modal"),body=m.querySelector("#relayEditorBody");
@@ -3276,21 +3345,21 @@ function openRelayEditor(relaySel,done){
     return `${i+1}泳`;
   }
   function renderEditor(){
-    body.innerHTML=RELAYS.map(kind=>`<div class="card">
+    body.innerHTML=kinds.map(kind=>`<div class="card">
       <b>${RELAY_LABEL[kind]}</b>
       <div class="row" style="margin-top:8px">${[0,1,2,3].map(i=>{
-        let e=legEvent(kind,i),current=relaySel[kind]?.[i]||"";
+        let e=legEvent(kind,i),current=draft[kind]?.[i]||"";
         return`<label>${legName(kind,i)}<br><select data-kind="${kind}" data-i="${i}" style="min-width:220px">
           <option value="">-- 選択 --</option>
-          ${state.players.map(p=>`<option value="${p.id}" ${current===p.id?"selected":""}>${esc(p.name)} — ${EVENT_LABEL[e]} ${fmt(p.bestTimes[e])}</option>`).join("")}
+          ${roster.map(p=>`<option value="${p.id}" ${current===p.id?"selected":""}>${esc(p.name)}（${athleteGradeLabel(p)}） — ${EVENT_LABEL[e]} ${fmt(p.bestTimes[e])}</option>`).join("")}
         </select></label>`;
       }).join("")}</div>
     </div>`).join("");
-    RELAYS.forEach(kind=>refreshKind(kind));
+    kinds.forEach(kind=>refreshKind(kind));
     body.querySelectorAll("select[data-kind]").forEach(sel=>sel.onchange=()=>{
       let kind=sel.dataset.kind,i=+sel.dataset.i;
-      if(!relaySel[kind])relaySel[kind]=["","","",""];
-      relaySel[kind][i]=sel.value;
+      if(!draft[kind])draft[kind]=["","","",""];
+      draft[kind][i]=sel.value;
       refreshKind(kind);
     });
   }
@@ -3306,20 +3375,22 @@ function openRelayEditor(relaySel,done){
       sel.value=current;
     });
   }
-  m.querySelector("#relayClose").onclick=closeChild;
+  m.querySelector("#relayClose").onclick=()=>{closeChild();options.onCancel?.()};
   m.querySelector("#relayOk").onclick=()=>{
-    for(let kind of RELAYS){
+    let next={};
+    for(let kind of kinds){
       let vals=[...body.querySelectorAll(`select[data-kind="${kind}"]`)].map(s=>s.value).filter(Boolean);
-      if(vals.length!==0&&vals.length!==4){alert(`${RELAY_LABEL[kind]}は4名すべて選ぶか、全員未選択にしてください`);return}
+      if((options.required&&vals.length!==4)||(vals.length!==0&&vals.length!==4)){alert(`${RELAY_LABEL[kind]}は${options.required?"4名すべて選んでください":"4名すべて選ぶか、全員未選択にしてください"}`);return}
       if(new Set(vals).size!==vals.length){alert("同じ選手を2回選ぶことはできません");return}
-      relaySel[kind]=vals;
+      next[kind]=vals;
     }
+    Object.assign(relaySel,next);
     closeChild();done?.();
   };
   renderEditor();
 }
-function executeMeet(meet,selections,relaySel){
-  if(meet==="world_championship")return executeWorldMeet();
+function executeMeet(meet,selections,relaySel,options={}){
+  if(meet==="world_championship")return executeWorldMeet(options);
   if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
     let used={};
     for(let e of EVENTS){
@@ -3359,10 +3430,10 @@ function executeMeet(meet,selections,relaySel){
     for(let e of EVENTS)results[e]=runEvent(meet,e,selections[e],cpuCollegeEntries);
   }
 
-  let relays=runRelays(meet,relaySel),scores=teamScoring(meet,results,relays);
+  let relays=runRelays(meet,relaySel,!!options.deferRelayFinalEntries),scores=teamScoring(meet,results,relays),teamScoreEntry=null;
 
   if(TEAM_SCORE_MEETS.has(meet)){
-    state.teamScoreHistory.push({season:activeCompetitionSeason(),meet,scores});
+    teamScoreEntry={season:activeCompetitionSeason(),meet,scores};state.teamScoreHistory.push(teamScoreEntry);
   }
 
   // Reputation is based on qualifying-meet participation, not team points.
@@ -3374,15 +3445,15 @@ function executeMeet(meet,selections,relaySel){
     let rows=results[e].final.length?results[e].final:results[e].prelim;
     if(rows.length)podiums[e]=rows.slice(0,3).map((x,i)=>({rank:i+1,name:x.athlete.name,organization:x.athlete.organization,time:x.race.total}));
   }
-  state.meetHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,teamScores:scores,pointsAfter:state.points,podiums});
+  let historyEntry={season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,teamScores:scores,pointsAfter:state.points,podiums};state.meetHistory.push(historyEntry);
   refreshRecordBook();
   let selection=meet==="japan_championship"?selectJapanTeam(results,calendarYear(activeCompetitionSeason(),activeCompetitionSlot())):null;
-  return{meet,events:results,relays,teamScores:scores,selection};
+  return{meet,events:results,relays,teamScores:scores,selection,historyEntry,teamScoreEntry};
 }
-function executeWorldMeet(){
+function executeWorldMeet(options={}){
   let year=calendarYear(activeCompetitionSeason(),activeCompetitionSlot());
   if(!isWorldChampionshipYear(year))throw new Error("この年は世界大会の開催年ではありません。");
-  let events=Object.fromEntries(EVENTS.map(e=>[e,runWorldEvent(e,year)])),relays=runWorldRelays(year),own=worldOwnEntries(year);
+  let events=Object.fromEntries(EVENTS.map(e=>[e,runWorldEvent(e,year)])),relays=runWorldRelays(year,!!options.deferRelayFinalEntries),own=worldOwnEntries(year);
   let podiums=Object.fromEntries(EVENTS.map(e=>[e,events[e].final.slice(0,3).map((x,i)=>({rank:i+1,name:x.athlete.name,organization:x.nationality||x.athlete.organization,time:x.race.total}))]));
   state.meetHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet:"world_championship",teamScores:{},pointsAfter:state.points,podiums});
   refreshRecordBook();
@@ -3706,7 +3777,7 @@ function renderRankings(){
         <td><span class="rank-pill ${topClass}">${i+1}</span></td>
         <td><span class="athlete-name">${own?"★ ":""}${esc(a.name)}</span></td><td>${esc(a.organization)}</td>
         <td>${own?'<span class="tag good">自大学</span>':({middle:"中学",high:"高校",university:"大学",adult:"社会人"}[a.category]||"-")}</td>
-        <td>${own?`<span class="grade-pill">${a.year}年</span>`:(a.grade?`${a.grade}年 / ${a.age}歳`:`${a.age}歳`)}</td>
+        <td>${own?`<span class="grade-pill">${a.year}年 / ${a.age}歳</span>`:(a.grade?`${a.grade}年 / ${a.age}歳`:`${a.age}歳`)}</td>
         <td><b>${fmt(a.bestTimes[e])}</b></td>
       </tr>`;
     }).join("")||'<tr><td colspan="6"><div class="empty-state">まだ記録がありません。</div></td></tr>'}</tbody></table>`;

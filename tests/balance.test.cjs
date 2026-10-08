@@ -20,6 +20,60 @@ function game(seed = 12345) {
   return run;
 }
 
+test('CPU cohorts and abilities stay stable through twelve full seasons and repeated college participation',()=>{
+  const run=game();
+  const samples=JSON.parse(run(`JSON.stringify((()=>{
+    const samples=[],snapshot=()=>{
+      const cpu=state.world.filter(a=>a.category==='university'),values=cpu.map(overallStatValue).sort((a,b)=>a-b);
+      const sizes=state.universities.flatMap(u=>[1,2,3,4].map(grade=>cpu.filter(a=>a.organization===u.name&&a.grade===grade).length));
+      return {season:state.season,count:cpu.length,expected:state.universities.length*20,sizes,
+        mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
+        reputationBound:state.universities.every(u=>Math.abs(u.reputation-u.baseReputation)<=25.01)};
+    };
+    samples.push(snapshot());
+    for(let year=1;year<=12;year++){
+      for(let turn=0;turn<96;turn++){state.slot=turn+1;trainCommand()}
+      for(const meet of ['kansai_college','intercollege']){
+        const entries=buildCpuCollegeEntries(meet),byId=new Map(state.world.map(a=>[a.id,a]));
+        updateCpuUniversityReputations(meet,Object.fromEntries(EVENTS.map(e=>[e,{prelim:entries[e].map(id=>({source:'CPU',athlete:byId.get(id)}))}])));
+      }
+      newSeason();
+      if(year%4===0)samples.push(snapshot());
+    }
+    return samples;
+  })())`));
+  for(const sample of samples){
+    assert.equal(sample.count,sample.expected,JSON.stringify(sample));
+    assert.ok(sample.sizes.every(n=>n===5));assert.equal(sample.reputationBound,true);
+    assert.ok(Math.abs(sample.mean-samples[0].mean)<4,JSON.stringify(sample));
+    assert.ok(Math.abs(sample.p90-samples[0].p90)<5,JSON.stringify(sample));
+  }
+});
+
+test('CPU individuals vary within one team and the new legacy spread preserves players, alumni and title records once',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    let used=new Set(),sample=Array.from({length:80},()=>makeAthlete('university','同じ大学',used,20,2,82));
+    let values=sample.map(overallStatValue),mean=values.reduce((a,b)=>a+b)/values.length;
+    let own=JSON.stringify(state.players),alumni={...deepClone(state.players[0]),id:'preserved-alumni',category:'adult',age:26,alumni:true};
+    state.world.push(alumni);let savedAlumni=JSON.stringify(alumni);
+    for(let a of state.world.filter(a=>a.category==='university')){
+      a.stats=Object.fromEntries(STATS.map(k=>[k,120]));a.bestTimes=Object.fromEntries(EVENTS.map(e=>[e,expectedTime(a,e)]));
+    }
+    state.cpuDiversityVersion=1;migrateState();
+    let first=JSON.stringify(state.world),cpu=state.world.filter(a=>a.category==='university').map(overallStatValue);
+    let cpuMean=cpu.reduce((a,b)=>a+b)/cpu.length;
+    let titlesValid=state.world.every(a=>(a.accolades||[]).every(t=>!EVENTS.includes(t.event)||!Number.isFinite(t.time)||a.bestTimes[t.event]<=t.time));
+    migrateState();
+    return {sampleSD:Math.sqrt(values.reduce((s,v)=>s+(v-mean)**2,0)/values.length),
+      legacySD:Math.sqrt(cpu.reduce((s,v)=>s+(v-cpuMean)**2,0)/cpu.length),
+      ownPreserved:JSON.stringify(state.players)===own,alumniPreserved:JSON.stringify(state.world.find(a=>a.id===alumni.id))===savedAlumni,
+      once:first===JSON.stringify(state.world),titlesValid};
+  })())`));
+  assert.ok(result.sampleSD>8,JSON.stringify(result));assert.ok(result.legacySD>4,JSON.stringify(result));
+  assert.ok(result.ownPreserved&&result.alumniPreserved&&result.once&&result.titlesValid,JSON.stringify(result));
+});
+
 test('initial teammates have visibly different overall abilities within the same grade',()=>{
   let spreads=[],deviations=[];
   for(const seed of [12345,20261008,816,5914,314159,987654]){
@@ -244,7 +298,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.30.2');
+  assert.equal(result.version, 'pwa-v1.31');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -401,5 +455,5 @@ test('CPU universities and swimmers have wider differences and legacy diversity 
     return {repRange:Math.max(...teams.map(u=>u.rep))-Math.min(...teams.map(u=>u.rep)),abilityRange:Math.max(...teams.map(u=>u.mean))-Math.min(...teams.map(u=>u.mean)),preserved:own===JSON.stringify(state.players[0]),alumniPreserved:JSON.stringify(state.world.find(a=>a.id===alumni.id))===oldAlumni,once:first===JSON.stringify(state.world)&&reps===JSON.stringify(state.universities),version:state.cpuDiversityVersion};
   })())`));
   assert.ok(result.repRange>280,JSON.stringify(result));assert.ok(result.abilityRange>28,JSON.stringify(result));
-  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,1);
+  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,2);
 });
