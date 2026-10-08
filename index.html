@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.30.1</title>
+<title>大学競泳監督シミュレーション PWA版 v1.30.2</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1119,7 +1119,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.30.1</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.30.2</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1267,6 +1267,11 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   <div class="page-lead"><div><h1>スカウト</h1><p>高校生の実績・PBと自大学評判から勧誘成功率が決まります。</p></div></div>
   <div class="card">
     <div class="row"><h2 style="margin-right:auto">スカウト候補</h2><span class="tag good">新年度自動更新</span></div>
+    <div class="row" style="margin-top:10px">
+      <label>専門種目 <select id="scoutEventFilter"></select></label>
+      <label>並び順 <select id="scoutSortMode"><option value="default">肩書・発見順</option><option value="pb">種目別・PBが速い順</option></select></label>
+    </div>
+    <p class="muted small">専門種目を選ぶと、その種目のPBが速い順に表示します。</p>
     <div id="scoutTable" class="table-wrap" style="margin-top:10px"></div>
   </div>
 </section>
@@ -1427,7 +1432,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.30.1";
+  state.version="pwa-v1.30.2";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -1442,14 +1447,17 @@ function migrateState(){
   if(!state.alumniCareer)state.alumniCareer=[];
   if(!state.pendingFreshmenWelcome)state.pendingFreshmenWelcome=[];
   if(!state.organizationNames)state.organizationNames={middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]};
-  if(state.orgNameModelVersion!==2){migrateLegacyOrganizationNames();state.orgNameModelVersion=2}
+  let upgradeOrganizationNames=state.orgNameModelVersion!==2;
+  if(upgradeOrganizationNames){migrateLegacyOrganizationNames();state.orgNameModelVersion=2}
+  let defaultOrganizationNames={middle:MIDDLE_SCHOOLS,high:HIGH_SCHOOLS,adult:ADULT_TEAMS};
   for(let cat of ["middle","high","adult"]){
-    if(!Array.isArray(state.organizationNames[cat]))state.organizationNames[cat]=[];
-    state.organizationNames[cat]=[...new Set(state.organizationNames[cat].filter(Boolean))];
+    let names=state.organizationNames[cat];
+    names=Array.isArray(names)?[...new Set(names.filter(Boolean))]:[];
+    if(!names.length)names=[...defaultOrganizationNames[cat]];
+    // Expand legacy pools once; a renamed current team replaces its old name.
+    if(upgradeOrganizationNames)for(let n of defaultOrganizationNames[cat])if(!names.includes(n))names.push(n);
+    state.organizationNames[cat]=names;
   }
-  for(let n of MIDDLE_SCHOOLS)if(!state.organizationNames.middle.includes(n))state.organizationNames.middle.push(n);
-  for(let n of HIGH_SCHOOLS)if(!state.organizationNames.high.includes(n))state.organizationNames.high.push(n);
-  for(let n of ADULT_TEAMS)if(!state.organizationNames.adult.includes(n))state.organizationNames.adult.push(n);
   for(let u of EXTRA_UNIVERSITIES)if(!(state.universities||[]).some(x=>x.id===u.id))state.universities.push(deepClone(u));
   if(state.cpuUniversityRepModelVersion!==3){
     for(let u of state.universities){
@@ -2059,8 +2067,16 @@ function makeInitialPlayer(year,used){
   rollProdigy(p,year);
   return p;
 }
-function createState(){
-  let s={version:"pwa-v1.30.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+function createState(nameSettings=null){
+  let s={version:"pwa-v1.30.2",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  if(nameSettings){
+    if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
+    for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
+    for(let cat of ["middle","high","adult"]){
+      let names=nameSettings.organizationNames?.[cat];
+      if(Array.isArray(names)&&names.length)s.organizationNames[cat]=[...names];
+    }
+  }
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -3711,11 +3727,22 @@ function renderRecords(){
 
 }
 function renderScout(){
-  let rows=refreshScoutBoard();
+  let selectedEvent=document.getElementById("scoutEventFilter").value;
+  let sortMode=document.getElementById("scoutSortMode").value;
+  let rows=refreshScoutBoard().map(a=>{
+    let info=bestScoutEvent(a),event=EVENTS.includes(a.specialty)?a.specialty:info.event;
+    return{athlete:a,info,event};
+  }).filter(x=>!selectedEvent||x.event===selectedEvent);
+  if(sortMode==="pb")rows.sort((a,b)=>{
+    let eventOrder=EVENTS.indexOf(a.event)-EVENTS.indexOf(b.event);
+    if(eventOrder)return eventOrder;
+    let ta=a.athlete.bestTimes?.[a.event],tb=b.athlete.bestTimes?.[b.event];
+    return (Number.isFinite(ta)?ta:Infinity)-(Number.isFinite(tb)?tb:Infinity);
+  });
   document.getElementById("scoutTable").innerHTML=`<table>
-    <thead><tr><th>選手</th><th>高校</th><th>肩書</th><th>最も得意な種目PB</th><th>成功率</th><th></th></tr></thead>
-    <tbody>${rows.map(a=>{
-      let info=bestScoutEvent(a),e=info.event,title=info.title,p=scoutProbability(a),pct=p*100;
+    <thead><tr><th>選手</th><th>高校</th><th>肩書</th><th>専門種目PB</th><th>成功率</th><th></th></tr></thead>
+    <tbody>${rows.map(({athlete:a,info,event:e})=>{
+      let title=info.title,p=scoutProbability(a),pct=p*100;
       let titleText=title?`${esc(title.title)}`:(a.discovered?"合同記録会出場":"通常候補");
       let pc=pct>=55?"easy":pct>=25?"mid":pct>=8?"hard":"very-hard";
       return`<tr>
@@ -3726,7 +3753,7 @@ function renderScout(){
         <td><span class="prob-pill ${pc}">${pct.toFixed(1)}%</span></td>
         <td><button data-scout="${a.id}" class="primary">1ptで勧誘</button></td>
       </tr>`;
-    }).join("")}</tbody></table>`;
+    }).join("")||'<tr><td colspan="6" class="muted">この専門種目のスカウト候補はいません。</td></tr>'}</tbody></table>`;
   document.querySelectorAll("[data-scout]").forEach(b=>b.onclick=()=>doScout(b.dataset.scout));
 }
 function renderFacilities(){
@@ -3953,14 +3980,17 @@ function loadLocal(showMessage=false){
   }
 }
 function resetGame(){
-  if(!confirm("ゲームを初期化します。現在の進行データは失われます。よろしいですか？"))return;
+  if(!confirm("大学名・学校名・チーム名を引き継いでゲームを初期化します。現在の進行データは失われます。よろしいですか？"))return;
+  let nameSettings={playerUniversity:state.playerUniversity,
+    universityNames:Object.fromEntries(state.universities.map(u=>[u.id,u.name])),
+    organizationNames:deepClone(organizationNames())};
   try{
     localStorage.removeItem("swimManagerSave");
     localStorage.removeItem("swimManagerHtmlV13");
   }catch(e){}
-  state=createState();migrateState();selectedTrainingId=null;
+  state=createState(nameSettings);migrateState();selectedTrainingId=null;
   initSelectors();renderAll();autoSaveNow();
-  alert("初期化しました");
+  alert("大学名・学校名・チーム名を引き継いで初期化しました");
 }
 
 function exportJson(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`swim_manager_${state.season}_slot${state.slot}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
@@ -4051,6 +4081,9 @@ async function initializeCloudSync(){
 function initSelectors(){
   let r=document.getElementById("rankEvent");
   if(r){r.innerHTML=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");r.value="fr100"}
+  let scoutEvent=document.getElementById("scoutEventFilter");
+  if(scoutEvent)scoutEvent.innerHTML='<option value="">すべて</option>'+EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
+  let scoutSort=document.getElementById("scoutSortMode");if(scoutSort)scoutSort.value="default";
 }
 
 function setupLandscapeViewport(){
@@ -4132,6 +4165,11 @@ document.getElementById("copyPlanBtn").onclick=()=>{
 if(document.getElementById("rosterSortMode"))document.getElementById("rosterSortMode").onchange=renderRoster;
 if(document.getElementById("rankEvent"))document.getElementById("rankEvent").onchange=renderRankings;
 if(document.getElementById("rankCategory"))document.getElementById("rankCategory").onchange=renderRankings;
+document.getElementById("scoutEventFilter").onchange=()=>{
+  if(document.getElementById("scoutEventFilter").value)document.getElementById("scoutSortMode").value="pb";
+  renderScout();
+};
+document.getElementById("scoutSortMode").onchange=renderScout;
 
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="hidden")autoSaveNow();

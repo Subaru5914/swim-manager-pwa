@@ -17,7 +17,7 @@ after(async () => { await browser?.close(); });
 
 async function testContext(options) {
   const context=await browser.newContext(options);
-  await context.addInitScript(()=>{Object.defineProperty(crypto,'getRandomValues',{value:array=>{array[0]=12345;return array;}});});
+  await context.addInitScript(()=>{Object.defineProperty(crypto,'getRandomValues',{configurable:true,value:array=>{array[0]=12345;return array;}});});
   return context;
 }
 
@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.30.1', 'v1.30'));
+      data = Buffer.from(data.toString().replaceAll('v1.30.2', 'v1.30.1'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -119,6 +119,62 @@ test('unconfigured cloud setup keeps local play working and exposes configuratio
     await page.locator('#cloudClose').click();await page.locator('#saveBtn').click();
     await page.reload();assert.ok(await page.evaluate(()=>state.players.length===32));
     assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close()}
+});
+
+test('game reset retains every configured organization name, resets progress and survives reload',async()=>{
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=[],dialogs=[];let acceptReset=false;
+    page.on('pageerror',error=>errors.push(error.message));
+    page.on('console',message=>{if(message.type()==='warning')errors.push(message.text())});
+    page.on('dialog',async dialog=>{
+      dialogs.push({type:dialog.type(),message:dialog.message()});
+      if(dialog.type()==='confirm'&&!acceptReset)await dialog.dismiss();else await dialog.accept();
+    });
+    await page.goto(app.url);
+    const original=await page.evaluate(()=>{
+      renamePlayerUniversity('保持した自大学');
+      state.universities.forEach((u,i)=>renameOrganization('university',i,`保持した大学${i+1}`));
+      for(const cat of ['middle','high','adult'])organizationNames()[cat].forEach((n,i)=>renameOrganization(cat,i,`保持した${cat}${i+1}`));
+      state.season=2032;state.slot=59;state.points=888;state.reputation=310;
+      STATS.forEach(k=>{state.facilities[k]=75;state.players[0].stats[k]=165});
+      state.universities[0].reputation=500;state.players[0].bestTimes.fr100=48.01;
+      state.meetHistory=[{season:2031,meet:'intercollege',pointsAfter:888}];
+      renderAll();saveLocal();
+      return{state:JSON.stringify(state),save:localStorage.getItem('swimManagerSave'),
+        names:{player:state.playerUniversity,universities:state.universities.map(u=>({id:u.id,name:u.name})),organizations:deepClone(organizationNames())},
+        players:JSON.stringify(state.players)};
+    });
+    await page.locator('.utility-summary').click();await page.locator('#resetBtn').click();
+    assert.equal(await page.evaluate(()=>JSON.stringify(state)),original.state);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('swimManagerSave')),original.save);
+    acceptReset=true;
+    await page.evaluate(()=>Object.defineProperty(crypto,'getRandomValues',{value:array=>{array[0]=24680;return array;}}));
+    await page.locator('.utility-summary').click();await page.locator('#resetBtn').click();
+    await page.waitForFunction(()=>state.season===2026&&state.points===0);
+    const reset=await page.evaluate(()=>({
+      names:{player:state.playerUniversity,universities:state.universities.map(u=>({id:u.id,name:u.name})),organizations:deepClone(organizationNames())},
+      season:state.season,slot:state.slot,points:state.points,reputation:state.reputation,
+      facilities:Object.values(state.facilities),count:state.players.length,players:JSON.stringify(state.players),
+      ownAffiliations:state.players.every(p=>p.organization===state.playerUniversity),
+      cpuFresh:state.universities.every(u=>u.reputation===initialUniversityReputation(u.strength)),
+      worldAffiliations:state.world.every(a=>a.category==='university'?state.universities.some(u=>u.name===a.organization):organizationNames()[a.category].includes(a.organization)),
+      everyOrgPopulated:['middle','high','adult'].every(cat=>organizationNames()[cat].every(n=>state.world.some(a=>a.category===cat&&a.organization===n)))&&state.universities.every(u=>state.world.some(a=>a.category==='university'&&a.organization===u.name)),
+      history:state.meetHistory.length,savedNames:JSON.parse(localStorage.getItem('swimManagerSave')).organizationNames
+    }));
+    assert.deepEqual(reset.names,original.names);
+    assert.deepEqual([reset.season,reset.slot,reset.points,reset.reputation,reset.count,reset.history],[2026,1,0,35,32,0]);
+    assert.ok(reset.facilities.every(v=>v===0));assert.notEqual(reset.players,original.players);
+    assert.ok(reset.ownAffiliations&&reset.cpuFresh&&reset.worldAffiliations&&reset.everyOrgPopulated);
+    assert.deepEqual(reset.savedNames,original.names.organizations);
+    await page.reload();
+    assert.deepEqual(await page.evaluate(()=>({player:state.playerUniversity,universities:state.universities.map(u=>({id:u.id,name:u.name})),organizations:deepClone(organizationNames())})),original.names);
+    await page.locator('.utility-summary').click();await page.locator('#universitiesBtn').click();
+    assert.ok((await page.locator('#settingsPlayerUniversity').innerText()).includes(original.names.player));
+    assert.equal(await page.locator('#settingsHigh .org-edit-row').count(),original.names.organizations.high.length);
+    assert.deepEqual(dialogs.map(d=>d.type),['confirm','confirm','alert']);
+    assert.ok(dialogs.every(d=>d.message.includes('引き継いで')));assert.deepEqual(errors,[]);
   }finally{await context.close();await app.close()}
 });
 
@@ -397,7 +453,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.30 cache to v1.30.1 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.30.1 cache to v1.30.2 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -406,7 +462,7 @@ test('PWA upgrades its v1.30 cache to v1.30.1 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.30.1'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -416,19 +472,19 @@ test('PWA upgrades its v1.30 cache to v1.30.1 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.30.1') && !keys.includes('swim-manager-pwa-v1.30');
+      return keys.includes('swim-manager-pwa-v1.30.2') && !keys.includes('swim-manager-pwa-v1.30.1');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.30\.1/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30.1');
+    assert.match(await page.title(), /v1\.30\.2/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30.2');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.30\.1/);
+    assert.match(await page.title(), /v1\.30\.2/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
