@@ -16,6 +16,73 @@ function game(seed = 12345) {
 }
 const json = (run, code) => JSON.parse(run(`JSON.stringify(${code})`));
 
+test('college totals rank ties consistently and distinguish medals, places and scoreless teams',()=>{
+  const run=game();
+  const result=json(run,`collegePointRankings({優勝校:100,銀校:90,銅校:80,同点校:80,五位校:60,六位校:50,七位校:40,八位校:30,九位校:20,無得点校:0})`);
+  assert.deepEqual(result.map(r=>r.rank),[1,2,3,3,5,6,7,8,9,10]);
+  assert.deepEqual(result.map(r=>r.award),['総合優勝','第2位','第3位','第3位','入賞','入賞','入賞','入賞','','']);
+  assert.equal(result.at(-1).points,0);
+  assert.equal(json(run,'collegePointRankings({無得点校:0})')[0].award,'');
+});
+
+test('individual top-ten records retain school-era results through university, adulthood, retirement and reload',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};
+    let a={id:'career-record',name:'記録選手',category:'high',grade:3,organization:'記録高校',bestTimes:{}};
+    recordIndividualResult(a,'fr100',50,'全国高校総体','決勝');
+    a.category='university';a.organization='記録大学';state.season++;
+    recordIndividualResult(a,'fr100',49,'intercollege','決勝');
+    recordIndividualResult(a,'fr100',52,'intercollege','予選');
+    a.category='adult';a.organization='記録チーム';state.season++;
+    recordIndividualResult(a,'fr100',48,'japan_championship','決勝');
+    recordIndividualResult({...a,id:'foreign-record',category:'international',nationality:'USA'},'fr100',40,'world_championship','決勝');
+    let before=JSON.stringify(state.recordRankings);
+    state=JSON.parse(JSON.stringify(state));migrateState();
+    return {before,after:JSON.stringify(state.recordRankings),high:state.recordRankings.high.fr100,
+      university:state.recordRankings.university.fr100,japan:state.recordRankings.japan.fr100};
+  })()`);
+  assert.equal(result.before,result.after);
+  assert.deepEqual(result.high.map(r=>[r.time,r.organization,r.season]),[[50,'記録高校',2026]]);
+  assert.deepEqual(result.university.map(r=>[r.time,r.organization,r.season]),[[49,'記録大学',2027]]);
+  assert.deepEqual(result.japan.map(r=>[r.time,r.organization,r.season]),[[48,'記録チーム',2028]]);
+});
+
+test('record tables keep only ten distinct fastest swimmers and relay teams and exclude mixed-school relays from school records',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};
+    for(let i=0;i<15;i++)recordIndividualResult({id:'top'+i,name:'選手'+i,category:'high',organization:'高校'},'fr50',30-i*.1,'全国高校総体','決勝');
+    let students=Array.from({length:5},(_,i)=>({id:'relay'+i,name:'泳者'+i,category:'university',organization:'記録大学'}));
+    recordRelayResult('4x100fr',{organization:'記録大学',members:students.slice(0,4),race:{total:200}},'intercollege','予選');
+    recordRelayResult('4x100fr',{organization:'記録大学',members:students.slice(1),race:{total:199}},'intercollege','決勝');
+    students[0].organization='別大学';
+    recordRelayResult('4x100fr',{organization:'日本',members:students.slice(0,4),race:{total:190}},'world_championship','決勝');
+    recordRelayResult('4x100fr',{organization:'海外',members:students.slice(0,4).map(a=>({...a,category:'international'})),race:{total:180}},'world_championship','決勝');
+    return {individual:state.recordRankings.high.fr50,studentRelays:state.recordRankings.university['4x100fr'],nationalRelays:state.recordRankings.japan['4x100fr']};
+  })()`);
+  assert.equal(result.individual.length,10);assert.deepEqual(result.individual.map(r=>r.time),[28.6,28.7,28.8,28.9,29,29.1,29.2,29.3,29.4,29.5]);
+  assert.equal(result.studentRelays.length,1);assert.equal(result.studentRelays[0].time,199);
+  assert.deepEqual(result.studentRelays[0].members.map(a=>a.id),['relay1','relay2','relay3','relay4']);
+  assert.deepEqual(result.nationalRelays.map(r=>[r.organization,r.time]),[['日本',190],['記録大学',199]]);
+});
+
+test('legacy records migrate once with high-school medals and graduate university records intact',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    delete state.recordRankings;delete state.recordRankingVersion;
+    let a=state.players[0];a.accolades.push({competition:'全国高校総体',event:'fr50',time:20,season:2023});
+    upsertIndividualTop10('fr50',{id:'retired-record',name:'卒業選手'},21,'intercollege','決勝');
+    migrateState();
+    let first=JSON.stringify(state.recordRankings),high=state.recordRankings.high.fr50.find(r=>r.athleteId===a.id),graduate=state.recordRankings.university.fr50.find(r=>r.athleteId==='retired-record');
+    a.bestTimes.fr50=19;migrateState();
+    return{high,graduate,unchanged:first===JSON.stringify(state.recordRankings),count:state.recordRankings.japan.fr50.length};
+  })()`);
+  assert.equal(result.high.time,20);assert.equal(result.high.season,2023);assert.equal(result.high.organization,'高校在籍時');
+  assert.equal(result.graduate.time,21);assert.equal(result.graduate.name,'卒業選手');
+  assert.ok(result.unchanged);assert.equal(result.count,10);
+});
+
 test('all relay finals can change swimmers without altering prelims, lane seeding or abandoned top-ten records',()=>{
   const run=game();
   const result=json(run,`(()=>{
@@ -28,6 +95,7 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
     return RELAYS.map(kind=>{
       const entry=relays.find(r=>r[0]===kind),own=entry[1].find(ownsRelayTeam),prelim=JSON.stringify(entry[2].prelim);
       const lane=own.heatLane,abandonedTime=own.race.total;
+      const ownPrelim=entry[2].prelim.find(ownsRelayTeam),beforeRecord=state.recordRankings.university[kind].find(r=>r.organization===state.playerUniversity).time;
       let rejected=false;try{setRelayFinalEntry(result,kind,[original[0],original[0],original[1],original[2]])}catch(e){rejected=true}
       let unchangedAfterReject=prelim===JSON.stringify(entry[2].prelim)&&entry[2].finalEntryPending;
       setRelayFinalEntry(result,kind,replacements);
@@ -35,7 +103,9 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
         initial:entries[kind],members:own.members.map(p=>p.id),replacements,lane,finalLane:own.heatLane,rank:own.rank,
         ranks:entry[1].map(t=>t.rank),scoresAgree:JSON.stringify(result.teamScores)===JSON.stringify(result.historyEntry.teamScores)&&JSON.stringify(result.teamScores)===JSON.stringify(result.teamScoreEntry.scores),
         pending:entry[2].finalEntryPending,abandonedSaved:state.teamTop10[kind].some(r=>r.memberKey===original.join('|')&&r.time===abandonedTime),
-        replacementSaved:state.teamTop10[kind].some(r=>r.memberKey===replacements.join('|')&&r.time===own.race.total)};
+        replacementSaved:state.teamTop10[kind].some(r=>r.memberKey===replacements.join('|')&&r.time===own.race.total),
+        beforeRecord,prelimTime:round2(ownPrelim.race.total),nationalRecord:state.recordRankings.japan[kind].find(r=>r.organization===state.playerUniversity).time,
+        expectedRecord:Math.min(round2(ownPrelim.race.total),round2(own.race.total))};
     });
   })()`);
   for(const row of result){
@@ -44,6 +114,7 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
     assert.equal(row.finalLane,row.lane);assert.equal(row.pending,false);assert.equal(row.rank,8);
     assert.deepEqual(row.ranks,[1,2,3,4,5,6,7,8]);
     assert.equal(row.abandonedSaved,false);assert.equal(row.replacementSaved,true);
+    assert.equal(row.beforeRecord,row.prelimTime);assert.equal(row.nationalRecord,row.expectedRecord);
   }
 });
 

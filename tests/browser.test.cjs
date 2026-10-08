@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.31.1', 'v1.31'));
+      data = Buffer.from(data.toString().replaceAll('v1.32', 'v1.31.1'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -147,8 +147,9 @@ test('relay final entry screens change all three lineups, preserve prelims and u
     await page.locator('#relayClose').click();await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
     const seen=[],edited=[];
     for(let step=0;step<100;step++){
-      await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
+      await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, #collegeRankingNext, .modal-meet-results'));
       if(await page.locator('.modal-meet-results').count())break;
+      if(await page.locator('#collegeRankingNext').count()){await acceptCollegeRanking(page);continue;}
       if(await page.locator('#relayOk').count()){
         const kind=await page.locator('#relayEditorBody select').first().getAttribute('data-kind');
         assert.equal(await page.locator('#relayEditorBody select').count(),4);
@@ -239,12 +240,22 @@ test('game reset retains every configured organization name, resets progress and
 });
 
 
+async function acceptCollegeRanking(page){
+  assert.match(await page.locator('.modal-college-ranking .notice').innerText(),/全4日間/);
+  const scores=await page.evaluate(()=>state.teamScoreHistory.at(-1).scores);
+  assert.equal(await page.locator('.college-ranking-table tbody tr').count(),Object.keys(scores).length);
+  assert.equal(await page.locator('.college-own').count(),1);
+  const own=await page.locator('.college-own td').allTextContents(),university=await page.evaluate(()=>state.playerUniversity);
+  assert.equal(own[1],'★ '+university);assert.equal(own[2],scores[university]+' pt');
+  await page.locator('#collegeRankingNext').click();await page.locator('.modal-meet-results').waitFor();
+}
+
 async function advanceToRace(page) {
   for(let steps=0;steps<100;steps++){
-    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, #collegeRankingNext, .modal-meet-results'));
     if(await page.locator('#raceCanvas').count())return;
     if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
-    if(await page.locator('.modal-meet-results').count())throw Error('Meet ended before the expected own race');
+    if(await page.locator('.modal-meet-results, .modal-college-ranking').count())throw Error('Meet ended before the expected own race');
     if(await page.locator('#startProgramRace').count())await page.locator('#startProgramRace').click();
     else await page.locator('#nextEv').click();
   }
@@ -254,8 +265,9 @@ async function advanceToRace(page) {
 async function drainRaces(page,program=[]) {
   const races=[];
   for(let steps=0;steps<200;steps++) {
-    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, #collegeRankingNext, .modal-meet-results'));
     if(await page.locator('.modal-meet-results').count())return races;
+    if(await page.locator('#collegeRankingNext').count()){await acceptCollegeRanking(page);continue;}
     if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
     if(await page.locator('#startProgramRace').count()){
       program.push(await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase})));
@@ -284,6 +296,62 @@ async function drainRaces(page,program=[]) {
   }
   throw Error('Race sequence did not terminate');
 }
+
+test('college awards and all three historic record categories work on PC and portrait iPhone and survive reload',async()=>{
+  const app=await fixture();
+  for(const options of [{viewport:{width:1280,height:800}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+    const context=await testContext(options);
+    try{
+      const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+      const names=await page.evaluate(()=>{
+        state.recordRankings={};
+        const own=state.players[0];own.name='記録確認選手';
+        recordIndividualResult({...own,id:'school-record',category:'high',year:null,organization:'記録高校'},'fr100',50,'全国高校総体','決勝');
+        recordIndividualResult(own,'fr100',49,'intercollege','決勝');
+        recordIndividualResult({id:'adult-record',name:'社会人選手',category:'adult',organization:'記録チーム'},'fr100',48,'japan_championship','決勝');
+        recordRelayResult('4x100fr',{organization:state.playerUniversity,members:state.players.slice(0,4),race:{total:200}},'intercollege','決勝');
+        const events=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[],heats:[]} ]));
+        const scores={[state.playerUniversity]:90,優勝大学:100,三位大学:80,四位大学:70,五位大学:60,六位大学:50,七位大学:40,八位大学:30,九位大学:20,無得点大学:0};
+        showMeetSummary({meet:'intercollege',events,relays:[],teamScores:scores},()=>renderAll());
+        return{university:state.playerUniversity};
+      });
+      assert.equal(await page.locator('.award-1 .college-award').innerText(),'総合優勝');
+      assert.equal(await page.locator('.award-2 .college-award').innerText(),'第2位');
+      assert.equal(await page.locator('.award-3 .college-award').innerText(),'第3位');
+      assert.equal(await page.locator('.award-finalist .college-award').count(),5);
+      assert.equal(await page.locator('.college-own td').nth(1).innerText(),'★ '+names.university);
+      assert.equal(await page.locator('.college-ranking-table tbody tr').last().locator('.college-award').count(),0);
+      const bounds=await page.locator('.modal-college-ranking').evaluate(m=>({height:m.clientHeight,available:Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--game-vh'))*100,
+        button:m.querySelector('#collegeRankingNext').getBoundingClientRect(),modal:m.getBoundingClientRect(),scroll:m.querySelector('.college-ranking-wrap').scrollHeight>m.querySelector('.college-ranking-wrap').clientHeight}));
+      assert.ok(bounds.height<=bounds.available,JSON.stringify(bounds));
+      assert.ok(bounds.button.left>=bounds.modal.left&&bounds.button.right<=bounds.modal.right+1&&bounds.button.bottom<=bounds.modal.bottom+1,JSON.stringify(bounds));
+      await page.locator('#collegeRankingNext').click();await page.locator('.modal-meet-results #x').click();
+      await page.locator('#nav button[data-page="records"]').click();
+      assert.equal(await page.locator('#recordRankingEvent option').count(),15);
+      assert.equal(await page.locator('#recordRankingCategory option').count(),3);
+      await page.locator('#recordRankingCategory').selectOption('high');
+      assert.equal(await page.locator('#recordRankingTitle').innerText(),'高校記録10傑');
+      assert.match(await page.locator('#recordRankingBody').innerText(),/記録高校/);
+      assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'50.00');
+      await page.locator('#recordRankingCategory').selectOption('university');
+      assert.match(await page.locator('#recordRankingBody').innerText(),/記録確認選手/);
+      assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'49.00');
+      await page.locator('#recordRankingEvent').selectOption('4x100fr');
+      assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'3:20.00');
+      assert.match(await page.locator('#recordRankingBody').innerText(),/記録確認選手/);
+      await page.locator('#nav button[data-page="home"]').click();await page.locator('#nav button[data-page="records"]').click();
+      assert.equal(await page.locator('#recordRankingCategory').inputValue(),'university');
+      assert.equal(await page.locator('#recordRankingEvent').inputValue(),'4x100fr');
+      const saved=await page.evaluate(()=>{saveLocal();return JSON.stringify(state.recordRankings)});
+      await page.reload();await page.locator('#nav button[data-page="records"]').click();
+      assert.equal(await page.evaluate(()=>JSON.stringify(state.recordRankings)),saved);
+      await page.locator('#recordRankingCategory').selectOption('japan');await page.locator('#recordRankingEvent').selectOption('fr100');
+      assert.deepEqual(await page.locator('#recordRankingBody .record-time').allTextContents(),['48.00','49.00','50.00']);
+      assert.ok(await page.locator('#teamTop10Body').count());assert.deepEqual(errors,[]);
+    }finally{await context.close()}
+  }
+  await app.close();
+});
 
 test('compact details have close labels, narrow stat boxes and right-aligned numbers on desktop and touch', async () => {
   const app = await fixture();
@@ -517,7 +585,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.31 cache to v1.31.1 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.31.1 cache to v1.32 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -526,7 +594,7 @@ test('PWA upgrades its v1.31 cache to v1.31.1 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.31'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.31.1'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -536,19 +604,19 @@ test('PWA upgrades its v1.31 cache to v1.31.1 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.31.1') && !keys.includes('swim-manager-pwa-v1.31');
+      return keys.includes('swim-manager-pwa-v1.32') && !keys.includes('swim-manager-pwa-v1.31.1');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.31\.1/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.31.1');
+    assert.match(await page.title(), /v1\.32/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.31\.1/);
+    assert.match(await page.title(), /v1\.32/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -646,10 +714,13 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
       await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
       await page.waitForFunction(()=>Array.isArray(window.expectedRaces));
       const expected=await page.evaluate(()=>window.expectedRaces);
-      const seen=[],program=[];
+      const seen=[],program=[],rankings=[];
       for(let steps=0;steps<200;steps++){
-        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, .modal-meet-results'));
+        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #startProgramRace, #nextEv, #relayOk, #collegeRankingNext, .modal-meet-results'));
         if(await page.locator('.modal-meet-results').count())break;
+        if(await page.locator('#collegeRankingNext').count()){
+          assert.equal(seen.length,expected.length,meet);rankings.push(meet);await acceptCollegeRanking(page);continue;
+        }
         if(await page.locator('#relayOk').count()){await page.locator('#relayOk').click();continue;}
         if(await page.locator('#startProgramRace').count()){
           const details=await page.locator('.modal-meet-program').evaluate(m=>({day:Number(m.dataset.day),event:m.dataset.event,phase:m.dataset.phase,
@@ -685,6 +756,7 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
         await page.locator('#nextGroup').click();
       }
       assert.equal(seen.length,expected.length,meet);
+      assert.deepEqual(rankings,['kansai_college','intercollege'].includes(meet)?[meet]:[]);
       if(['kansai_college','intercollege','japan_open','japan_championship'].includes(meet)){
         const days=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
         const withRelays=['kansai_college','intercollege'].includes(meet);
