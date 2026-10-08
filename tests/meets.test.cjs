@@ -81,25 +81,15 @@ test('college final points are 12/10/8/6/4/3/2/1 and relay points double', () =>
   }
 });
 
-test('all training plans retain a valid minimum of one item and concentration improves total gains', () => {
-  const run = game();
-  const result = json(run, `(()=>{
-    state.players.forEach(p=>{state.trainingFocus[p.id]=[];ensureTrainingFocus(p)});
-    let valid=state.players.every(p=>state.trainingFocus[p.id].length>=1);
-    let means=[];
-    for(let n of [1,2,7,14]){
-      let total=0;
-      for(let i=0;i<100;i++){
-        let p={id:'test',name:'test',specialty:'fr100',year:1,stats:Object.fromEntries(STATS.map(k=>[k,80])),growthProfile:{1:1}};
-        state={players:[p],world:[],slot:1,rngSeed:100+i,facilities:Object.fromEntries(STATS.map(k=>[k,100])),trainingFocus:{test:STATS.slice(0,n)}};
-        trainCommand();total+=STATS.reduce((s,k)=>s+p.stats[k]-80,0);
-      }
-      means.push(total/100);
-    }
-    return {valid,means};
+test('empty and multiple legacy training selections become exactly one valid item', () => {
+  const run=game();
+  const result=json(run,`(()=>{
+    return [[],['mental','start'],['mental','fr_speed','fr_stamina'],STATS,['bogus']].map(focus=>{
+      let p=state.players[0];p.specialty='fr100';state.trainingFocus[p.id]=focus;
+      return ensureTrainingFocus(p);
+    });
   })()`);
-  assert.equal(result.valid, true);
-  for (let i = 1; i < result.means.length; i++) assert.ok(result.means[i] < result.means[i - 1], JSON.stringify(result));
+  assert.deepEqual(result,[['fr_speed'],['mental'],['fr_speed'],['fr_speed'],['fr_speed']]);
 });
 
 test('world editions start in 2027 and March belongs to the next calendar year', () => {
@@ -218,4 +208,54 @@ test('dispatch data matches all twelve user-provided 2026 Pan Pacific standards'
   assert.equal(run('PANPAC_2026_DISPATCH.sourceType'), 'user_provided');
   assert.deepEqual(json(run, 'EVENTS.map(dispatchStandard)'), [21.64,47.64,105.60,224.33,52.57,115.64,59.27,129.32,50.88,114.62,117.23,251.52]);
   assert.match(run('PANPAC_2026_DISPATCH.source'), /^https:\/\//);
+});
+
+test('prelim lanes follow PB and final lanes follow prelim times in 4,5,3,6,2,7,1,8 order', () => {
+  const run=game();
+  const result=json(run,`(()=>{
+    let field=Array.from({length:8},(_,i)=>({athlete:{id:String(i),bestTimes:{fr100:60-i},stats:Object.fromEntries(STATS.map(k=>[k,130]))}}));
+    let heat=seedRaceHeats(field,'fr100','team_trial')[0];
+    let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,173]));p.bestTimes.fr100=48;
+    let race=runEvent('joint_record','fr100',[p.id]);
+    let finals=race.prelim.slice(0,8).map(pre=>race.final.find(x=>x.athlete.id===pre.athlete.id).heatLane);
+    const members=Array.from({length:4},(_,i)=>({...p,id:'m'+i}));
+    let teams=Array.from({length:8},(_,i)=>({organization:'Team '+i,members:members.map(p=>({...p,bestTimes:{fr100:50+i}}))}));
+    let relay=seedRelayHeats(teams,'4x100fr','joint_record').flat();
+    return {heat:heat.map(x=>({id:x.athlete.id,lane:x.heatLane})),finals,relay:relay.map(t=>({score:relaySeedScore(t,'4x100fr'),lane:t.heatLane,heat:t.heatNo}))};
+  })()`);
+  assert.deepEqual(result.heat.map(x=>x.id),['7','6','5','4','3','2','1','0']);
+  assert.deepEqual(result.heat.map(x=>x.lane),[4,5,3,6,2,7,1,8]);
+  assert.deepEqual(result.finals,[4,5,3,6,2,7,1,8]);
+  for(const heat of new Set(result.relay.map(t=>t.heat))){
+    const lanes=result.relay.filter(t=>t.heat===heat).sort((a,b)=>a.score-b.score).map(t=>t.lane);
+    assert.deepEqual(lanes,[4,5,3,6,2,7,1,8].slice(0,lanes.length));
+  }
+});
+
+test('reputation additions decrease modestly in the three national meets and the displayed rules agree', () => {
+  const run=game();
+  const result=json(run,`(()=>{
+    let entry=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?['a','b','c','d','e','f']:[]]));
+    return {deltas:['intercollege','japan_open','japan_championship'].map(m=>playerReputationDelta(m,entry)),empty:['intercollege','japan_open','japan_championship'].map(m=>playerReputationDelta(m,Object.fromEntries(EVENTS.map(e=>[e,[]])))),text:reputationRuleHtml()};
+  })()`);
+  assert.deepEqual(result.deltas,[84.8,99.6,158.4]);
+  assert.deepEqual(result.empty,[-1.5,-.75,-1]);
+  assert.match(result.text,/1人 \+10/);assert.match(result.text,/1人 \+15/);assert.match(result.text,/1人 \+24/);
+});
+
+test('international names contain no numeric IDs, remain unique, and old names are cleaned once', () => {
+  const run=game();
+  const result=json(run,`(()=>{
+    let world=ensureInternationalWorld(2027);
+    let names=world.athletes.map(a=>a.name),id=world.athletes[0].id;
+    world.athletes[0].name='Alex Miller 001';world.athletes[1].name='Alex Miller 002';
+    state.meetHistory=[{meet:'world_championship',podiums:{fr100:[{name:'Alex Miller 001',organization:'アメリカ',time:47.12},{name:'代表 123',organization:'日本',time:47.2}]}}];
+    state=JSON.parse(JSON.stringify(state));migrateState();
+    let first=JSON.stringify(state.internationalWorld.athletes.map(a=>({id:a.id,name:a.name,stats:a.stats,pb:a.bestTimes})));
+    migrateState();
+    return {count:names.length,unique:new Set(names).size,numeric:names.some(n=>/\\d/.test(n)),oldId:state.internationalWorld.athletes[0].id,name:state.internationalWorld.athletes[0].name,podium:state.meetHistory[0].podiums.fr100,once:first===JSON.stringify(state.internationalWorld.athletes.map(a=>({id:a.id,name:a.name,stats:a.stats,pb:a.bestTimes})))};
+  })()`);
+  assert.equal(result.count,864);assert.equal(result.unique,864);assert.equal(result.numeric,false);
+  assert.equal(result.name,'Alex Miller');assert.equal(result.once,true);assert.match(result.oldId,/^INT/);
+  assert.deepEqual(result.podium,[{name:'Alex Miller',organization:'アメリカ',time:47.12},{name:'代表 123',organization:'日本',time:47.2}]);
 });

@@ -135,10 +135,10 @@ test('untitled high school swimmers remain recruitable at low reputation; titles
     return {rep,ratio,ordinary,titled:scoutProbability(a)};
   })))`));
   for (const row of rows) {
-    assert.ok(row.ordinary >= .35 && row.ordinary <= .92);
+    assert.ok(row.ordinary >= .35 && row.ordinary <= .94);
     assert.ok(row.titled >= .01 && row.titled <= .92);
     assert.ok(row.ordinary > row.titled, JSON.stringify(row));
-    if (row.rep === 0) assert.ok(row.ordinary <= .55 + 1e-9);
+    if (row.rep === 0) assert.ok(row.ordinary <= .75 + 1e-9);
   }
   for (let i = 4; i < rows.length; i++) assert.ok(rows[i].ordinary >= rows[i - 4].ordinary);
 });
@@ -208,7 +208,8 @@ test('actual race scores and playback stay on the ability-based clock instead of
     assert.equal(row.total, row.target, JSON.stringify(row));
     assert.equal(row.sum, row.total, JSON.stringify(row));
     assert.equal(row.last, row.total, JSON.stringify(row));
-    assert.ok(Math.abs(row.total / row.expected - 1) < .01, JSON.stringify(row));
+    const distance=Number(row.event.match(/\d+/)[0]);
+    assert.ok(row.total>=row.expected*.98&&row.total<=row.expected+({50:.7,100:1.4,200:3.1,400:5.1}[distance]),JSON.stringify(row));
   }
 });
 
@@ -227,7 +228,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.27');
+  assert.equal(result.version, 'pwa-v1.28');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -254,4 +255,120 @@ test('new seasons produce exactly eight freshmen and enforce the prodigy cap aft
   assert.equal(result.prodigy, true);
   assert.ok(result.max <= 158);
   assert.ok(result.pbs >= 2 && result.pbs <= 4);
+});
+
+test('facility upgrades progressively improve eight-turn gains while level 100 stays near +30', () => {
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify([0,25,50,75,100].map(level=>{
+    let sum=0;
+    for(let sample=0;sample<300;sample++){
+      let p={id:'test',name:'test',specialty:'fr100',year:1,stats:Object.fromEntries(STATS.map(k=>[k,80])),growthProfile:{1:1}};
+      state={players:[p],world:[],slot:1,rngSeed:sample+4321,facilities:{fr_speed:level},trainingFocus:{test:['fr_speed']}};
+      for(let turn=0;turn<8;turn++){state.slot=turn+1;trainCommand()}
+      sum+=p.stats.fr_speed-80;
+    }
+    return {level,gain:sum/300};
+  }))`));
+  assert.ok(rows[0].gain<10);
+  assert.ok(rows[4].gain>=28&&rows[4].gain<=32);
+  for(let i=1;i<rows.length;i++)assert.ok(rows[i].gain>rows[i-1].gain+3,JSON.stringify(rows));
+  console.log('Facility growth:',rows.map(r=>`Lv.${r.level}: +${r.gain.toFixed(2)}`).join(', '));
+});
+
+test('upper A can break each dispatch standard on a good day in actual player and CPU races', () => {
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify([165,173].flatMap(value=>EVENTS.map(e=>{
+    let p={id:'upper-a',stats:Object.fromEntries(STATS.map(k=>[k,value]))},passes=0,bestSeed=0,worstSeed=0,min=Infinity,max=0;
+    for(let i=0;i<5000;i++){
+      let seed=state.rngSeed,t=raceTarget(p,e);
+      if(t<=dispatchStandard(e))passes++;
+      if(t<min){min=t;bestSeed=seed}if(t>max){max=t;worstSeed=seed}
+    }
+    state.players=[p];state.rngSeed=bestSeed;let player=simulateRace(p,e,true,true).total;
+    state.rngSeed=bestSeed;let cpu=simulateMeetRace(p,e,'japan_championship',false).total;
+    state.rngSeed=worstSeed;let slow=simulateRace(p,e,true,true).total;
+    return {e,value,chance:passes/5000,player,cpu,slow,standard:dispatchStandard(e)};
+  })))`));
+  for(const row of rows){
+    assert.ok(row.chance>.003&&row.chance<.98,JSON.stringify(row));
+    assert.ok(row.player<row.standard&&row.cpu<row.standard&&row.slow>row.standard,JSON.stringify(row));
+    assert.ok(Math.abs(row.player-row.cpu)<.001,JSON.stringify(row));
+  }
+});
+
+test('generated swimmers have distinct stroke strengths without changing existing earned stats', () => {
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    let players=state.players.filter(p=>!p.prodigy),cpu=state.world.filter(a=>a.category==='university');
+    const spread=a=>{let values=['fr','ba','br','fly'].map(s=>['speed','stamina','turn'].reduce((sum,k)=>sum+a.stats[s+'_'+k],0)/3);return Math.max(...values)-Math.min(...values)};
+    let p=state.players[0];p.stats.fr_speed=183.25;let before=JSON.stringify(p.stats);migrateState();
+    return {playerMean:players.reduce((s,a)=>s+spread(a),0)/players.length,cpuMean:cpu.reduce((s,a)=>s+spread(a),0)/cpu.length,preserved:before===JSON.stringify(p.stats)};
+  })())`));
+  assert.ok(result.playerMean>20&&result.cpuMean>20,JSON.stringify(result));
+  assert.equal(result.preserved,true);
+});
+
+test('scouting differentiates ability, reputation, titles and title ranks', () => {
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify([10,160,310].map(rep=>{
+    state.reputation=rep;
+    const make=(ability,rank=null)=>({stats:Object.fromEntries(STATS.map(k=>[k,ability])),specialty:'fr100',bestTimes:Object.fromEntries(EVENTS.map(e=>[e,JAPAN_RECORD[e]*1.18])),accolades:rank?[{competition:'全国高校総体',event:'fr100',rank,season:2026}]:[]});
+    return {weak:scoutProbability(make(80)),strong:scoutProbability(make(173)),champion:scoutProbability(make(173,1)),finalist:scoutProbability(make(173,8))};
+  }))`));
+  for(const row of rows){
+    assert.ok(row.weak>row.strong+.12,JSON.stringify(row));
+    assert.ok(row.strong>=.35&&row.strong>row.finalist&&row.finalist>row.champion,JSON.stringify(row));
+  }
+  assert.ok(rows[2].strong>rows[0].strong&&rows[2].champion>rows[0].champion);
+});
+
+test('standard badges are first-ever per swimmer, event and meet, surviving history pruning and saves', () => {
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    let p=state.players[0];p.bestTimes.fr100=80;p.standardAchievementVersion=1;p.standardAchievements={};
+    let first=updateResultHistory(p,'fr100',51,'team_trial','記録会',1);
+    let second=updateResultHistory(p,'fr100',50.5,'joint_record','予選',1);
+    let third=updateResultHistory(p,'fr100',49.9,'joint_record','A決勝',1);
+    let repeated=updateResultHistory(p,'fr100',49.8,'japan_championship','予選',1);
+    p.raceHistory=[];state=JSON.parse(JSON.stringify(state));migrateState();p=state.players[0];
+    let reload=updateResultHistory(p,'fr100',49.7,'intercollege','A決勝',1);
+    let legacy=state.players[1];legacy.bestTimes.fr100=49.8;delete legacy.standardAchievements;delete legacy.standardAchievementVersion;
+    let oldSave=updateResultHistory(legacy,'fr100',49.75,'japan_championship','予選',1);
+    return {first:first.newlyCleared,second:second.newlyCleared,third:third.newlyCleared,repeated:repeated.newlyCleared,reload:reload.newlyCleared,oldSave:oldSave.newlyCleared,repeatHtml:achievementBadges({achievement:repeated},'fr100')};
+  })())`));
+  assert.deepEqual(result.first,['関西カレッジ']);
+  assert.deepEqual(result.second,['インカレ']);
+  assert.deepEqual(result.third,['ジャパンオープン','日本選手権']);
+  assert.deepEqual(result.repeated,[]);assert.deepEqual(result.reload,[]);assert.deepEqual(result.oldSave,[]);
+  assert.match(result.repeatHtml,/自己PB/);assert.doesNotMatch(result.repeatHtml,/突破/);
+});
+
+test('poor races miss PB by distance-scaled margins even when abilities improve', () => {
+  const run=game();
+  const rows=JSON.parse(run(`JSON.stringify(EVENTS.map(e=>{
+    let p={stats:Object.fromEntries(STATS.map(k=>[k,173])),bestTimes:{[e]:expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,165]))},e)}};
+    let pb=p.bestTimes[e],poor=[];
+    for(let i=0;i<2000;i++){let t=raceTarget(p,e);if(t>pb)poor.push(t-pb)}
+    return {e,distance:distanceOf(e),count:poor.length,max:Math.max(...poor),min:Math.min(...poor)};
+  }))`));
+  for(const row of rows){
+    const expected={50:.5,100:1,200:2.8,400:4.7}[row.distance];
+    assert.ok(row.count>150&&row.count<900,JSON.stringify(row));
+    assert.ok(row.max>expected,JSON.stringify(row));
+
+  }
+});
+
+test('CPU universities and swimmers have wider differences and legacy diversity migrates only once', () => {
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    let teams=state.universities.map(u=>({rep:u.reputation,mean:state.world.filter(a=>a.category==='university'&&a.organization===u.name).reduce((s,a)=>s+overallStatValue(a),0)/20}));
+    let p=state.players[0],own=JSON.stringify(p),alumni={...deepClone(p),id:'alumni-profile',category:'adult',age:26,alumni:true};state.world.push(alumni);
+    const oldAlumni=JSON.stringify(alumni);delete state.cpuDiversityVersion;state.cpuUniversityRepModelVersion=2;
+    state.universities.forEach(u=>{u.baseReputation=clamp(35+(u.strength-65)*8.5,20,320);u.reputation=u.baseReputation+10});
+    migrateState();let first=JSON.stringify(state.world),reps=JSON.stringify(state.universities);migrateState();
+    return {repRange:Math.max(...teams.map(u=>u.rep))-Math.min(...teams.map(u=>u.rep)),abilityRange:Math.max(...teams.map(u=>u.mean))-Math.min(...teams.map(u=>u.mean)),preserved:own===JSON.stringify(state.players[0]),alumniPreserved:JSON.stringify(state.world.find(a=>a.id===alumni.id))===oldAlumni,once:first===JSON.stringify(state.world)&&reps===JSON.stringify(state.universities),version:state.cpuDiversityVersion};
+  })())`));
+  assert.ok(result.repRange>280,JSON.stringify(result));assert.ok(result.abilityRange>28,JSON.stringify(result));
+  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,1);
 });

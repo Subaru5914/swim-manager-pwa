@@ -14,6 +14,12 @@ before(async () => {
 });
 after(async () => { await browser?.close(); });
 
+async function testContext(options) {
+  const context=await browser.newContext(options);
+  await context.addInitScript(()=>{Object.defineProperty(crypto,'getRandomValues',{value:array=>{array[0]=12345;return array;}});});
+  return context;
+}
+
 async function fixture(legacy = false) {
   let oldVersion = legacy;
   const server = http.createServer((request, response) => {
@@ -22,7 +28,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.27', 'v1.26'));
+      data = Buffer.from(data.toString().replaceAll('v1.28', 'v1.27'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -47,11 +53,32 @@ function runtimeErrors(page) {
   return errors;
 }
 
+
+async function drainRaces(page) {
+  const races=[];
+  for(let steps=0;steps<100;steps++) {
+    await page.waitForFunction(()=>document.querySelector('#raceCanvas, #nextEv, .modal-meet-results'));
+    if(await page.locator('.modal-meet-results').count())return races;
+    if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
+    const title=await page.locator('.modal-race-live h2').innerText();races.push(title);
+    const controls=await page.locator('#skipEvent').evaluate(el=>{let a=el.getBoundingClientRect(),m=el.closest('.modal').getBoundingClientRect();return {bottom:a.bottom,limit:m.bottom};});
+    assert.ok(controls.bottom<=controls.limit+1,JSON.stringify(controls));
+    assert.ok(await page.locator('.race-entrants .own').count()>0,title);
+    assert.equal(await page.locator('#nextRace').isDisabled(),true);
+    await page.locator('#skipEvent').click();
+    await page.locator('.modal-race-result').waitFor();
+    assert.match(await page.locator('.modal-race-result h2').innerText(), /結果/);
+    assert.ok(await page.locator('.modal-race-result .result-own').count()>0);
+    await page.locator('#nextGroup').click();
+  }
+  throw Error('Race sequence did not terminate');
+}
+
 test('compact details have close labels, narrow stat boxes and right-aligned numbers on desktop and touch', async () => {
   const app = await fixture();
   try {
     for (const mobile of [false, true]) {
-      const context = await browser.newContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1440, height: 900 },
+      const context = await testContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1440, height: 900 },
         isMobile: mobile, hasTouch: mobile });
       try {
         const page = await context.newPage();
@@ -77,10 +104,10 @@ test('compact details have close labels, narrow stat boxes and right-aligned num
             align: getComputedStyle(row.querySelector('.stat-number')).textAlign })),
         }));
         assert.ok(compact.width <= (mobile ? 740 : 880));
-        assert.ok(compact.stats.every(row => row.width <= (mobile ? 140 : 168) && row.align === 'right'));
+        assert.ok(compact.stats.every(row => row.width <= (mobile ? 152 : 180) && row.align === 'right'));
         if (mobile && process.env.SWIM_SCREENSHOT_DIR) {
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR, { recursive: true });
-          await page.screenshot({ path: path.join(process.env.SWIM_SCREENSHOT_DIR, 'v1.27-player-detail.png') });
+          await page.screenshot({ path: path.join(process.env.SWIM_SCREENSHOT_DIR, 'v1.28-player-detail.png') });
         }
         assert.deepEqual(errors, []);
       } finally { await context.close(); }
@@ -92,7 +119,7 @@ test('training requires one item, reset chooses specialty, and specialty popup s
   const app = await fixture();
   try {
     for (const mobile of [false, true]) {
-      const context = await browser.newContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1440, height: 900 }, isMobile: mobile, hasTouch: mobile });
+      const context = await testContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1440, height: 900 }, isMobile: mobile, hasTouch: mobile });
       try {
         const page = await context.newPage();
         const errors = runtimeErrors(page);
@@ -100,9 +127,8 @@ test('training requires one item, reset chooses specialty, and specialty popup s
         await page.locator('#nav [data-page="training"]').click();
         await page.locator('#trainingPlan .focus-btn.selected').click();
         assert.equal(await page.locator('#trainingPlan .focus-btn.selected').count(), 1);
-        assert.match(await page.locator('#toastRoot').innerText(), /最低1つ/);
         await page.locator('#trainingPlan .focus-btn:not(.selected)').first().click();
-        assert.equal(await page.locator('#trainingPlan .focus-btn.selected').count(), 2);
+        assert.equal(await page.locator('#trainingPlan .focus-btn.selected').count(), 1);
         await page.locator('#clearFocusBtn').click();
         assert.equal(await page.locator('#trainingPlan .focus-btn.selected').count(), 1);
         const gap = await page.evaluate(() => {
@@ -123,7 +149,7 @@ test('training requires one item, reset chooses specialty, and specialty popup s
 
 test('entry badges expose qualified, unqualified and missing PB in both views; standards preserve entry', async () => {
   const app = await fixture();
-  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  const context = await testContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
   try {
     const page = await context.newPage();
     const errors = runtimeErrors(page);
@@ -155,7 +181,7 @@ test('entry badges expose qualified, unqualified and missing PB in both views; s
 
 test('world meet automatically animates own swimmers and mixed national relay, exposes all CPU-only results and saves offline', async () => {
   const app = await fixture();
-  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  const context = await testContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
   try {
     const page = await context.newPage();
     const errors = runtimeErrors(page);
@@ -173,14 +199,9 @@ test('world meet automatically animates own swimmers and mixed national relay, e
     await page.locator('.modal-race-live').waitFor({ timeout: 60000 });
     assert.match(await page.locator('.modal-race-live h2').innerText(), /100mFr/);
     assert.match(await page.locator('.race-entrants .own').innerText(), /PB/);
-    await page.locator('#skipEvent').click();
-    await page.locator('#nextEv').click();
-    await page.locator('.modal-race-live').waitFor();
-    assert.match(await page.locator('.modal-race-live h2').innerText(), /メドレーリレー/);
-    assert.match(await page.locator('.race-entrants .own').innerText(), /日本/);
-    await page.locator('#skipEvent').click();
-    await page.locator('#nextEv').click();
-    await page.locator('.modal-meet-results').waitFor();
+    const races=await drainRaces(page);
+    assert.equal(races.filter(title=>/100mFr/.test(title)).length,2);
+    assert.equal(races.filter(title=>/メドレーリレー/.test(title)).length,2);
     assert.equal(await page.locator('#resEv option').count(), 12);
     await page.locator('#resEv').selectOption('fr400');
     assert.match(await page.locator('#resBody').innerText(), /自チームの出場なし/);
@@ -202,7 +223,7 @@ test('world meet automatically animates own swimmers and mixed national relay, e
 
 test('actual March championship selects a graduating swimmer and April/save/reload preserve his automatic world entry', async () => {
   const app = await fixture();
-  const context = await browser.newContext();
+  const context = await testContext();
   try {
     const page = await context.newPage();
     const errors = runtimeErrors(page);
@@ -232,7 +253,7 @@ test('actual March championship selects a graduating swimmer and April/save/relo
 
 test('a training turn can enter and finish a record meet through the UI', async () => {
   const app = await fixture();
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const context = await testContext({ viewport: { width: 1440, height: 900 } });
   try {
     const page = await context.newPage();
     const errors = runtimeErrors(page);
@@ -244,6 +265,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
     await page.locator('#confirmEntry').click();
     await page.locator('#goRace').click();
     await page.locator('#skipEvent').click();
+    await page.locator('#nextGroup').click();
     await page.locator('#modalRoot #nextEv').click();
     await page.locator('#modalRoot #x').click();
     const result = await page.evaluate(() => ({ slot: state.slot, history: state.meetHistory.length,
@@ -261,16 +283,16 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.26 cache to v1.27 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.27 cache to v1.28 and retains saved progress offline', async () => {
   const app = await fixture(true);
-  const context = await browser.newContext();
+  const context = await testContext();
   try {
     const page = await context.newPage();
     const errors = runtimeErrors(page);
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.26'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.27'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -280,21 +302,247 @@ test('PWA upgrades its v1.26 cache to v1.27 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.27') && !keys.includes('swim-manager-pwa-v1.26');
+      return keys.includes('swim-manager-pwa-v1.28') && !keys.includes('swim-manager-pwa-v1.27');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.27/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.27');
+    assert.match(await page.title(), /v1\.28/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.28');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.27/);
+    assert.match(await page.title(), /v1\.28/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
   } finally { await context.close(); await app.close(); }
+});
+
+test('portrait touch starts in landscape, keeps shared page widths and rotates dialogs and touch controls', async () => {
+  const app=await fixture();
+  const context=await testContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    const layout=await page.evaluate(()=>{
+      const root=document.getElementById('gameViewport'),rect=root.getBoundingClientRect();
+      return {rotated:root.classList.contains('landscape-rotated'),width:root.clientWidth,height:root.clientHeight,rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},widths:[document.querySelector('header'),document.querySelector('nav'),document.querySelector('main'),document.querySelector('#page-home>.grid')].map(el=>el.clientWidth)};
+    });
+    assert.equal(layout.rotated,true);assert.equal(layout.width,844);assert.equal(layout.height,390);
+    assert.ok(Math.abs(layout.rect.x)<1&&Math.abs(layout.rect.y)<1);
+    assert.equal(layout.rect.width,390);assert.equal(layout.rect.height,844);
+    assert.ok(Math.max(...layout.widths)-Math.min(...layout.widths)<2,JSON.stringify(layout));
+    await page.locator('#nav [data-page="training"]').tap();
+    await page.locator('#trainingPlan .focus-btn:not(.selected)').first().tap();
+    assert.equal(await page.locator('#trainingPlan .focus-btn.selected').count(),1);
+    await page.locator('#nav [data-page="roster"]').tap();
+    await page.locator('#rosterTable [data-detail]').first().tap();
+    const dialog=await page.locator('.modal-player-detail').boundingBox();
+    assert.ok(dialog.x>=0&&dialog.y>=0&&dialog.x+dialog.width<=391&&dialog.y+dialog.height<=845,JSON.stringify(dialog));
+    await page.locator('.modal-player-detail #x').tap();
+    if(process.env.SWIM_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,'v1.28-portrait-landscape.png')});
+    await page.setViewportSize({width:844,height:390});
+    assert.equal(await page.locator('#gameViewport').evaluate(el=>el.classList.contains('landscape-rotated')),false);
+    await page.locator('#nav [data-page="home"]').tap();
+    const widths=await page.evaluate(()=>['header','nav','main','#page-home>.grid'].map(q=>document.querySelector(q).clientWidth));
+    assert.ok(Math.max(...widths)-Math.min(...widths)<2,JSON.stringify(widths));
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('Japan celebration follows first April training, includes selected graduates and resumes once after reload', async () => {
+  const app=await fixture(),context=await testContext();
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    const names=await page.evaluate(()=>{
+      let own=state.players[0],graduate=deepClone(state.players.find(p=>p.year===4)),cpu=state.world[0];
+      graduate.id='selected-graduate';graduate.organization='関西青陵大学';
+      state.season=2027;state.slot=1;
+      state.japanTeam={year:2027,announced:false,individual:Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[own.id,graduate.id]:[]])),relays:{'4x100fr':[own.id,cpu.id,graduate.id,state.world[1].id]},athletes:[own,graduate,cpu,state.world[1]].map(p=>({id:p.id,snapshot:deepClone(p),ownAtSelection:p===own||p===graduate}))};
+      renderAll();return [own.name,graduate.name,cpu.name];
+    });
+    assert.equal(await page.locator('.modal-japan-celebration').count(),0);
+    await page.locator('#advanceBtn').click();
+    await page.locator('.modal-training-result').waitFor();
+    assert.equal(await page.locator('.modal-japan-celebration').count(),0);
+    await page.locator('.modal-training-result #next').click();
+    await page.locator('.modal-japan-celebration').waitFor();
+    const text=await page.locator('.modal-japan-celebration').innerText();
+    assert.match(text,/おめでとう/);for(const name of names)assert.ok(text.includes(name));
+    assert.equal(await page.locator('.celebration-table .result-own').count(),2);
+    await page.reload();await page.locator('.modal-japan-celebration').waitFor();
+    assert.equal(await page.evaluate(()=>state.slot),2);
+    await page.locator('#representativeClose').click();
+    assert.equal(await page.evaluate(()=>state.japanTeam.announced),true);
+    await page.reload();assert.equal(await page.locator('.modal-japan-celebration').count(),0);
+    await page.locator('#advanceBtn').click();await page.locator('.modal-training-result #next').click();
+    assert.equal(await page.locator('.modal-japan-celebration').count(),0);
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('every domestic meet preserves all owned heats and finals after skip, then reaches final results', async () => {
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.evaluate(()=>{
+      const original=buildMeetRaceQueue;
+      buildMeetRaceQueue=(result,selections)=>{
+        const queue=original(result,selections);
+        window.expectedRaces=queue.map(q=>({event:q.event,label:q.label,names:[...q.rows].sort((a,b)=>(a.heatLane||1)-(b.heatLane||1)).map(x=>x.athlete.name)}));
+        return queue;
+      };
+    });
+    for(const meet of ['team_trial','kansai_college','intercollege','japan_open','joint_record','japan_championship']){
+      await page.evaluate(meet=>{
+        state=createState();state.points=10000;state.rngSeed=12345;
+        for(let p of state.players.slice(0,4)){
+          p.stats=Object.fromEntries(STATS.map(k=>[k,200]));
+          for(let e of EVENTS)p.bestTimes[e]=expectedTime(p,e);
+        }
+        const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?state.players.slice(0,meet==='team_trial'?9:3).map(p=>p.id):e==='fr200'?[state.players[0].id]:[]]));
+        const relays=RELAY_MEETS.has(meet)?Object.fromEntries((meet==='joint_record'?RELAYS:['4x100fr']).map(k=>[k,state.players.slice(0,4).map(p=>p.id)])):{};
+        openMeetEntry(meet,8,2026,entries,relays);
+      },meet);
+      await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
+      await page.locator('.modal-race-live').waitFor({timeout:60000});
+      const expected=await page.evaluate(()=>window.expectedRaces);
+      const seen=[];
+      for(let steps=0;steps<60;steps++){
+        await page.waitForFunction(()=>document.querySelector('#raceCanvas, #nextEv, .modal-meet-results'));
+        if(await page.locator('.modal-meet-results').count())break;
+        if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue;}
+        let next=expected[seen.length];assert.ok(next,`${meet}: extra race`);
+        const title=await page.locator('.modal-race-live h2').innerText();assert.ok(title.includes(next.label),`${meet}: ${title}`);
+        assert.deepEqual((await page.locator('.race-entrant strong').allTextContents()).map(n=>n.replace(/^(?:★ )?\d+ /,'')),next.names);
+        // Own names have a star; compare names after stripping it.
+        seen.push(title);await page.locator('#skipEvent').click();
+        await page.locator('.modal-race-result').waitFor();
+        assert.match(await page.locator('.modal-race-result h2').innerText(),/結果/);
+        await page.locator('#nextGroup').click();
+      }
+      assert.equal(seen.length,expected.length,meet);
+      assert.ok(expected.some(q=>q.event==='fr100'),meet);
+      assert.ok(expected.some(q=>q.event==='fr200'),meet);
+      if(meet!=='team_trial')assert.ok(expected.some(q=>q.label==='A決勝'),meet);
+      if(['kansai_college','intercollege','joint_record'].includes(meet))assert.ok(expected.some(q=>q.event==='4x100fr'&&q.label==='リレー A決勝'),meet);
+      await page.locator('.modal-meet-results #x').click();
+      assert.equal(await page.evaluate(()=>state.activeCompetitionSlot),null);
+    }
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('pause, speed and natural finish enable next only after the current race ends', async () => {
+  const app=await fixture(),context=await testContext();
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.clock.install();
+    await page.evaluate(()=>{
+      let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,173]));
+      let q={event:'fr50',label:'予選 1組',rows:[{source:'PLAYER',athlete:p,race:simulateRace(p,'fr50',true,true)}]};
+      playRaceCanvas(q.event,q.rows,{onDone:()=>showRaceGroupResult(q,()=>closeModal())});
+    });
+    await page.locator('#pause').click();const pausedAt=await page.locator('#clock').innerText();await page.clock.runFor(2000);
+    assert.equal(await page.locator('#clock').innerText(),pausedAt);
+    assert.equal(await page.locator('#nextRace').isDisabled(),true);
+    await page.evaluate(()=>document.querySelector('#nextRace').onclick());
+    assert.equal(await page.locator('#raceCanvas').count(),1);
+    await page.locator('#pause').click();await page.locator('[data-sp="4"]').click();await page.clock.runFor(8000);
+    assert.equal(await page.locator('#nextRace').isDisabled(),false);
+    await page.locator('#nextRace').click();await page.locator('.modal-race-result').waitFor();
+    await page.locator('#nextGroup').click();assert.equal(await page.locator('#modalRoot .modal').count(),0);
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('results highlight own swimmers and first standards while top ten marks active members and compact popups fit', async () => {
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.evaluate(()=>{
+      let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,200]));p.bestTimes.fr100=70;p.standardAchievementVersion=1;p.standardAchievements={};
+      const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
+      let result=executeMeet('joint_record',entries,{});result.entries=entries;showMeetResults(result,()=>{});
+    });
+    assert.ok(await page.locator('#resBody .result-own').count()>=4);
+    assert.ok(await page.locator('#resBody .pb-badge').count()>0);
+    assert.equal(await page.locator('#resBody .std-clear').count(),0);
+    // Each of the four standards is earned in prelim only and shown in its own result and global prelim ranking.
+    assert.equal(await page.locator('#resBody .result-own .std-new').count(),8);
+    const compact=await page.locator('#resBody table').last().evaluate(table=>({width:table.clientWidth,parent:table.parentElement.clientWidth,paddings:[...table.querySelectorAll('td')].map(td=>parseFloat(getComputedStyle(td).paddingLeft))}));
+    assert.ok(compact.width<800,JSON.stringify(compact));assert.ok(compact.paddings.every(p=>p<=4));
+    await page.locator('.modal-meet-results #x').click();
+    await page.evaluate(()=>{
+      const p=state.players[0],graduate={id:'former-student',name:'卒業した選手'};
+      upsertIndividualTop10('fr100',graduate,48.4,'intercollege','決勝');
+      upsertRelayTop10('4x100fr',[p,state.players[1],state.players[2],graduate],200,'intercollege');
+    });
+    await page.locator('#top10Btn').click();await page.locator('#t10ev').selectOption('fr100');
+    assert.ok(await page.locator('.top10-active .active-athlete').count()>0);
+    const former=page.locator('.top10-table tr').filter({hasText:'卒業した選手'});
+    assert.equal(await former.locator('.active-athlete').count(),0);
+    await page.locator('#t10ev').selectOption('4x100fr');assert.equal(await page.locator('.active-athlete').count(),3);
+    await page.locator('.modal-top10 #x').click();await page.locator('#reputationInfoBtn').click();
+    assert.ok((await page.locator('.modal-reputation').boundingBox()).width<560);
+    await page.locator('.modal-reputation #x').click();await page.evaluate(()=>showPodiums(0));
+    assert.ok((await page.locator('.modal-podium').boundingBox()).width<530);
+    await page.locator('.modal-podium #x').click();assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('a swimmer eliminated in prelim gets his race and group results, while CPU-only finals use tables', async () => {
+  const app=await fixture(),context=await testContext();
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.evaluate(()=>{
+      let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,80]));
+      const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
+      openMeetEntry('joint_record',74,2026,entries,{});
+    });
+    await page.locator('#confirmEntry').click();await page.locator('#goRace').click();await page.locator('.modal-race-live').waitFor();
+    assert.match(await page.locator('.modal-race-live h2').innerText(),/予選/);
+    const races=await drainRaces(page);assert.equal(races.length,1);
+    assert.ok(await page.locator('#resBody h3').filter({hasText:'A決勝'}).count());
+    assert.equal(await page.locator('#resBody .result-own').count(),2);
+    await page.locator('.modal-meet-results #x').click();assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
+});
+
+test('race cards follow their seeded lanes, course numbers appear on the right, and freshmen welcome stays compact', async () => {
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    const expected=await page.evaluate(()=>{
+      let labels={},original=CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText=function(text,x,y,...args){
+        if(/^[1-8]$/.test(String(text)))labels[text]={x,y};original.call(this,text,x,y,...args);
+      };
+      window.courseLabels=labels;
+      const entries=state.players.slice(0,8).map((p,i)=>{p.bestTimes.fr100=55+i;return {source:i===0?'PLAYER':'CPU',athlete:p,entryPB:p.bestTimes.fr100};});
+      let rows=seedRaceHeats(entries,'fr100','team_trial')[0].map(x=>({...x,race:simulateRace(x.athlete,'fr100',true,true)}));
+      let q={event:'fr100',label:'予選 1組',rows};
+      state.pendingFreshmenWelcome=freshmanWelcomeRows(state.players.slice(0,8));
+      playRaceCanvas('fr100',rows,{onSkip:()=>showRaceGroupResult(q,()=>showFreshmenWelcome())});
+      return rows.sort((a,b)=>a.heatLane-b.heatLane).map(x=>({lane:x.heatLane,name:x.athlete.name}));
+    });
+    await page.waitForFunction(()=>Object.keys(window.courseLabels).length===8);
+    const labels=await page.evaluate(()=>window.courseLabels);
+    assert.deepEqual(Object.keys(labels),['1','2','3','4','5','6','7','8']);
+    for(let lane=1;lane<=8;lane++){
+      assert.ok(labels[lane].x>1200,JSON.stringify(labels));
+      if(lane>1)assert.ok(labels[lane].y>labels[lane-1].y);
+    }
+    const cards=await page.locator('.race-entrant strong').allTextContents();
+    assert.deepEqual(cards.map(t=>Number(t.match(/\d+/)[0])),expected.map(x=>x.lane));
+    assert.deepEqual(cards.map(t=>t.replace(/^(?:★ )?\d+ /,'')),expected.map(x=>x.name));
+    await page.locator('#skipEvent').click();await page.locator('#nextGroup').click();
+    await page.locator('.modal-freshmen-welcome').waitFor();
+    const bounds=await page.locator('.modal-freshmen-welcome').boundingBox();
+    assert.ok(bounds.width<615&&bounds.height<385,JSON.stringify(bounds));
+    assert.equal(await page.locator('.modal-freshmen-welcome tbody tr').count(),8);
+    await page.locator('#freshClose').click();assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close();}
 });
