@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.32.3</title>
+<title>大学競泳監督シミュレーション PWA版 v1.33</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1157,7 +1157,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.32.3</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.33</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1475,7 +1475,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.32.3";
+  state.version="pwa-v1.33";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -1739,16 +1739,17 @@ const INTERCOLLEGE_A_FINAL_REFERENCE={
   im200:118.84,
   im400:255.98
 };
-function expectedTime(p,e){
+function expectedTime(p,e,legacyUpperA=false){
   let ability=abilityValue(p,e)*200;
   let jr=JAPAN_RECORD[e];
   let finalTime=INTERCOLLEGE_A_FINAL_REFERENCE[e];
   // Regional final / national final / national champion / Japanese record.
   // Champion and regional-final anchors are game benchmarks, not new official results.
   let champion=Math.max(jr*1.01,finalTime*.985);
+  // Spread late A across its full ability range instead of reaching near-S at 167.
   let upperA=Math.min(champion*.9975,Math.max(jr*1.004,dispatchStandard(e)*1.005));
   let anchors=[[0,jr*1.50],[113,KANSAI_COLLEGE_WIN_TARGET[e]*1.02],
-    [138,finalTime],[163,champion],[167,upperA],
+    [138,finalTime],[163,champion],[legacyUpperA?167:175,upperA],
     [188,jr],[200,Math.min(jr*ELITE_JR_FACTOR,WORLD_REFERENCE.individual[e])]];
   for(let i=1;i<anchors.length;i++){
     let [hi,time]=anchors[i],[lo,prev]=anchors[i-1];
@@ -1761,8 +1762,10 @@ function raceTarget(p,e,champ=true){
   let effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;
   // Upper A can swim a dispatch-standard race on a good day; S remains stable.
   let upperA=clamp((ability-163)/2,0,1)*clamp((188-ability)/12,0,1);
-  let sigma=Math.max(.001,.0032-(mental/200)*.0018,.008*upperA);
-  let target=base*(1+effect+gauss(0,sigma));
+  let sigma=Math.max(.001,.0032-(mental/200)*.0018,.008*upperA),performance=gauss(0,sigma);
+  // Preserve ordinary slow-race variation while allowing an exceptional good day.
+  if(performance<0)performance*=1+.5*upperA;
+  let target=base*(1+effect+performance);
   // A poor race can miss the lifetime PB even after the athlete has improved.
   let poorChance=.12+.08*(1-clamp(mental/200,0,1));
   if(rng()<poorChance){
@@ -1882,6 +1885,7 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65){
   let potential=Object.fromEntries(STATS.map(k=>[k,200]));
   let a={id:uid("W"),name:newName(used),gender:"M",category,age,grade,organization:org,stats,potential,cpuStatCeilings,condition:65,fatigue:0,bestTimes:{},retired:false,scouted:false,discovered:false,potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),accolades:[],raceHistory:[],specialty};
   diversifyStrokeStats(a);
+  diversifyCpuIndividual(a);
   refreshCpuPBs(a);
   return a;
 }
@@ -1938,20 +1942,43 @@ function cpuTeamProfile(category,organization){
   }
   return profiles[key];
 }
+function diversifyCpuIndividual(a){
+  if(a.cpuIndividualProfileVersion===1||a.alumni)return;
+  const roll=key=>profileHash(a.id+":individual-v3:"+key)%10001/10000;
+  let level=(roll("level")-.5)*44,strokes=["fr","ba","br","fly"],strokeBias=Object.fromEntries(strokes.map(s=>[s,(roll(s)-.5)*18]));
+  let mean=strokes.reduce((sum,s)=>sum+strokeBias[s],0)/4;
+  let specialty=EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
+  let distance=distanceOf(specialty),distanceBias=distance<=100?5+roll("distance")*9:distance>=400?-5-roll("distance")*9:(roll("distance")-.5)*16;
+  let exceptional=Object.values(a.cpuStatCeilings||{}).some(v=>v>=178)||STATS.some(k=>a.stats[k]>=176),cap=exceptional?187:175;
+  let peak=exceptional?178+roll("ceiling")*7:145+roll("ceiling")*29;
+  if(!a.cpuStatCeilings)a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,175]));
+  for(let k of STATS){
+    let stroke=k.split("_")[0],shift=level+(strokeBias[stroke]===undefined?0:strokeBias[stroke]-mean);
+    if(k.endsWith("_speed"))shift+=distanceBias*.65;
+    if(k.endsWith("_stamina"))shift-=distanceBias*1.6;
+    if(k==="start")shift+=distanceBias*.35;
+    let ceiling=round2(clamp(peak+(roll(k+":ceiling")-.5)*5,140,cap));
+    a.stats[k]=round2(clamp(a.stats[k]+shift,40,ceiling));
+    a.cpuStatCeilings[k]=ceiling;
+  }
+  a.cpuIndividualProfileVersion=1;
+}
 function diversifyLegacyCpuRoster(){
-  if(state.cpuDiversityVersion===2)return;
+  if(state.cpuDiversityVersion===3)return;
   for(let a of state.world||[]){
     if(a.alumni)continue;
-    let before=Object.fromEntries(EVENTS.map(e=>[e,expectedTime(a,e)]));
+    let needsIndividual=a.cpuIndividualProfileVersion!==1;
+    let before=Object.fromEntries(EVENTS.map(e=>[e,expectedTime(a,e,needsIndividual)]));
     let team=cpuTeamProfile(a.category,a.organization),talent=((profileHash(a.id)%2001)/1000-1)*4;
     let avg=overallStatValue(a),shift=0;
-    if(state.cpuDiversityVersion!==1){
+    if(state.cpuDiversityVersion!==1&&state.cpuDiversityVersion!==2){
       shift=team.offset+talent;
       if(a.category==="university")shift+=(universityStrengthFromReputation(universityReputationByName(a.organization))*1.5+8-avg)*.30;
       shift=clamp(shift,-14,9);
     }
-    shift+=(profileHash(a.id+":individual-v2")%2001/1000-1)*9;
+    if(state.cpuDiversityVersion!==2)shift+=(profileHash(a.id+":individual-v2")%2001/1000-1)*9;
     for(let k of STATS){let old=a.stats[k];a.stats[k]=round2(clamp(old+shift,40,old>=176?188:175))}
+    diversifyCpuIndividual(a);
     for(let title of a.accolades||[])if(EVENTS.includes(title.event)&&Number.isFinite(title.time))calibrateToTime(a,title.event,title.time);
     for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))a.bestTimes[e]=round2(a.bestTimes[e]*expectedTime(a,e)/before[e]);
     for(let title of a.accolades||[])if(EVENTS.includes(title.event)&&Number.isFinite(title.time))a.bestTimes[title.event]=Math.min(a.bestTimes[title.event]??Infinity,title.time);
@@ -1960,7 +1987,7 @@ function diversifyLegacyCpuRoster(){
       a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(Math.max(a.stats[k],peak+(profileHash(a.id+k)%401)/100-2))]));
     }
   }
-  state.cpuDiversityVersion=2;
+  state.cpuDiversityVersion=3;
 }
 function initialUniversityReputation(strength){
   return round2(25+330*Math.pow(clamp((strength-65)/26,0,1),1.45));
@@ -2141,7 +2168,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.32.3",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:2,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.33",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:3,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];

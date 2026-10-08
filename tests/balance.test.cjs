@@ -74,6 +74,57 @@ test('CPU individuals vary within one team and the new legacy spread preserves p
   assert.ok(result.ownPreserved&&result.alumniPreserved&&result.once&&result.titlesValid,JSON.stringify(result));
 });
 
+test('new CPU swimmers spread across every event even within one university and grade',()=>{
+  for(const seed of [12345,54321,5914]){
+    const run=game(seed);
+    const result=JSON.parse(run(`JSON.stringify((()=>{
+      const used=new Set(),athletes=Array.from({length:200},()=>makeAthlete('university','同学年の大学',used,20,2,82));
+      const deviation=values=>{let mean=values.reduce((s,v)=>s+v,0)/values.length;return Math.sqrt(values.reduce((s,v)=>s+(v-mean)**2,0)/values.length)};
+      return{abilities:deviation(athletes.map(overallStatValue)),events:EVENTS.map(e=>({e,relativeSD:deviation(athletes.map(a=>expectedTime(a,e)))/INTERCOLLEGE_A_FINAL_REFERENCE[e]}))};
+    })())`));
+    assert.ok(result.abilities>13,JSON.stringify({seed,...result}));
+    for(const row of result.events)assert.ok(row.relativeSD>.014,JSON.stringify({seed,...row}));
+  }
+});
+
+test('v2 CPU saves gain event differences once while player, alumni, awards and historical records remain intact',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),titles=JSON.stringify(state.world.flatMap(a=>a.accolades));
+    const alumni={...deepClone(state.players[0]),id:'v3-preserved-alumni',category:'adult',age:26,alumni:true};state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
+    const cpu=state.world.filter(a=>a.category==='university');
+    for(const a of cpu){
+      delete a.cpuIndividualProfileVersion;
+      a.stats=Object.fromEntries(STATS.map(k=>[k,120]));a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,170]));
+      a.bestTimes=Object.fromEntries(EVENTS.map(e=>[e,round2(expectedTime(a,e,true))]));
+    }
+    delete cpu[0].specialty;
+    state.cpuDiversityVersion=2;migrateState();
+    const first=JSON.stringify(state.world),profiles=cpu.every(a=>a.cpuIndividualProfileVersion===1);
+    const eventSpreads=EVENTS.map(e=>{const times=cpu.map(a=>expectedTime(a,e)),mean=times.reduce((s,v)=>s+v,0)/times.length;return{e,relativeSD:Math.sqrt(times.reduce((s,v)=>s+(v-mean)**2,0)/times.length)/mean}});
+    const titlesValid=state.world.every(a=>(a.accolades||[]).every(t=>!EVENTS.includes(t.event)||!Number.isFinite(t.time)||a.bestTimes[t.event]<=t.time));
+    migrateState();return{version:state.cpuDiversityVersion,profiles,eventSpreads,titlesValid,once:JSON.stringify(state.world)===first,
+      own:JSON.stringify(state.players)===own,alumni:JSON.stringify(state.world.find(a=>a.id===alumni.id))===savedAlumni,
+      records:JSON.stringify(state.recordRankings)===records,titles:JSON.stringify(state.world.filter(a=>!a.alumni).flatMap(a=>a.accolades))===titles};
+  })())`));
+  assert.equal(result.version,3);assert.ok(result.profiles&&result.once&&result.own&&result.alumni&&result.records&&result.titles&&result.titlesValid,JSON.stringify(result));
+  for(const row of result.eventSpreads)assert.ok(row.relativeSD>.012,JSON.stringify(row));
+});
+
+test('late-A ability differences affect every event while sprint and distance CPU specialties stay distinct',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const time=(e,value)=>expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,value]))},e);
+    const rows=EVENTS.map(e=>({e,portion:(time(e,167)-time(e,175))/(time(e,163)-time(e,175))}));
+    const athlete={id:'cpu-distance-profile',stats:Object.fromEntries(STATS.map(k=>[k,113])),cpuStatCeilings:Object.fromEntries(STATS.map(k=>[k,170]))};
+    const short={...deepClone(athlete),specialty:'fr50'},long={...deepClone(athlete),specialty:'fr400'};
+    diversifyCpuIndividual(short);diversifyCpuIndividual(long);
+    return{rows,sprint:[expectedTime(short,'fr50'),expectedTime(long,'fr50')],distance:[expectedTime(short,'fr400'),expectedTime(long,'fr400')]};
+  })())`));
+  for(const row of result.rows)assert.ok(row.portion>.6,JSON.stringify(row));
+  assert.ok(result.sprint[0]<result.sprint[1]);assert.ok(result.distance[0]>result.distance[1]);
+});
+
 test('initial teammates have visibly different overall abilities within the same grade',()=>{
   let spreads=[],deviations=[];
   for(const seed of [12345,20261008,816,5914,314159,987654]){
@@ -298,7 +349,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.32.3');
+  assert.equal(result.version, 'pwa-v1.33');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -434,13 +485,19 @@ test('poor races miss PB by distance-scaled margins even when abilities improve'
     let p={stats:Object.fromEntries(STATS.map(k=>[k,173])),bestTimes:{[e]:expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,165]))},e)}};
     let pb=p.bestTimes[e],poor=[];
     for(let i=0;i<2000;i++){let t=raceTarget(p,e);if(t>pb)poor.push(t-pb)}
-    return {e,distance:distanceOf(e),count:poor.length,max:Math.max(...poor),min:Math.min(...poor)};
+    // Non-PBs also include ordinary race variance, not only poor-condition races.
+    const oldPB=pb+30,oldBest={...p,bestTimes:{[e]:oldPB}},badCondition=[];
+    for(let i=0;i<2000;i++){let t=raceTarget(oldBest,e);if(t>oldPB)badCondition.push(t-oldPB)}
+    return {e,distance:distanceOf(e),count:poor.length,max:Math.max(...poor),min:Math.min(...poor),
+      badCount:badCondition.length,badMin:Math.min(...badCondition),badMax:Math.max(...badCondition)};
   }))`));
   for(const row of rows){
     const expected={50:.5,100:1,200:2.8,400:4.7}[row.distance];
-    assert.ok(row.count>150&&row.count<900,JSON.stringify(row));
+    assert.ok(row.count>150&&row.count<1100,JSON.stringify(row));
     assert.ok(row.max>expected,JSON.stringify(row));
-
+    const [min,max]={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[row.distance];
+    assert.ok(row.badCount>150&&row.badCount<450,JSON.stringify(row));
+    assert.ok(row.badMin>=min-1e-8&&row.badMax<=max+1e-8,JSON.stringify(row));
   }
 });
 
@@ -455,5 +512,5 @@ test('CPU universities and swimmers have wider differences and legacy diversity 
     return {repRange:Math.max(...teams.map(u=>u.rep))-Math.min(...teams.map(u=>u.rep)),abilityRange:Math.max(...teams.map(u=>u.mean))-Math.min(...teams.map(u=>u.mean)),preserved:own===JSON.stringify(state.players[0]),alumniPreserved:JSON.stringify(state.world.find(a=>a.id===alumni.id))===oldAlumni,once:first===JSON.stringify(state.world)&&reps===JSON.stringify(state.universities),version:state.cpuDiversityVersion};
   })())`));
   assert.ok(result.repRange>280,JSON.stringify(result));assert.ok(result.abilityRange>28,JSON.stringify(result));
-  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,2);
+  assert.equal(result.preserved,true);assert.equal(result.alumniPreserved,true);assert.equal(result.once,true);assert.equal(result.version,3);
 });

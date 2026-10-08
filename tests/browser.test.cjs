@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.32.3', 'v1.32.2'));
+      data = Buffer.from(data.toString().replaceAll('v1.33', 'v1.32.3'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -644,7 +644,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.32.2 cache to v1.32.3 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.32.3 cache to v1.33 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -653,7 +653,7 @@ test('PWA upgrades its v1.32.2 cache to v1.32.3 and retains saved progress offli
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.32.2'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.32.3'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -663,19 +663,19 @@ test('PWA upgrades its v1.32.2 cache to v1.32.3 and retains saved progress offli
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.32.3') && !keys.includes('swim-manager-pwa-v1.32.2');
+      return keys.includes('swim-manager-pwa-v1.33') && !keys.includes('swim-manager-pwa-v1.32.3');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.32\.3/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32.3');
+    assert.match(await page.title(), /v1\.33/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.33');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.32\.3/);
+    assert.match(await page.title(), /v1\.33/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
