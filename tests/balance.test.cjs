@@ -20,6 +20,22 @@ function game(seed = 12345) {
   return run;
 }
 
+test('initial teammates have visibly different overall abilities within the same grade',()=>{
+  let spreads=[],deviations=[];
+  for(const seed of [12345,20261008,816,5914,314159,987654]){
+    const run=game(seed);
+    const classes=JSON.parse(run(`JSON.stringify([1,2,3,4].map(year=>state.players.filter(p=>p.year===year&&!p.prodigy).map(overallStatValue)))`));
+    for(const means of classes){
+      assert.ok(means.length>=5);
+      const average=means.reduce((a,b)=>a+b)/means.length;
+      spreads.push(Math.max(...means)-Math.min(...means));
+      deviations.push(Math.sqrt(means.reduce((sum,v)=>sum+(v-average)**2,0)/means.length));
+    }
+  }
+  assert.ok(deviations.reduce((a,b)=>a+b)/deviations.length>=7);
+  assert.ok(spreads.filter(spread=>spread>=20).length>=spreads.length*.7);
+});
+
 test('all 12 events use C/B/A/S benchmarks and improve continuously with ability', () => {
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify(EVENTS.map(event => {
@@ -228,7 +244,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.29.3');
+  assert.equal(result.version, 'pwa-v1.30');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);

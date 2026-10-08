@@ -4,9 +4,10 @@ const path = require('node:path');
 const http = require('node:http');
 const { test, before, after } = require('node:test');
 const { chromium } = require('playwright');
+const {config:cloudConfig,backend:cloudBackend}=require('./cloud-fixture.cjs');
 
 const repo = path.join(__dirname, '..');
-const assets = ['index.html', 'sw.js', 'manifest.webmanifest', 'icons/apple-touch-icon.png',
+const assets = ['index.html', 'sw.js', 'manifest.webmanifest', 'cloud-sync.js', 'cloud-config.json', 'CLOUD_SYNC_SETUP.md', 'firebase.database.rules.json', 'icons/apple-touch-icon.png',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'];
 let browser;
 before(async () => {
@@ -28,7 +29,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.29.3', 'v1.29.2'));
+      data = Buffer.from(data.toString().replaceAll('v1.30', 'v1.29.3'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -52,6 +53,73 @@ function runtimeErrors(page) {
   page.on('dialog', async dialog => { errors.push(dialog.message()); await dialog.dismiss(); });
   return errors;
 }
+
+async function cloudContext(server,options){
+  const context=await testContext(options);
+  await context.addInitScript(config=>localStorage.setItem('swimManagerCloudConfig',JSON.stringify(config)),cloudConfig);
+  const handler=async route=>{
+    const request=route.request(),headers={'Access-Control-Allow-Origin':'*','Access-Control-Expose-Headers':'ETag','Access-Control-Allow-Methods':'GET,PUT,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,If-Match,X-Firebase-ETag'};
+    if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
+    const response=await server.fetch(request.url(),{method:request.method(),headers:request.headers(),body:request.postData()});
+    await route.fulfill({status:response.status,headers:{...Object.fromEntries(response.headers),...headers},body:await response.text()});
+  };
+  for(const url of ['https://identitytoolkit.googleapis.com/**','https://securetoken.googleapis.com/**',cloudConfig.databaseURL+'/**'])await context.route(url,handler);
+  return context;
+}
+
+test('PC and iPhone account screens share real game saves, handle offline conflicts and retain login after reload',async()=>{
+  const app=await fixture(),server=cloudBackend(),pcContext=await cloudContext(server),phoneContext=await cloudContext(server,{viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const pc=await pcContext.newPage(),phone=await phoneContext.newPage(),errors=[runtimeErrors(pc),runtimeErrors(phone)];
+    await pc.goto(app.url);await pc.waitForFunction(()=>cloudSync?.config);
+    await pc.evaluate(()=>{state.points=321;state.players[0].stats.fr_speed=111.22;state.players[0].bestTimes.fr100=47.89;saveLocal()});
+    for(const [page,create] of [[pc,true],[phone,false]]){
+      if(page===phone){await page.goto(app.url);await page.waitForFunction(()=>cloudSync?.config)}
+      await page.locator('.utility-summary').click();await page.locator('#cloudSyncBtn').click();
+      await page.locator('#cloudEmail').fill('owner@example.test');await page.locator('#cloudPassword').fill('test-password');
+      await page.locator(create?'#cloudRegister':'#cloudLogin').click();
+      await page.locator('#cloudLogout').waitFor();
+    }
+    await phone.locator('#cloudUseRemote').click();await phone.waitForFunction(()=>cloudSync.status.kind==='synced');
+    assert.equal(await phone.evaluate(()=>state.points),321);
+    assert.equal(await phone.evaluate(()=>state.players[0].stats.fr_speed),111.22);
+    assert.equal(await phone.evaluate(()=>state.players[0].bestTimes.fr100),47.89);
+    assert.ok((await phone.locator('.modal-cloud').boundingBox()).width<=620);
+    await phone.locator('#cloudClose').click();await pc.locator('#cloudClose').click();
+    await pc.evaluate(()=>{state.points=333;saveLocal()});
+    await pc.waitForFunction(()=>cloudSync.status.kind==='synced');
+    await phone.evaluate(()=>cloudSync.sync());await phone.waitForFunction(()=>state.points===333);
+    await phone.evaluate(()=>navigator.serviceWorker.ready);await phoneContext.setOffline(true);
+    await phone.evaluate(()=>{state.points=444;saveLocal()});
+    assert.equal(await phone.evaluate(()=>JSON.parse(localStorage.getItem('swimManagerSave')).points),444);
+    await pc.evaluate(async()=>{state.points=555;saveLocal();await cloudSync.sync()});
+    await phoneContext.setOffline(false);await phone.waitForFunction(()=>cloudSync.status.kind==='conflict');
+    assert.equal(await phone.evaluate(()=>state.points),444);
+    await phone.locator('#cloudSyncChip').click();await phone.locator('#cloudUseRemote').click();
+    await phone.waitForFunction(()=>cloudSync.status.kind==='synced');assert.equal(await phone.evaluate(()=>state.points),555);
+    await phone.locator('#cloudClose').click();await phone.reload();
+    await phone.waitForFunction(()=>cloudSync?.session&&cloudSync.status.kind==='synced');
+    assert.equal(await phone.evaluate(()=>state.points),555);
+    assert.equal(await phone.evaluate(()=>cloudSync.session.email),'owner@example.test');
+    assert.ok(!await phone.evaluate(()=>JSON.stringify(state).includes('test-password')));
+    for(const list of errors)assert.deepEqual(list,[]);
+  }finally{await pcContext.close();await phoneContext.close();await app.close()}
+});
+
+test('unconfigured cloud setup keeps local play working and exposes configuration instructions',async()=>{
+  const app=await fixture(),context=await testContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+    await page.waitForFunction(()=>cloudSync?.status.kind==='unconfigured');
+    await page.locator('#cloudSyncChip').click();
+    assert.equal(await page.locator('#cloudLogin').isDisabled(),true);
+    assert.equal(await page.locator('#cloudConfigForm').isVisible(),true);
+    assert.equal(await page.locator('.modal-cloud a').getAttribute('href'),'https://github.com/Subaru5914/swim-manager-pwa/blob/main/CLOUD_SYNC_SETUP.md');
+    await page.locator('#cloudClose').click();await page.locator('#saveBtn').click();
+    await page.reload();assert.ok(await page.evaluate(()=>state.players.length===32));
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close()}
+});
 
 
 async function advanceToRace(page) {
@@ -328,7 +396,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.29.2 cache to v1.29.3 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.29.3 cache to v1.30 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -337,7 +405,7 @@ test('PWA upgrades its v1.29.2 cache to v1.29.3 and retains saved progress offli
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.2'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.3'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -347,19 +415,19 @@ test('PWA upgrades its v1.29.2 cache to v1.29.3 and retains saved progress offli
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.29.3') && !keys.includes('swim-manager-pwa-v1.29.2');
+      return keys.includes('swim-manager-pwa-v1.30') && !keys.includes('swim-manager-pwa-v1.29.3');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.29\.3/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.3');
+    assert.match(await page.title(), /v1\.30/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.30');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.29\.3/);
+    assert.match(await page.title(), /v1\.30/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

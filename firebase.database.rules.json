@@ -1,0 +1,23 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "swimManagerSaves": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && newData.exists()",
+        ".validate": "newData.hasChildren(['schemaVersion', 'revision', 'fingerprint', 'encoding', 'payload', 'updatedAt', 'season', 'slot', 'university'])",
+        "schemaVersion": { ".validate": "newData.val() === 1" },
+        "revision": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 64" },
+        "fingerprint": { ".validate": "newData.isString() && newData.val().length === 64" },
+        "encoding": { ".validate": "newData.val() === 'json' || newData.val() === 'gzip-base64'" },
+        "payload": { ".validate": "newData.isString() && newData.val().length <= 12582912" },
+        "updatedAt": { ".validate": "newData.isNumber() && newData.val() <= now" },
+        "season": { ".validate": "newData.isNumber()" },
+        "slot": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 96" },
+        "university": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
