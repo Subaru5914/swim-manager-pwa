@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.32.2', 'v1.32.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.32.3', 'v1.32.2'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -360,11 +360,11 @@ test('college awards and all three historic record categories work on PC and por
       const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
       const names=await page.evaluate(()=>{
         state.recordRankings={};
-        const own=state.players[0];own.name='記録確認選手';
-        recordIndividualResult({...own,id:'school-record',category:'high',year:null,organization:'記録高校'},'fr100',50,'全国高校総体','決勝');
+        const own=state.players.find(p=>p.year===2);own.name='記録確認選手';
+        recordIndividualResult({...own,id:'school-record',category:'high',grade:3,age:18,year:null,organization:'記録高校'},'fr100',50,'全国高校総体','決勝');
         recordIndividualResult(own,'fr100',49,'intercollege','決勝');
         recordIndividualResult({id:'adult-record',name:'社会人選手',category:'adult',organization:'記録チーム'},'fr100',48,'japan_championship','決勝');
-        recordRelayResult('4x100fr',{organization:state.playerUniversity,members:state.players.slice(0,4),race:{total:200}},'intercollege','決勝');
+        recordRelayResult('4x100fr',{organization:state.playerUniversity,members:[1,2,3,4].map(year=>state.players.find(p=>p.year===year)),race:{total:200}},'intercollege','決勝');
         const events=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[],heats:[]} ]));
         const scores={[state.playerUniversity]:90,優勝大学:100,三位大学:80,四位大学:70,五位大学:60,六位大学:50,七位大学:40,八位大学:30,九位大学:20,無得点大学:0};
         showMeetSummary({meet:'intercollege',events,relays:[],teamScores:scores},()=>renderAll());
@@ -388,12 +388,15 @@ test('college awards and all three historic record categories work on PC and por
       assert.equal(await page.locator('#recordRankingTitle').innerText(),'高校記録10傑');
       assert.match(await page.locator('#recordRankingBody').innerText(),/記録高校/);
       assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'50.00');
+      assert.equal(await page.locator('#recordRankingBody .record-school-label').innerText(),'高3年');
       await page.locator('#recordRankingCategory').selectOption('university');
       assert.match(await page.locator('#recordRankingBody').innerText(),/記録確認選手/);
       assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'49.00');
+      assert.equal(await page.locator('#recordRankingBody .record-school-label').innerText(),'大2年');
       await page.locator('#recordRankingEvent').selectOption('4x100fr');
       assert.equal(await page.locator('#recordRankingBody .record-time').innerText(),'3:20.00');
       assert.match(await page.locator('#recordRankingBody').innerText(),/記録確認選手/);
+      assert.deepEqual(await page.locator('#recordRankingBody .record-school-label').allTextContents(),['大1年','大2年','大3年','大4年']);
       await page.locator('#nav button[data-page="home"]').click();await page.locator('#nav button[data-page="records"]').click();
       assert.equal(await page.locator('#recordRankingCategory').inputValue(),'university');
       assert.equal(await page.locator('#recordRankingEvent').inputValue(),'4x100fr');
@@ -402,6 +405,7 @@ test('college awards and all three historic record categories work on PC and por
       assert.equal(await page.evaluate(()=>JSON.stringify(state.recordRankings)),saved);
       await page.locator('#recordRankingCategory').selectOption('japan');await page.locator('#recordRankingEvent').selectOption('fr100');
       assert.deepEqual(await page.locator('#recordRankingBody .record-time').allTextContents(),['48.00','49.00','50.00']);
+      assert.deepEqual(await page.locator('#recordRankingBody .record-school-label').allTextContents(),['社会人','大2年','高3年']);
       assert.ok(await page.locator('#teamTop10Body').count());assert.deepEqual(errors,[]);
     }finally{await context.close()}
   }
@@ -640,7 +644,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.32.1 cache to v1.32.2 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.32.2 cache to v1.32.3 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -649,7 +653,7 @@ test('PWA upgrades its v1.32.1 cache to v1.32.2 and retains saved progress offli
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.32.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.32.2'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -659,19 +663,19 @@ test('PWA upgrades its v1.32.1 cache to v1.32.2 and retains saved progress offli
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.32.2') && !keys.includes('swim-manager-pwa-v1.32.1');
+      return keys.includes('swim-manager-pwa-v1.32.3') && !keys.includes('swim-manager-pwa-v1.32.2');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.32\.2/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32.2');
+    assert.match(await page.title(), /v1\.32\.3/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.32.3');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.32\.2/);
+    assert.match(await page.title(), /v1\.32\.3/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

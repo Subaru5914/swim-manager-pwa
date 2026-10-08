@@ -48,6 +48,89 @@ test('individual top-ten records retain school-era results through university, a
   assert.deepEqual(result.japan.map(r=>[r.time,r.organization,r.season]),[[48,'記録チーム',2028]]);
 });
 
+test('record grades stay at the race year after progression, graduation and save reload',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};
+    let a={id:'grade-career',name:'学年記録選手',category:'high',grade:3,age:18,organization:'記録高校'};
+    recordIndividualResult(a,'fr100',50,'全国高校総体','決勝');
+    state.season++;a.category='university';a.grade=1;a.age=19;a.organization='記録大学';
+    recordIndividualResult(a,'fr100',49,'intercollege','決勝');
+    state.season+=3;a.grade=4;a.age=22;
+    recordIndividualResult(a,'fr100',51,'intercollege','決勝');
+    state.season++;a.category='adult';a.grade=null;a.age=23;a.organization='記録チーム';
+    recordIndividualResult(a,'fr100',48,'japan_championship','決勝');
+    let own=state.players.find(p=>p.year===4);recordIndividualResult(own,'fr50',20,'intercollege','決勝');
+    let before=JSON.stringify(state.recordRankings);newSeason();
+    state=deepClone(state);migrateState();
+    return{before,after:JSON.stringify(state.recordRankings),labels:['high','university','japan'].map(k=>recordSchoolLabel(state.recordRankings[k].fr100.find(r=>r.athleteId===a.id))),
+      own:state.recordRankings.university.fr50.find(r=>r.athleteId===own.id)};
+  })()`);
+  // New-season high-school records can be added; the tested athletes retain their snapshots.
+  for(const category of ['high','university','japan']){
+    const before=JSON.parse(result.before)[category].fr100.find(r=>r.athleteId==='grade-career');
+    const after=JSON.parse(result.after)[category].fr100.find(r=>r.athleteId==='grade-career');
+    assert.deepEqual(after,before);
+  }
+  assert.deepEqual(result.labels,['高3年','大1年','社会人']);
+  assert.equal(result.own.gradeAtRecord,4);assert.equal(result.own.schoolCategory,'university');
+});
+
+test('relay records preserve each member grade and capture a faster replacement lineup separately',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};
+    const members=[1,2,3,4].map(year=>state.players.find(p=>p.year===year));
+    recordRelayResult('4x100fr',{organization:state.playerUniversity,members,race:{total:200}},'intercollege','予選');
+    const prelim=deepClone(state.recordRankings.university['4x100fr'][0]);
+    state.season++;members.forEach(p=>p.year++);
+    let replacement=state.players.find(p=>!members.includes(p)&&p.year===1);
+    recordRelayResult('4x100fr',{organization:state.playerUniversity,members:[...members.slice(0,3),replacement],race:{total:199}},'intercollege','決勝');
+    const final=deepClone(state.recordRankings.university['4x100fr'][0]);
+    members.forEach(p=>p.year=4);replacement.year=4;state=deepClone(state);migrateState();
+    return{prelim,final,saved:state.recordRankings.university['4x100fr'][0]};
+  })()`);
+  assert.deepEqual(result.prelim.members.map(m=>m.gradeAtRecord),[1,2,3,4]);
+  assert.deepEqual(result.final.members.map(m=>m.gradeAtRecord),[2,3,4,1]);
+  assert.deepEqual(result.saved,result.final);assert.equal(result.final.time,199);
+});
+
+test('legacy record grades recover from school cohorts and graduation seasons without inventing unknown grades',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.season=2027;state.recordRankings={high:{fr100:[]},university:{fr100:[]},japan:{fr100:[]}};
+    const own=state.players.find(p=>p.year===2);
+    const record=(id,season,time,organization=state.playerUniversity)=>({kind:'individual',event:'fr100',athleteId:id,name:'旧記録選手',season,time,organization,meet:'PB集計',stage:'PB'});
+    state.retiredArchive.push({id:'grade-retired',name:'卒業記録選手',season:2026,reason:'大学卒業・競技終了',organization:state.playerUniversity,bestTimes:{},accolades:[]});
+    const high=record(own.id,2025,50,'高校在籍時'),student=record(own.id,2026,49),retired=record('grade-retired',2024,48),missing=record('grade-missing',2023,47,'不明大学');
+    state.recordRankings.high.fr100=[high];state.recordRankings.university.fr100=[student,retired,missing];
+    state.recordRankings.japan.fr100=[deepClone(high),deepClone(student),deepClone(retired),deepClone(missing)];
+    state.recordRankings.university['4x100fr']=[{kind:'relay',event:'4x100fr',organization:state.playerUniversity,time:200,season:2026,meet:'intercollege',members:[{id:own.id,name:own.name},{id:'grade-retired',name:'卒業記録選手'},{id:'grade-missing',name:'不明選手'},{id:state.players.find(p=>p.year===3).id,name:'上級生'}]}];
+    const original=deepClone(state.recordRankings);migrateState();const first=JSON.stringify(state.recordRankings);
+    state.season++;state.players.forEach(p=>p.year++);state=deepClone(state);migrateState();
+    return{original,records:state.recordRankings,once:first===JSON.stringify(state.recordRankings),
+      labels:state.recordRankings.japan.fr100.map(recordSchoolLabel)};
+  })()`);
+  assert.deepEqual(result.labels,['高3年','大1年','大2年','学年不明']);
+  assert.deepEqual(result.records.university['4x100fr'][0].members.map(m=>m.gradeAtRecord),[1,4,null,2]);
+  assert.ok(result.once);
+  for(const category of ['high','university','japan'])for(const old of result.original[category].fr100){
+    const saved=result.records[category].fr100.find(r=>r.athleteId===old.athleteId&&r.time===old.time);
+    const {schoolCategory,gradeAtRecord,...unchanged}=saved;assert.deepEqual(unchanged,old);
+  }
+});
+
+test('graduated Japan representatives record world races as post-graduation results',()=>{
+  const run=game();
+  const result=json(run,`(()=>{
+    state.recordRankings={};let snapshot=deepClone(state.players.find(p=>p.year===4));
+    snapshot.id='graduated-representative';state.japanTeam={selectedSeason:2026,athletes:[{id:snapshot.id,snapshot}]};state.season=2027;
+    recordIndividualResult(snapshot,'fr100',47,'world_championship','決勝');
+    return{record:state.recordRankings.japan.fr100[0],label:recordSchoolLabel(state.recordRankings.japan.fr100[0]),student:state.recordRankings.university?.fr100||[]};
+  })()`);
+  assert.equal(result.label,'卒業後');assert.equal(result.record.gradeAtRecord,null);assert.deepEqual(result.student,[]);
+});
+
 test('record tables keep only ten distinct fastest swimmers and relay teams and exclude mixed-school relays from school records',()=>{
   const run=game();
   const result=json(run,`(()=>{
