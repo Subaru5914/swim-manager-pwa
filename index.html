@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.29.2</title>
+<title>大学競泳監督シミュレーション PWA版 v1.29.3</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1111,7 +1111,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.29.2</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.29.3</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1415,7 +1415,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.29.2";
+  state.version="pwa-v1.29.3";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -2046,7 +2046,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.29.2",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.29.3",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2117,6 +2117,17 @@ function refreshRecordBook(){EVENTS.forEach(e=>{let a=ranking(e,"all",1)[0];if(!
 function standardFor(meet,e){return STANDARDS[meet]?.[e]??null}
 function dispatchStandard(e){return PANPAC_2026_DISPATCH.times?.[e]??null}
 function dispatchStandardsReady(){return EVENTS.every(e=>Number.isFinite(dispatchStandard(e)))}
+function selectMedleyRelay(results){
+  let events=["ba100","br100","fly100","fr100"],finals=events.map(e=>[...(results[e]?.final||[])].sort((a,b)=>a.race.total-b.race.total)),preferred=new Map();
+  if(finals.some(rows=>!rows.length))return [];
+  for(let i=0;i<events.length;i++){
+    let a=finals[i][0].athlete,stroke=strokeForEvent(a.specialty||bestSpecialtyByAbility(a));
+    // A 200m specialist also has priority on the same stroke's 100m relay leg.
+    if(!preferred.has(a.id)||stroke===strokeForEvent(events[i]))preferred.set(a.id,i);
+  }
+  let members=finals.map((rows,i)=>rows[preferred.get(rows[0].athlete.id)===i?0:1]);
+  return members.every(Boolean)&&new Set(members.map(row=>row.athlete.id)).size===4?members:[];
+}
 function selectJapanTeam(results,year){
   if(!isWorldChampionshipYear(year)||!dispatchStandardsReady())return null;
   let individual={},relays={},selectionTimes={},selected=new Map();
@@ -2130,8 +2141,7 @@ function selectJapanTeam(results,year){
     let top=[...(results[event]?.final||[])].sort((a,b)=>a.race.total-b.race.total).slice(0,4);
     relays[kind]=top.length===4?top.map(remember):[];
   }
-  let medley=["ba100","br100","fly100","fr100"].map(e=>[...(results[e]?.final||[])].sort((a,b)=>a.race.total-b.race.total)[0]);
-  relays["4x100medley"]=medley.every(Boolean)&&new Set(medley.map(x=>x.athlete.id)).size===4?medley.map(remember):[];
+  relays["4x100medley"]=selectMedleyRelay(results).map(remember);
   let athletes=[...selected.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
   return state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,athletes,announced:false};
 }
@@ -2316,8 +2326,9 @@ function updateResultHistory(a,e,t,meet,stage,rank){
   return achievement;
 }
 function achievementBadges(row,event){
+  if(row.source!=="PLAYER")return "—";
   let a=row.achievement||{},parts=[];
-  if(row.source==="PLAYER"&&a.pb)parts.push('<span class="pb-badge">自己PB!</span>');
+  if(a.pb)parts.push('<span class="pb-badge">自己PB!</span>');
   for(let label of a.newlyCleared||[])parts.push(`<span class="std-new">初突破 ${standardDisplay(event,label)}</span>`);
   return parts.join(" ")||"—";
 }
@@ -2868,7 +2879,7 @@ function showStandards(){
   let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td><td>${fmt(dispatchStandard(e))}</td></tr>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>世界大会</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small">男子・長水路。世界大会は2027年から隔年、8月第2週後半。その年の3月日本選手権A決勝で派遣標準を突破した上位2名を自動選出します（標準と同タイムを含む）。</p>
-    <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。メドレーの優勝者が重複する場合は4名を編成できないため出場しません。</p>
+    <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。優勝者が重複する場合は専門泳法を優先し、他の泳法は2位の選手を選出します。</p>
     <p class="small">2026年の派遣標準をゲーム内の隔年大会に使用しています。<a href="${PANPAC_2026_DISPATCH.source}" target="_blank" rel="noopener">日本水泳連盟</a></p>`);
   m.classList.add("modal-standards");m.querySelector("#x").onclick=()=>closeModal(()=>document.getElementById("modalRoot").append(...previous));
 }

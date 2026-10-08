@@ -28,7 +28,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.29.2', 'v1.29.1'));
+      data = Buffer.from(data.toString().replaceAll('v1.29.3', 'v1.29.2'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -197,6 +197,7 @@ test('entry badges expose qualified, unqualified and missing PB in both views; s
     assert.equal(await page.locator('.standards-table thead th').count(), 6);
     assert.equal(await page.locator('.standards-table thead th').last().innerText(), '世界大会');
     assert.equal(await page.locator('.standards-table tbody tr').nth(1).locator('td').last().innerText(), '47.64');
+    assert.match(await page.locator('.modal-standards').innerText(),/専門泳法を優先し、他の泳法は2位の選手/);
     await page.locator('.modal-standards #x').click();
     assert.equal(await cells.nth(0).isChecked(), true);
     assert.match(await page.locator('#entryViewToggle').innerText(), /能力表示 → PB表示/);
@@ -327,7 +328,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.29.1 cache to v1.29.2 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.29.2 cache to v1.29.3 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -336,7 +337,7 @@ test('PWA upgrades its v1.29.1 cache to v1.29.2 and retains saved progress offli
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.1'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.2'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -346,19 +347,19 @@ test('PWA upgrades its v1.29.1 cache to v1.29.2 and retains saved progress offli
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.29.2') && !keys.includes('swim-manager-pwa-v1.29.1');
+      return keys.includes('swim-manager-pwa-v1.29.3') && !keys.includes('swim-manager-pwa-v1.29.2');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.29\.2/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.2');
+    assert.match(await page.title(), /v1\.29\.3/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.3');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.29\.2/);
+    assert.match(await page.title(), /v1\.29\.3/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -556,14 +557,18 @@ test('results highlight own swimmers and first standards while top ten marks act
   const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
-    const cpuPBCount=await page.evaluate(()=>{
+    const cpuAchievements=await page.evaluate(()=>{
       let p=state.players[0];p.stats=Object.fromEntries(STATS.map(k=>[k,200]));p.bestTimes.fr100=70;p.standardAchievementVersion=1;p.standardAchievements={};
+      for(let a of state.world){a.standardAchievementVersion=1;a.standardAchievements={}}
       const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[p.id]:[]]));
       let result=executeMeet('joint_record',entries,{});result.entries=entries;showMeetResults(result,()=>{});
-      return [...result.events.fr100.prelim,...result.events.fr100.final].filter(x=>x.source==='CPU'&&x.achievement?.pb).length;
+      let rows=[...result.events.fr100.prelim,...result.events.fr100.final].filter(x=>x.source==='CPU');
+      return {pb:rows.filter(x=>x.achievement?.pb).length,standards:rows.filter(x=>x.achievement?.newlyCleared.length).length};
     });
-    assert.ok(cpuPBCount>0);
+    assert.ok(cpuAchievements.pb>0);
+    assert.ok(cpuAchievements.standards>0);
     assert.equal(await page.locator('#resBody tr:not(.result-own) .pb-badge').count(),0);
+    assert.equal(await page.locator('#resBody tr:not(.result-own) .std-new').count(),0);
     assert.ok(await page.locator('#resBody .result-own').count()>=4);
     assert.ok(await page.locator('#resBody .pb-badge').count()>0);
     assert.equal(await page.locator('#resBody .std-clear').count(),0);

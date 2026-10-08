@@ -121,8 +121,6 @@ test('Japan selects up to two standard-clearing finalists, top four freestyle fi
     let answer={individual:team.individual.fr100,free:team.relays['4x100fr'],free200:team.relays['4x200fr'],medley:team.relays['4x100medley'],expected:fixtureSwimmers.map(a=>a.id)};
     fixtureResults.fr50.final.forEach((x,i)=>x.race.total=101+i);
     answer.none=selectJapanTeam(fixtureResults,2027).individual.fr50;
-    fixtureResults.ba100.final[0].athlete=fixtureSwimmers[0];
-    answer.duplicate=selectJapanTeam(fixtureResults,2027).relays['4x100medley'];
     return answer;
   })()`);
   assert.deepEqual(result.individual, result.expected.slice(0, 2));
@@ -130,8 +128,59 @@ test('Japan selects up to two standard-clearing finalists, top four freestyle fi
   assert.deepEqual(result.free200, result.expected.slice(0, 4));
   assert.deepEqual(result.medley, [result.expected[4], result.expected[5], result.expected[6], result.expected[0]]);
   assert.deepEqual(result.none, []);
-  assert.deepEqual(result.duplicate, []);
   assert.equal(run(`selectJapanTeam(fixtureResults,2028)`), null);
+});
+
+test('a double medley champion keeps his specialist stroke and the other runner-up enters automatically', () => {
+  for(const specialty of ['fr100','fr200','ba100','ba200']){
+    const run=game();run(selectionFixture);
+    const result=json(run,`(()=>{
+      fixtureSwimmers[0].specialty=${JSON.stringify(specialty)};
+      let rows=fixtureResults.ba100.final;
+      [rows[0].athlete,rows[1].athlete]=[rows[1].athlete,rows[0].athlete];
+      let team=selectJapanTeam(fixtureResults,2027),roles=team.relays['4x100medley'];
+      let memberIds=team.athletes.map(a=>a.id);
+      state=JSON.parse(JSON.stringify(state));migrateState();
+      return {roles,automatic:worldAutoEntries(2027).relays['4x100medley'],memberIds,expected:fixtureSwimmers.map(a=>a.id),individual:team.individual.fr100,free:team.relays['4x100fr']};
+    })()`);
+    const ids=result.expected,expected=specialty.startsWith('fr')?[ids[4],ids[5],ids[6],ids[0]]:[ids[0],ids[5],ids[6],ids[1]];
+    assert.deepEqual(result.roles,expected,specialty);
+    assert.deepEqual(result.automatic,expected,specialty);
+    assert.equal(new Set(result.roles).size,4,specialty);
+    assert.ok(result.roles.every(id=>result.memberIds.includes(id)),specialty);
+    assert.deepEqual(result.individual,ids.slice(0,2),specialty);
+    assert.deepEqual(result.free,ids.slice(0,4),specialty);
+  }
+});
+
+test('medley selection resolves two double champions and one triple champion without reusing swimmers', () => {
+  for(const triple of [false,true]){
+    const run=game();run(selectionFixture);
+    const result=json(run,`(()=>{
+      fixtureSwimmers[0].specialty=${JSON.stringify(triple?'br200':'fr200')};
+      fixtureSwimmers[1].specialty='br100';
+      let winners=${JSON.stringify(triple?[0,0,0,3]:[0,1,1,0])};
+      for(let [i,e] of ['ba100','br100','fly100','fr100'].entries()){
+        let order=[winners[i],4+i];
+        fixtureResults[e].final=order.map((index,rank)=>({athlete:fixtureSwimmers[index],race:{total:98+rank}}));
+      }
+      let team=selectJapanTeam(fixtureResults,2027);
+      return {roles:team.relays['4x100medley'],expected:fixtureSwimmers.map(a=>a.id)};
+    })()`);
+    const ids=result.expected;
+    assert.deepEqual(result.roles,triple?[ids[4],ids[0],ids[6],ids[3]]:[ids[4],ids[1],ids[6],ids[0]]);
+    assert.equal(new Set(result.roles).size,4);
+  }
+});
+
+test('medley selection does not put a retained champion in another leg as its runner-up', () => {
+  const run=game();run(selectionFixture);
+  const result=json(run,`(()=>{
+    fixtureSwimmers[0].specialty='fr100';
+    fixtureResults.ba100.final=[0,5,4].map((index,rank)=>({athlete:fixtureSwimmers[index],race:{total:97+rank}}));
+    return selectJapanTeam(fixtureResults,2027).relays['4x100medley'];
+  })()`);
+  assert.deepEqual(result,[]);
 });
 
 test('Japan team survives April, missing graduated swimmers, and save migration', () => {
@@ -234,12 +283,14 @@ test('four-day meets finish every daily prelim before finals and place all three
   }
 });
 
-test('race result PB badges are shown only for owned swimmers while standard badges remain independent', () => {
+test('race result PB and first-standard badges are shown only for own swimmers', () => {
   const run=game();
   const rows=json(run,`['PLAYER','CPU'].map(source=>({source,html:achievementBadges({source,achievement:{pb:true,newlyCleared:['日本選手権']}},'fr100')}))`);
   assert.match(rows[0].html,/自己PB/);
+  assert.match(rows[0].html,/初突破/);
   assert.doesNotMatch(rows[1].html,/自己PB/);
-  assert.ok(rows.every(row=>row.html.includes('初突破')));
+  assert.doesNotMatch(rows[1].html,/初突破/);
+  assert.equal(rows[1].html,'—');
 });
 
 test('dispatch data matches all twelve user-provided 2026 Pan Pacific standards', () => {
