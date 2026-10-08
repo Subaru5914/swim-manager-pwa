@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.29.1</title>
+<title>大学競泳監督シミュレーション PWA版 v1.29.2</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -685,15 +685,14 @@ nav .nav-action:hover{background:#edf6ff}
   #rankingTable th:nth-child(6),#rankingTable td:nth-child(6){width:15%}
   #rankingTable .rank-pill,#rankingTable .grade-pill{padding-left:3px;padding-right:3px}
 
-  /* RECORDS / MEET HISTORY: compact every table */
-  #recordBook table,#archiveTable table,#meetHistory table{
+  /* Records and career archive: compact every table */
+  #recordBook table,#archiveTable table{
     width:100%!important;
     min-width:0!important;
     table-layout:fixed;
   }
   #recordBook th,#recordBook td,
-  #archiveTable th,#archiveTable td,
-  #meetHistory th,#meetHistory td{
+  #archiveTable th,#archiveTable td{
     padding-left:2px!important;
     padding-right:2px!important;
     white-space:normal;
@@ -704,13 +703,6 @@ nav .nav-action:hover{background:#edf6ff}
   #recordBook th:nth-child(3),#recordBook td:nth-child(3){width:25%}
   #recordBook th:nth-child(4),#recordBook td:nth-child(4){width:37%}
 
-  #meetHistory th:nth-child(1),#meetHistory td:nth-child(1){width:12%}
-  #meetHistory th:nth-child(2),#meetHistory td:nth-child(2){width:17%}
-  #meetHistory th:nth-child(3),#meetHistory td:nth-child(3){width:29%}
-  #meetHistory th:nth-child(4),#meetHistory td:nth-child(4){width:15%}
-  #meetHistory th:nth-child(5),#meetHistory td:nth-child(5){width:13%}
-  #meetHistory th:nth-child(6),#meetHistory td:nth-child(6){width:14%}
-  #meetHistory button{padding-left:3px;padding-right:3px}
 
   /* SCOUT: same dense column treatment */
   #scoutTable table{width:100%!important;min-width:0!important;table-layout:fixed}
@@ -863,9 +855,8 @@ nav .nav-action:hover{background:#edf6ff}
   #rankingTable th:nth-child(5),#rankingTable td:nth-child(5){width:21%}
   #rankingTable th:nth-child(6),#rankingTable td:nth-child(6){width:18%}
 
-  /* Records/history/archive */
+  /* Records and career archive */
   #recordBook th,#recordBook td,
-  #meetHistory th,#meetHistory td,
   #archiveTable th,#archiveTable td{padding-left:1px!important;padding-right:1px!important}
 
   /* Scout */
@@ -918,7 +909,7 @@ nav .nav-action:hover{background:#edf6ff}
   #page-scout .table-wrap,#facilityGrid{
     margin-left:auto!important;margin-right:auto!important
   }
-  #rosterTable,#rankingTable,#recordBook,#archiveTable,#meetHistory,#scoutTable{
+  #rosterTable,#rankingTable,#recordBook,#archiveTable,#scoutTable{
     margin-left:auto!important;margin-right:auto!important
   }
   .modal{margin-left:auto;margin-right:auto}
@@ -1015,6 +1006,8 @@ nav .nav-action:hover{background:#edf6ff}
 .race-entrant{padding:4px 6px;background:#edf4fb;border-radius:6px;min-width:0}
 .race-entrant strong{display:block;font-size:16px;overflow-wrap:anywhere}
 .race-entrant.own{background:#fff3c1;color:#8b1e10}
+.relay-member{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.relay-members{line-height:1.35}
 .standards-table th:not(:first-child),.standards-table td:not(:first-child){width:17%}
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse), (orientation:portrait) and (max-height:950px) and (max-width:500px) and (pointer:coarse){
   .modal-player-detail{width:calc(var(--game-vw) * 86)!important;max-width:740px!important;max-height:calc(var(--game-vh) * 90)!important}
@@ -1042,7 +1035,6 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .modal-player-detail .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,180px));justify-content:center}
 .modal-player-detail .stat-detail-row[class*="rank-"]{max-width:180px}
 .modal-reputation{width:min(650px,calc(var(--game-vw) * 84));max-width:650px}
-.modal-podium{width:min(600px,calc(var(--game-vw) * 80));max-width:600px}
 .modal-freshmen-welcome{width:min(680px,calc(var(--game-vw) * 86));max-width:680px}
 .modal-freshmen-welcome table{width:max-content;min-width:0;table-layout:auto;margin:auto}
 .modal-freshmen-welcome th,.modal-freshmen-welcome td{padding:4px 6px}
@@ -1086,7 +1078,6 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   .modal-player-detail .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,152px))}
   .modal-player-detail .stat-detail-row[class*="rank-"]{max-width:152px}
   .modal-reputation{width:calc(var(--game-vw) * 66)!important;max-width:560px!important;padding:5px!important}
-  .modal-podium{width:calc(var(--game-vw) * 62)!important;max-width:520px!important;padding:5px!important}
   .modal-freshmen-welcome{width:calc(var(--game-vw) * 72)!important;max-width:610px!important;padding:5px!important}
   .modal-freshmen-welcome table{width:max-content!important;min-width:0!important;table-layout:auto!important}
   .modal-japan-celebration{width:calc(var(--game-vw) * 90)!important;max-width:860px!important;padding:5px!important}
@@ -1120,7 +1111,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.29.1</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.29.2</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1144,7 +1135,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   <button data-page="training">練習指示</button>
   <button data-page="roster">選手一覧</button>
   <button data-page="rankings">全選手ランキング</button>
-  <button data-page="records">記録・大会履歴</button>
+  <button data-page="records">記録</button>
   <button data-page="scout">スカウト</button>
   <button data-page="facilities">施設</button>
   <button id="scheduleBtn" class="nav-action">大会日程</button>
@@ -1255,12 +1246,11 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 </section>
 
 <section id="page-records" class="page">
-  <div class="page-lead"><div><h1>記録・大会履歴</h1><p>歴代記録、卒業後の進路、大会成績をまとめて確認できます。</p></div></div>
+  <div class="page-lead"><div><h1>記録</h1><p>歴代記録と卒業後の進路を確認できます。</p></div></div>
   <div class="grid">
     <div class="card"><h2>ゲーム内歴代記録</h2><div id="recordBook" class="table-wrap"></div></div>
     <div class="card"><h2>卒業・進路アーカイブ</h2><div id="archiveTable" class="table-wrap"></div></div>
   </div>
-  <div class="card"><h2>大会履歴</h2><div id="meetHistory" class="table-wrap"></div></div>
 </section>
 
 <section id="page-scout" class="page">
@@ -1425,7 +1415,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.29.1";
+  state.version="pwa-v1.29.2";
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
   if(!state.internationalWorld)state.internationalWorld=null;
@@ -2056,7 +2046,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(){
-  let s={version:"pwa-v1.29.1",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.29.2",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:1,cpuTeamProfiles:{},orgNameModelVersion:2};
   state=s;
   s.universities.forEach(u=>{u.baseReputation=initialUniversityReputation(u.strength);u.reputation=u.baseReputation});
   s.kansaiIds=s.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2876,7 +2866,7 @@ function closeModal(cb){document.getElementById("modalRoot").innerHTML="";if(cb)
 function showStandards(){
   let previous=[...document.getElementById("modalRoot").childNodes];
   let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td><td>${fmt(dispatchStandard(e))}</td></tr>`).join("");
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>2026パンパシ<br>派遣標準</th></tr></thead><tbody>${rows}</tbody></table></div>
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>世界大会</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small">男子・長水路。世界大会は2027年から隔年、8月第2週後半。その年の3月日本選手権A決勝で派遣標準を突破した上位2名を自動選出します（標準と同タイムを含む）。</p>
     <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。メドレーの優勝者が重複する場合は4名を編成できないため出場しません。</p>
     <p class="small">2026年の派遣標準をゲーム内の隔年大会に使用しています。<a href="${PANPAC_2026_DISPATCH.source}" target="_blank" rel="noopener">日本水泳連盟</a></p>`);
@@ -3411,6 +3401,16 @@ function raceEntryPB(row,event,athlete){
   if(Object.prototype.hasOwnProperty.call(row,"entryPB"))return row.entryPB;
   return athlete?.bestTimes?.[event];
 }
+function relayMemberLabel(p){
+  let names=String(p.name||"").trim().split(/\s+/),surname=p.category==="international"?names[names.length-1]:names[0];
+  let grade=p.year?`${p.year}年`:p.category==="university"&&p.grade?`${p.grade}年`:p.category==="high"&&p.grade?`高${p.grade}`:p.category==="middle"&&p.grade?`中${p.grade}`:"";
+  return `<span class="relay-member">${esc(surname)}${grade?`（${esc(grade)}）`:""}</span>`;
+}
+function raceEntrantCard(row,lane,event){
+  let course=row.heatLane||lane+1,own=row.source==="PLAYER"?"own":"";
+  if(row.members)return `<div class="race-entrant relay-entrant ${own}"><strong>${course} ${esc(row.nationality||row.athlete.organization||row.athlete.name)}</strong><div class="relay-members">${row.members.map(relayMemberLabel).join(" / ")}</div></div>`;
+  return `<div class="race-entrant ${own}"><strong>${own?"★ ":""}${course} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div><div>${athleteGradeLabel(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div></div>`;
+}
 
 function playRaceCanvas(event,rows,options={}){
   if(typeof raceAnim==="undefined")raceAnim=null;
@@ -3420,7 +3420,7 @@ function playRaceCanvas(event,rows,options={}){
   let stage=options.stageLabel||"",nextLabel=options.nextLabel||"閉じる";
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">LIVE ${EVENT_LABEL[event]||RELAY_LABEL[event]||event} ${stage}</h2><div id="clock" class="clock">0.00</div>
       <button id="pause">一時停止</button><button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button></div>
-    <div class="race-entrants">${rows.map((row,lane)=>`<div class="race-entrant ${row.source==="PLAYER"?"own":""}"><strong>${row.source==="PLAYER"?"★ ":""}${row.heatLane||lane+1} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div>${row.members?`<div>${row.members.map((p,i)=>`${esc(p.name)}（${esc(p.organization||"")} ${athleteGradeLabel(p)}）PB ${fmt(p.bestTimes[relayLegEvent(event,i)])}`).join(" / ")}</div>`:`<div>${athleteGradeLabel(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div>`}</div>`).join("")}</div>
+    <div class="race-entrants">${rows.map((row,lane)=>raceEntrantCard(row,lane,event)).join("")}</div>
     <div class="race-stage"><canvas id="raceCanvas" width="1240" height="634"></canvas><div class="race-progress"><span id="raceProg"></span></div></div>
     <div class="row" style="margin-top:10px">
       <span id="finishNote" class="muted">レース終了まで結果画面には進めません。</span>
@@ -3688,8 +3688,6 @@ function renderRecords(){
     ||'<tr><td colspan="5">まだありません</td></tr>'
   }</tbody></table>`;
 
-  document.getElementById("meetHistory").innerHTML=`<table><thead><tr><th>年度</th><th>日程</th><th>大会</th><th>自大学得点</th><th>終了時pt</th><th></th></tr></thead><tbody>${state.meetHistory.slice().reverse().map((m,ri)=>{let idx=state.meetHistory.length-1-ri;return`<tr><td>${m.season}</td><td>${dateText(m.slot)}</td><td>${meetMonthLabel(m.meet,m.slot)}</td><td>${m.teamScores?.[state.playerUniversity]||0}</td><td>${m.pointsAfter}</td><td><button data-podium="${idx}">表彰台</button></td></tr>`}).join("")||'<tr><td colspan="6">まだありません</td></tr>'}</tbody></table>`;
-  document.querySelectorAll("[data-podium]").forEach(b=>b.onclick=()=>showPodiums(+b.dataset.podium));
 }
 function renderScout(){
   let rows=refreshScoutBoard();
@@ -3822,7 +3820,6 @@ function renamePlayer(id){
   let r=applyPlayerRename(id,n);alert(r.msg);if(r.ok)renderAll();
 }
 function doScout(id){let a=state.world.find(x=>x.id===id);if(!a)return;if(state.points<1){alert("ポイント不足です");return}let p=scoutProbability(a);state.points--;if(rng()<=p){a.scouted=true;if(!state.recruits.includes(id))state.recruits.push(id);alert(`${a.name}のスカウトに成功しました。翌年度加入予定です。`)}else alert(`${a.name}のスカウトに失敗しました。`);renderAll()}
-function showPodiums(idx){let m=state.meetHistory[idx],lines=[];for(let [e,p] of Object.entries(m.podiums||{})){lines.push(`<h3>${EVENT_LABEL[e]}</h3>`+p.map(x=>`${x.rank}位 ${esc(x.name)} (${esc(x.organization)}) ${fmt(x.time)}`).join("<br>"))}let q=showModal(`<div class="row"><h2 style="margin-right:auto">${meetMonthLabel(m.meet,m.slot)} 表彰台</h2><button id="x">閉じる</button></div>${lines.join("")||"データなし"}`);q.classList.add("modal-podium");q.querySelector("#x").onclick=()=>closeModal()}
 
 function showTrainingGrowth(gains,onClose){
   let body=gains.length

@@ -28,7 +28,7 @@ async function fixture(legacy = false) {
     if (!assets.includes(name)) { response.writeHead(404); response.end(); return; }
     let data = fs.readFileSync(path.join(repo, name));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.29.1', 'v1.29'));
+      data = Buffer.from(data.toString().replaceAll('v1.29.2', 'v1.29.1'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -83,6 +83,11 @@ async function drainRaces(page,program=[]) {
     const controls=await page.locator('#skipEvent').evaluate(el=>{let a=el.getBoundingClientRect(),m=el.closest('.modal').getBoundingClientRect();return {bottom:a.bottom,limit:m.bottom};});
     assert.ok(controls.bottom<=controls.limit+1,JSON.stringify(controls));
     assert.ok(await page.locator('.race-entrants .own').count()>0,title);
+    if(await page.locator('.relay-entrant').count()){
+      assert.equal(await page.locator('.relay-member').count(),4*await page.locator('.relay-entrant').count());
+      assert.equal(await page.locator('.race-entrants .entrant-team').count(),0);
+      assert.doesNotMatch(await page.locator('.race-entrants').innerText(),/PB|\d+歳|選考時/);
+    }
     assert.equal(await page.locator('#nextRace').isDisabled(),true);
     await page.locator('#skipEvent').click();
     await page.locator('.modal-race-result').waitFor();
@@ -190,6 +195,7 @@ test('entry badges expose qualified, unqualified and missing PB in both views; s
     assert.match(await cells.nth(1).locator('..').innerText(), /未突破/);
     await page.locator('#std').click();
     assert.equal(await page.locator('.standards-table thead th').count(), 6);
+    assert.equal(await page.locator('.standards-table thead th').last().innerText(), '世界大会');
     assert.equal(await page.locator('.standards-table tbody tr').nth(1).locator('td').last().innerText(), '47.64');
     await page.locator('.modal-standards #x').click();
     assert.equal(await cells.nth(0).isChecked(), true);
@@ -321,7 +327,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.29 cache to v1.29.1 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.29.1 cache to v1.29.2 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -330,7 +336,7 @@ test('PWA upgrades its v1.29 cache to v1.29.1 and retains saved progress offline
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.29.1'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -340,19 +346,19 @@ test('PWA upgrades its v1.29 cache to v1.29.1 and retains saved progress offline
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.29.1') && !keys.includes('swim-manager-pwa-v1.29');
+      return keys.includes('swim-manager-pwa-v1.29.2') && !keys.includes('swim-manager-pwa-v1.29.1');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.29\.1/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.1');
+    assert.match(await page.title(), /v1\.29\.2/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.29.2');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.29\.1/);
+    assert.match(await page.title(), /v1\.29\.2/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
@@ -476,6 +482,11 @@ test('every domestic meet preserves all owned heats and finals after skip, then 
         let next=expected[seen.length];assert.ok(next,`${meet}: extra race`);
         const title=await page.locator('.modal-race-live h2').innerText();assert.ok(title.includes(next.label),`${meet}: ${title}`);
         assert.deepEqual((await page.locator('.race-entrant strong').allTextContents()).map(n=>n.replace(/^(?:★ )?\d+ /,'')),next.names);
+        if(next.event.startsWith('4x')){
+          assert.equal(await page.locator('.relay-member').count(),4*await page.locator('.relay-entrant').count());
+          assert.equal(await page.locator('.race-entrants .entrant-team').count(),0);
+          assert.doesNotMatch(await page.locator('.race-entrants').innerText(),/PB|\d+歳|選考時/);
+        }
         // Own names have a star; compare names after stripping it.
         seen.push(title);await page.locator('#skipEvent').click();
         await page.locator('.modal-race-result').waitFor();
@@ -573,9 +584,15 @@ test('results highlight own swimmers and first standards while top ten marks act
     await page.locator('#t10ev').selectOption('4x100fr');assert.equal(await page.locator('.active-athlete').count(),3);
     await page.locator('.modal-top10 #x').click();await page.locator('#reputationInfoBtn').click();
     assert.ok((await page.locator('.modal-reputation').boundingBox()).width<560);
-    await page.locator('.modal-reputation #x').click();await page.evaluate(()=>showPodiums(0));
-    assert.ok((await page.locator('.modal-podium').boundingBox()).width<530);
-    await page.locator('.modal-podium #x').click();assert.deepEqual(errors,[]);
+    await page.locator('.modal-reputation #x').click();
+    await page.locator('#nav button[data-page="records"]').click();
+    assert.equal(await page.locator('#nav button[data-page="records"]').innerText(),'記録');
+    assert.equal(await page.locator('#page-records h1').innerText(),'記録');
+    assert.equal(await page.locator('#meetHistory,[data-podium]').count(),0);
+    assert.equal(await page.locator('#recordBook tbody tr').count(),12);
+    assert.equal(await page.locator('#archiveTable').count(),1);
+    assert.doesNotMatch(await page.locator('#page-records').innerText(),/大会履歴|表彰台/);
+    assert.deepEqual(errors,[]);
   }finally{await context.close();await app.close();}
 });
 
