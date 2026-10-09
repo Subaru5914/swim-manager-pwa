@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.55</title>
+<title>大学競泳監督シミュレーション PWA版 v1.56</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1206,6 +1206,40 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 @media (max-width:720px) and (pointer:fine){
   #page-training>.two{grid-template-columns:minmax(0,1fr)}
 }
+/* Shared school-year colors and readable event-entry abilities. */
+.grade-pill.grade-1,.grade-1{background:#e5f0ff;color:#185ba3}
+.grade-pill.grade-2,.grade-2{background:#e3f5e9;color:#216741}
+.grade-pill.grade-3,.grade-3{background:#fff0da;color:#895019}
+.grade-pill.grade-4,.grade-4{background:#f0e7ff;color:#664096}
+.entry-athlete-name{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.entry-stat-view{display:grid;gap:3px;margin:4px auto;text-align:left;width:max-content}
+.entry-stat-row{display:grid;grid-template-columns:4.5em 22px 3.5ch;align-items:center;gap:4px;font-size:12px;line-height:1.35;white-space:nowrap}
+.entry-stat-label{color:#465d75;font-weight:700}
+.entry-stat-row .stat-rank-badge{width:22px;min-width:22px;height:22px;font-size:12px;border:1px solid currentColor;border-radius:5px}
+.entry-stat-value{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.entry-common-stats{display:grid;gap:3px;margin-top:6px}
+.entry-stat-guide{margin-top:8px}
+.entry-stat-guide .muted{font-size:12px}
+#entryMatrix.entry-abilities{table-layout:auto!important;width:max-content!important;min-width:100%!important;max-width:none!important}
+#entryMatrix.entry-abilities th:first-child,#entryMatrix.entry-abilities td:first-child{width:170px;min-width:170px!important}
+#entryMatrix.entry-abilities th:nth-child(2),#entryMatrix.entry-abilities td:nth-child(2){width:42px;min-width:42px!important}
+#entryMatrix.entry-abilities th:nth-child(n+3),#entryMatrix.entry-abilities td:nth-child(n+3){width:118px;min-width:118px!important}
+#entryMatrix td.entry-selected{box-shadow:inset 0 0 0 2px var(--accent)}
+#entryMatrix.entry-abilities input[type=checkbox]{width:18px!important;height:18px!important;margin:4px;accent-color:var(--accent)}
+.modal-meet-entry{display:flex;flex-direction:column;overflow:hidden}
+.modal-meet-entry>.row,.modal-meet-entry>.notice,.modal-meet-entry>.entry-stat-guide,.modal-meet-entry>#entrySummary{flex-shrink:0}
+.modal-meet-entry .entry-table-wrap{min-height:0;flex:1 1 auto;overscroll-behavior:contain}
+@media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse), (orientation:portrait) and (max-height:950px) and (max-width:500px) and (pointer:coarse){
+  .entry-stat-row{grid-template-columns:4.5em 19px 3.5ch;gap:3px;font-size:11px}
+  .entry-stat-row .stat-rank-badge{width:19px;min-width:19px;height:19px;font-size:11px}
+  .entry-stat-value{font-size:12px}
+  .entry-stat-view{gap:2px;margin:2px auto}
+  #entryMatrix.entry-abilities input[type=checkbox]{margin:2px}
+  .entry-stat-guide{margin-top:4px}
+  .entry-stat-guide .muted{font-size:10px}
+  #entryMatrix.entry-abilities th:first-child,#entryMatrix.entry-abilities td:first-child{width:150px;min-width:150px!important}
+  #entryMatrix.entry-abilities th:nth-child(n+3),#entryMatrix.entry-abilities td:nth-child(n+3){width:104px;min-width:104px!important}
+}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -1221,7 +1255,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.55</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.56</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1588,7 +1622,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.55";
+  state.version="pwa-v1.56";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1777,6 +1811,14 @@ function statRank(value){
   return STAT_RANKS.find(x=>v>=x.min)?.rank||"G";
 }
 function statRankClass(value){return `rank-${statRank(value).toLowerCase()}`}
+function gradeColorClass(grade){let n=Number(grade);return Number.isInteger(n)&&n>=1&&n<=4?`grade-${n}`:""}
+function gradeBadge(grade,label=null,extraClass=""){
+  return `<span class="grade-pill ${gradeColorClass(grade)}${extraClass?" "+esc(extraClass):""}">${esc(label??`${grade}年`)}</span>`;
+}
+function entryStatHtml(label,value,key){
+  let n=Math.round(+value||0);
+  return `<div class="entry-stat-row" data-entry-stat="${key}"><span class="entry-stat-label">${label}</span><span class="stat-rank-badge ${statRankClass(n)}">${statRank(n)}</span><b class="entry-stat-value">${n}</b></div>`;
+}
 function trainingRankUp(change){
   if(!Number.isFinite(change.before)||!Number.isFinite(change.after)||change.after<=change.before)return "";
   let before=statRank(change.before),after=statRank(change.after);
@@ -1864,9 +1906,9 @@ function abilityValue(p,e,legacyIm=false){
   let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;
   return clamp(raw/mx,0,1);
 }
-function entryEventSpeedStamina(p,e){
-  let [speed,stamina]=eventProfile(p,e);
-  return{speed:Math.round(speed),stamina:Math.round(stamina)};
+function entryEventStats(p,e){
+  let [speed,stamina,turn]=eventProfile(p,e);
+  return{speed:Math.round(speed),stamina:Math.round(stamina),turn:Math.round(turn)};
 }
 
 const ELITE_JR_FACTOR=.99;
@@ -2458,7 +2500,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.55",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.56",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2516,6 +2558,10 @@ function athleteGradeLabel(a){
   if(a.category==="high")return `高${a.grade||"-"}`;
   if(a.category==="middle")return `中${a.grade||"-"}`;
   return a.age?`${a.age}歳`:"";
+}
+function athleteGradeHtml(a){
+  const grade=a.year||(["middle","high","university"].includes(a.category)?a.grade:null),label=athleteGradeLabel(a);
+  return grade?gradeBadge(grade,label):esc(label);
 }
 function relayLegEvents(kind){return kind==="4x100fr"?["fr100","fr100","fr100","fr100"]:kind==="4x200fr"?["fr200","fr200","fr200","fr200"]:["ba100","br100","fly100","fr100"]}
 function relayLegEvent(kind,i){return relayLegEvents(kind)[i]}
@@ -2826,7 +2872,7 @@ function showJapanTeamCelebration(onClose){
   });
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">祝・${team.year}年 日本代表決定！</h2><button id="representativeClose" class="primary">応援して次へ</button></div>
     <div class="notice"><b>日本代表選出、おめでとうございます！</b><br>3月の日本選手権で勝ち取った代表の座。8月の世界大会で、日本の誇りを胸に泳ぎましょう！</div>
-    <div class="table-wrap"><table class="celebration-table"><thead><tr><th>選手</th><th>所属・学年</th><th>出場種目</th></tr></thead><tbody>${rows.map(({a,own,events})=>`<tr class="${own?"result-own":""}"><td><b>${own?"★ ":""}${esc(a.name)}</b></td><td>${esc(a.organization)} ${athleteGradeLabel(a)}</td><td>${events.map(e=>EVENT_LABEL[e]||RELAY_LABEL[e]).join(" / ")}</td></tr>`).join("")||'<tr><td colspan="3">今回は派遣標準を満たす代表選手がいませんでした。次の大会を目指しましょう。</td></tr>'}</tbody></table></div>`);
+    <div class="table-wrap"><table class="celebration-table"><thead><tr><th>選手</th><th>所属・学年</th><th>出場種目</th></tr></thead><tbody>${rows.map(({a,own,events})=>`<tr class="${own?"result-own":""}"><td><b>${own?"★ ":""}${esc(a.name)}</b></td><td>${esc(a.organization)} ${athleteGradeHtml(a)}</td><td>${events.map(e=>EVENT_LABEL[e]||RELAY_LABEL[e]).join(" / ")}</td></tr>`).join("")||'<tr><td colspan="3">今回は派遣標準を満たす代表選手がいませんでした。次の大会を目指しましょう。</td></tr>'}</tbody></table></div>`);
   m.classList.add("modal-japan-celebration");
   m.querySelector("#representativeClose").onclick=()=>{team.announced=true;state.pendingJapanCelebrationYear=null;closeModal();autoSaveNow();onClose?.()};
   return true;
@@ -3586,7 +3632,7 @@ function showStandards(){
 }
 function top10AthleteName(id,name){
   let p=state.players.find(p=>p.id===id);
-  return p?`<b>${esc(p.name)}</b> <span class="active-athlete">現役 ${p.year}年</span>`:esc(name);
+  return p?`<b>${esc(p.name)}</b> ${gradeBadge(p.year,`現役 ${p.year}年`,"active-athlete")}`:esc(name);
 }
 function renderTeamTop10(){
     let selector=document.getElementById("teamTop10Event");if(!selector)return;
@@ -3649,6 +3695,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
 
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー</h2><button id="entryViewToggle">PB表示 → 能力表示</button>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
     <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}</div>
+    <div id="entryStatGuide" class="entry-stat-guide hidden">${statRankLegendHtml()}<div class="muted">IMは4泳法の総合値を表示。表は上下・左右にスクロールできます。</div></div>
     <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" class="${meetEvents.some(e=>SPRINT_EVENTS.includes(e))?"entry-with-sprints":""}" style="min-width:1320px">
       <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${meetEvents.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
     </table></div>
@@ -3671,19 +3718,21 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   }
 
   function render(){
+    m.querySelector("#entryMatrix").classList.toggle("entry-abilities",entryDisplayMode==="stats");
+    m.querySelector("#entryStatGuide").classList.toggle("hidden",entryDisplayMode!=="stats");
     tbody.innerHTML=state.players.map(p=>`<tr>
-      <td style="position:sticky;left:0;background:white;z-index:2"><b>${esc(p.name)}</b><br><span class="small muted">${p.year}年 / 専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span></td>
+      <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div>${entryDisplayMode==="stats"?`<div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}${entryStatHtml("メンタル",p.stats.mental,"mental")}</div>`:""}</td>
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
       ${meetEvents.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
-        let stats=entryEventSpeedStamina(p,e);
-        let statText=`<div class="small entry-stat-view"><b>速${statRank(stats.speed)} ${stats.speed}</b><br><b>持${statRank(stats.stamina)} ${stats.stamina}</b></div>`;
+        let stats=entryEventStats(p,e);
+        let statText=`<div class="entry-stat-view">${entryStatHtml("スピード",stats.speed,"speed")}${entryStatHtml("スタミナ",stats.stamina,"stamina")}${entryStatHtml("ターン",stats.turn,"turn")}</div>`;
         let hasPB=validRaceTime(p.bestTimes[e]),cleared=qualified(p,meet,e);
         let statusClass=!hasPB?"entry-no-pb":cleared?"entry-qualified":"entry-unqualified";
         let standardBadge=RESTRICTED.has(meet)?`<span class="entry-standard-status">${!hasPB?"PBなし":cleared?"✓ 標準突破":"× 未突破"}</span><span class="small">標準 ${fmt(standardFor(meet,e))}</span>`:"";
         let pbText=`<div class="small entry-pb-view">${fmt(hasPB?p.bestTimes[e]:null)}</div>`;
         let sub=entryDisplayMode==="stats"?statText:pbText;
-        return`<td class="${RESTRICTED.has(meet)?statusClass:""}" style="text-align:center"><input type="checkbox" aria-label="${esc(p.name)} ${EVENT_LABEL[e]}" data-pid="${p.id}" data-event="${e}" ${selected?"checked":""} ${!selected&&!status.ok?"disabled":""}>${sub}${standardBadge}</td>`;
+        return`<td class="${RESTRICTED.has(meet)?statusClass:""}${selected?" entry-selected":""}" style="text-align:center"><input type="checkbox" aria-label="${esc(p.name)} ${EVENT_LABEL[e]}" data-pid="${p.id}" data-event="${e}" ${selected?"checked":""} ${!selected&&!status.ok?"disabled":""}>${sub}${standardBadge}</td>`;
       }).join("")}
     </tr>`).join("");
     tbody.querySelectorAll("input[type=checkbox]").forEach(ch=>ch.onchange=()=>{
@@ -3693,7 +3742,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
       render();
     });
     let total=EVENTS.reduce((n,e)=>n+selections[e].length,0),byEvent=EVENTS.filter(e=>selections[e].length).map(e=>`${EVENT_LABEL[e]} ${selections[e].length}名`).join(" / ");
-    summary.innerHTML=`個人エントリー合計 <b>${total}</b>件${byEvent?"<br>"+byEvent:""}`;
+    summary.innerHTML=`個人エントリー合計 <b>${total}</b>件${byEvent?" ／ "+byEvent:""}`;
   }
 
   if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
@@ -3872,7 +3921,7 @@ function meetProgramOwnNames(result,event,phase,emptyLabel="出場なし"){
     let r=result.events[event],rows=phase==="final"?r?.final:r?.prelim;
     athletes=(rows||[]).filter(x=>x.source==="PLAYER").map(x=>x.athlete);
   }
-  return athletes.map(p=>`<span class="program-athlete">★ ${esc(p.name)}（${athleteGradeLabel(p)}）</span>`).join(RELAYS.includes(event)?" → ":" / ")||`<span class="muted">${esc(emptyLabel)}</span>`;
+  return athletes.map(p=>`<span class="program-athlete">★ ${esc(p.name)}（${athleteGradeHtml(p)}）</span>`).join(RELAYS.includes(event)?" → ":" / ")||`<span class="muted">${esc(emptyLabel)}</span>`;
 }
 function showMeetDayProgram(result,block,onNext,completedPrelims=new Set()){
   let events=meetEventDays(result.meet)[block.day-1],final=block.phase==="final";
@@ -3896,7 +3945,7 @@ function finalQualificationTag(qualified){
   return qualified?'<span class="final-qualifier">決勝進出</span>':"—";
 }
 function resultRankingRows(rows,event,qualifiers=null){
-  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeLabel(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
+  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${i+1}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeHtml(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
 }
 function resultRankingTable(rows,event,qualifiers=null){
   return `<div class="table-wrap"><table><thead><tr><th>順位</th><th>コース</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>記録</th>${qualifiers?"<th>決勝</th>":""}<th>PB・初突破</th></tr></thead><tbody>${resultRankingRows(rows,event,qualifiers)}</tbody></table></div>`;
@@ -4218,12 +4267,12 @@ function raceEntryPB(row,event,athlete){
 function relayMemberLabel(p){
   let names=String(p.name||"").trim().split(/\s+/),surname=p.category==="international"?names[names.length-1]:names[0];
   let grade=p.year?`${p.year}年`:p.category==="university"&&p.grade?`${p.grade}年`:p.category==="high"&&p.grade?`高${p.grade}`:p.category==="middle"&&p.grade?`中${p.grade}`:"";
-  return `<span class="relay-member">${esc(surname)}${grade?`（${esc(grade)}）`:""}</span>`;
+  return `<span class="relay-member">${esc(surname)}${grade?`（${gradeBadge(p.year||p.grade,grade)}）`:""}</span>`;
 }
 function raceEntrantCard(row,lane,event){
   let course=row.heatLane||lane+1,own=row.source==="PLAYER"?"own":"";
   if(row.members)return `<div class="race-entrant relay-entrant ${own}"><strong>${course} ${esc(row.nationality||row.athlete.organization||row.athlete.name)}</strong><div class="relay-members">${row.members.map(relayMemberLabel).join(" / ")}</div></div>`;
-  return `<div class="race-entrant ${own}"><strong>${own?"★ ":""}${course} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div><div>${athleteGradeLabel(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div></div>`;
+  return `<div class="race-entrant ${own}"><strong>${own?"★ ":""}${course} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div><div>${athleteGradeHtml(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div></div>`;
 }
 
 function playRaceCanvas(event,rows,options={}){
@@ -4416,7 +4465,7 @@ function renderTrainingPlayers(){
       let overall=overallStatValue(p),pb=validRaceTime(p.bestTimes[p.specialty])?fmt(p.bestTimes[p.specialty]):"未記録";
       return`<tr data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.name)}を選択" class="player-select-row ${selectedTrainingId===p.id?"selected":""}">
         <td><span class="athlete-name">${esc(p.name)}</span></td>
-        <td><span class="grade-pill">${p.year}年</span></td>
+        <td>${gradeBadge(p.year)}</td>
         <td><div class="training-player-rank"><span class="stat-rank-badge ${statRankClass(overall)}">${statRank(overall)}</span><b>${Math.round(overall)}</b></div></td>
         <td><div class="training-list-specialty">${specialtyTag(p.specialty)}<div class="training-specialty-pb"><span class="pb-caption">PB</span> <b>${pb}</b></div></div></td>
       </tr>`;
@@ -4473,7 +4522,7 @@ function renderRoster(){
       let overall=overallStatValue(p),top=topStatKeys(p,3);
       return`<tr>
         <td><span class="athlete-name">${esc(p.name)}</span></td>
-        <td><span class="grade-pill">${p.year}年</span></td>
+        <td>${gradeBadge(p.year)}</td>
         <td><div class="player-overall"><span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span><span class="player-overall-meta"><b>${Math.round(overall)}</b><small class="muted">14能力平均</small></span></div></td>
         <td>${specialtyTag(displayEvent||p.specialty)}</td>
         <td><b>${fmt(displayEvent?p.bestTimes[displayEvent]:p.bestTimes[p.specialty])}</b></td>
@@ -4496,7 +4545,7 @@ function renderRankings(){
         <td><span class="rank-pill ${topClass}">${i+1}</span></td>
         <td><span class="athlete-name">${own?"★ ":""}${esc(a.name)}</span></td><td>${esc(a.organization)}</td>
         <td>${own?'<span class="tag good">自大学</span>':({middle:"中学",high:"高校",university:"大学",adult:"社会人"}[a.category]||"-")}</td>
-        <td>${own?`<span class="grade-pill">${a.year}年 / ${a.age}歳</span>`:(a.grade?`${a.grade}年 / ${a.age}歳`:`${a.age}歳`)}</td>
+        <td>${own||a.grade?`${gradeBadge(own?a.year:a.grade)} / ${a.age}歳`:`${a.age}歳`}</td>
         <td><b>${fmt(a.bestTimes[e])}</b></td>
       </tr>`;
     }).join("")||'<tr><td colspan="6"><div class="empty-state">まだ記録がありません。</div></td></tr>'}</tbody></table>`;
@@ -4506,7 +4555,7 @@ function renderRecordRankings(){
   document.getElementById("recordRankingTitle").textContent=({high:"高校",university:"学生",japan:"日本"}[category])+"記録10傑";
   document.getElementById("recordRankingBody").innerHTML=`<div class="table-wrap"><table class="record-ranking-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(event)?"チーム / メンバー":"選手 / 所属"}</th><th>年度</th><th>大会 / 区分</th></tr></thead><tbody>${rows.map((r,i)=>{
     let own=r.kind==="relay"?r.members.some(a=>state.players.some(p=>p.id===a.id)):state.players.some(p=>p.id===r.athleteId);
-    let athlete=r.kind==="relay"?`<b>${esc(r.organization)}</b><br><span class="small">${r.members.map(a=>`${esc(a.name)}<span class="record-school-label">${recordSchoolLabel(a)}</span>`).join(" → ")}</span>`:`<b>${own?"★ ":""}${esc(r.name)}</b><span class="record-school-label">${recordSchoolLabel(r)}</span><br><span class="small muted">${esc(r.organization)}</span>`;
+    let athlete=r.kind==="relay"?`<b>${esc(r.organization)}</b><br><span class="small">${r.members.map(a=>`${esc(a.name)}${gradeBadge(a.gradeAtRecord,recordSchoolLabel(a),"record-school-label")}`).join(" → ")}</span>`:`<b>${own?"★ ":""}${esc(r.name)}</b>${gradeBadge(r.gradeAtRecord,recordSchoolLabel(r),"record-school-label")}<br><span class="small muted">${esc(r.organization)}</span>`;
     return `<tr class="${own?"record-ranking-own":""}"><td>${i+1}</td><td class="record-time">${fmt(r.time)}</td><td>${athlete}</td><td>${r.season}</td><td>${esc(MEET_LABEL[r.meet]?meetMonthLabel(r.meet,r.slot):r.meet)}<br><span class="small muted">${esc(r.stage||"")}</span></td></tr>`;
   }).join("")||'<tr><td colspan="5">記録なし</td></tr>'}</tbody></table></div>`;
 }
@@ -4552,7 +4601,7 @@ function renderScout(){
       const pc=pct>=55?"easy":pct>=25?"mid":pct>=8?"hard":"very-hard";
       return`<tr class="${joined?'scout-recruited':''}">
         <td><span class="athlete-name">${esc(a.name)}</span></td>
-        <td>${esc(a.organization)} <span class="grade-pill">高${a.grade}</span></td>
+        <td>${esc(a.organization)} ${gradeBadge(a.grade,`高${a.grade}`)}</td>
         <td>${titleText}</td>
         <td>${specialtyTag(e)} <b>${fmt(a.bestTimes[e])}</b><div class="small muted">${details.rank==null?'高校順位なし':`高校${details.rank}位`}</div></td>
         <td>${scoutPreferenceHtml(details)}</td>
@@ -4730,7 +4779,7 @@ function showTrainingGrowth(gains,onClose){
       <tr>${["fr","ba","br","fly"].map(s=>["スピード","スタミナ","ターン"].map(label=>`<th scope="col" class="focus-${s}">${label}</th>`).join("")).join("")}</tr></thead>
       <tbody>${rows.map((g,i)=>{
         let changes=Object.fromEntries(g.changes.map(c=>[c.stat,c]));
-        return `<tr data-athlete-id="${esc(g.id)}" data-year="${g.year||""}" class="${i>0&&g.year!==rows[i-1].year?"growth-grade-start":""}"><th scope="row" class="growth-name">${esc(g.name)}<span class="growth-grade">${g.year?g.year+"年":"学年不明"}</span></th>${STATS.map(k=>{
+        return `<tr data-athlete-id="${esc(g.id)}" data-year="${g.year||""}" class="${i>0&&g.year!==rows[i-1].year?"growth-grade-start":""}"><th scope="row" class="growth-name">${esc(g.name)}${gradeBadge(g.year,g.year?g.year+"年":"学年不明","growth-grade")}</th>${STATS.map(k=>{
           let c=changes[k],promotion=c?trainingRankUp(c):"";
           return c?`<td class="growth-changed${promotion?" growth-rank-promoted":""}" data-stat="${k}"><span class="growth-up">+${c.up}</span><span class="growth-values">${c.before}→${c.after}</span>${promotion}</td>`:`<td class="growth-unchanged" data-stat="${k}">—</td>`;
         }).join("")}</tr>`;
