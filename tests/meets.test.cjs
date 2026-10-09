@@ -72,7 +72,7 @@ test('record grades stay at the race year after progression, graduation and save
     const after=JSON.parse(result.after)[category].fr100.find(r=>r.athleteId==='grade-career');
     assert.deepEqual(after,before);
   }
-  assert.deepEqual(result.labels,['高3年','大1年','社会人']);
+  assert.deepEqual(result.labels,['高3','大1年','社会人']);
   assert.equal(result.own.gradeAtRecord,4);assert.equal(result.own.schoolCategory,'university');
 });
 
