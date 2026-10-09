@@ -306,22 +306,29 @@ test('all growth respects the 200 cap; empty legacy focus becomes one specialty 
   assert.equal(result.cap, true);
 });
 
-test('untitled high school swimmers remain recruitable at low reputation; titles stay difficult', () => {
+test('school ranking and reputation drive scouting while untitled swimmers receive a small bonus', () => {
   const run = game();
-  const rows = JSON.parse(run(`JSON.stringify([0,10,35,160,310,600].flatMap(rep=>[1,1.08,1.20,1.4].map(ratio=>{
-    state.reputation=rep;
-    let a={bestTimes:Object.fromEntries(EVENTS.map(e=>[e,JAPAN_RECORD[e]*ratio])),accolades:[]};
-    let ordinary=scoutProbability(a);
-    a.accolades=[{competition:'全国高校総体',event:'fr100',rank:1,season:2026}];
-    return {rep,ratio,ordinary,titled:scoutProbability(a)};
-  })))`));
+  const rows = JSON.parse(run(`JSON.stringify((()=>{
+    const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
+    return [0,10,35,160,310,600].flatMap(rep=>[0,9,49,99,199].map(index=>{
+      state.reputation=rep;
+      const a={...deepClone(field[index]),id:'ranked-test-'+index,category:'high',grade:3,specialty:'fr100',accolades:[],scoutPreferences:{version:1,worldAmbition:false,preferredRegion:null}};
+      const ordinary=scoutProbability(a),rank=scoutProbabilityDetails(a).rank;
+      a.accolades=[{competition:'全国高校総体',event:'fr100',rank:1,season:2026}];
+      return {rep,rank,ordinary,titled:scoutProbability(a)};
+    }));
+  })())`));
   for (const row of rows) {
-    assert.ok(row.ordinary >= .35 && row.ordinary <= .94);
-    assert.ok(row.titled >= .01 && row.titled <= .92);
-    assert.ok(row.ordinary > row.titled, JSON.stringify(row));
-    if (row.rep === 0) assert.ok(row.ordinary <= .75 + 1e-9);
+    assert.ok(row.ordinary >= .01 && row.ordinary <= .97);
+    assert.ok(row.titled >= .01 && row.titled <= .97);
+    assert.ok(row.ordinary > row.titled&&row.ordinary-row.titled<=.04000001,JSON.stringify(row));
+    if(row.rep===0&&row.rank>=80)assert.ok(row.ordinary>.55);
   }
-  for (let i = 4; i < rows.length; i++) assert.ok(rows[i].ordinary >= rows[i - 4].ordinary);
+  for(let i=5;i<rows.length;i++)assert.ok(rows[i].ordinary>=rows[i-5].ordinary);
+  for(let i=0;i<rows.length;i+=5)for(let j=1;j<5;j++){
+    const before=rows[i+j-1].ordinary,after=rows[i+j].ordinary;
+    assert.ok(before===.97?after===.97:after>before,JSON.stringify(rows.slice(i,i+5)));
+  }
 });
 
 test('S is rare in generated CPU and player rosters', () => {
@@ -409,7 +416,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.36');
+  assert.equal(result.version, 'pwa-v1.37');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -489,18 +496,25 @@ test('generated swimmers have distinct stroke strengths without changing existin
   assert.equal(result.preserved,true);
 });
 
-test('scouting differentiates ability, reputation, titles and title ranks', () => {
+test('scouting uses specialty PB rank rather than ability snapshots and title absence adds four points', () => {
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([10,160,310].map(rep=>{
     state.reputation=rep;
-    const make=(ability,rank=null)=>({stats:Object.fromEntries(STATS.map(k=>[k,ability])),specialty:'fr100',bestTimes:Object.fromEntries(EVENTS.map(e=>[e,JAPAN_RECORD[e]*1.18])),accolades:rank?[{competition:'全国高校総体',event:'fr100',rank,season:2026}]:[]});
-    return {weak:scoutProbability(make(80)),strong:scoutProbability(make(173)),champion:scoutProbability(make(173,1)),finalist:scoutProbability(make(173,8))};
+    const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
+    const make=(time,ability,titleRank=null)=>({id:'pb-scout-'+ability+'-'+titleRank,category:'high',grade:3,
+      stats:Object.fromEntries(STATS.map(k=>[k,ability])),specialty:'fr100',bestTimes:{fr100:time},
+      scoutPreferences:{version:1,worldAmbition:false,preferredRegion:null},
+      accolades:titleRank?[{competition:'全国高校総体',event:'fr100',rank:titleRank,season:2026}]:[]});
+    const fast=field[0].bestTimes.fr100,slow=field[79].bestTimes.fr100;
+    return {slow:scoutProbability(make(slow,80)),fast:scoutProbability(make(fast,80)),strongStatsSamePB:scoutProbability(make(fast,173)),
+      champion:scoutProbability(make(fast,173,1)),finalist:scoutProbability(make(fast,173,8))};
   }))`));
   for(const row of rows){
-    assert.ok(row.weak>row.strong+.12,JSON.stringify(row));
-    assert.ok(row.strong>=.35&&row.strong>row.finalist&&row.finalist>row.champion,JSON.stringify(row));
+    assert.ok(row.slow>row.fast+.2,JSON.stringify(row));
+    assert.equal(row.fast,row.strongStatsSamePB);assert.equal(row.champion,row.finalist);
+    assert.ok(Math.abs(row.fast-row.champion-.04)<1e-10);
   }
-  assert.ok(rows[2].strong>rows[0].strong&&rows[2].champion>rows[0].champion);
+  assert.ok(rows[2].fast>rows[0].fast&&rows[2].champion>rows[0].champion);
 });
 
 test('standard badges are first-ever per swimmer, event and meet, surviving history pruning and saves', () => {
