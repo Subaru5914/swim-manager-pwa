@@ -562,15 +562,10 @@ test('prelim lanes follow PB and final lanes follow prelim times in 4,5,3,6,2,7,
   }
 });
 
-test('reputation additions decrease modestly in the three national meets and the displayed rules agree', () => {
-  const run=game();
-  const result=json(run,`(()=>{
-    let entry=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?['a','b','c','d','e','f']:[]]));
-    return {deltas:['intercollege','japan_open','japan_championship'].map(m=>playerReputationDelta(m,entry)),empty:['intercollege','japan_open','japan_championship'].map(m=>playerReputationDelta(m,Object.fromEntries(EVENTS.map(e=>[e,[]])))),text:reputationRuleHtml()};
-  })()`);
-  assert.deepEqual(result.deltas,[84.8,99.6,158.4]);
-  assert.deepEqual(result.empty,[-1.5,-.75,-1]);
-  assert.match(result.text,/1人 \+10/);assert.match(result.text,/1人 \+15/);assert.match(result.text,/1人 \+24/);
+test('reputation rules explain previous-year attendance and the two calculation dates',()=>{
+  const run=game(),text=run('reputationRuleHtml()');
+  assert.match(text,/前年度/);assert.match(text,/同人数なら変化なし/);assert.match(text,/インカレ終了時/);assert.match(text,/日本選手権終了時/);
+  assert.match(text,/基準記録のみ/);assert.doesNotMatch(text,/エントリー1件|自然減衰。未出場/);
 });
 
 test('international names contain no numeric IDs, remain unique, and old names are cleaned once', () => {

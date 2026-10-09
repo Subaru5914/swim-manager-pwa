@@ -35,7 +35,7 @@ test('existing CPU cohorts advance through twelve full seasons without replaceme
       for(let turn=0;turn<96;turn++){state.slot=turn+1;trainCommand()}
       for(const meet of ['kansai_college','intercollege']){
         const entries=buildCpuCollegeEntries(meet),byId=new Map(state.world.map(a=>[a.id,a]));
-        updateCpuUniversityReputations(meet,Object.fromEntries(EVENTS.map(e=>[e,{prelim:entries[e].map(id=>({source:'CPU',athlete:byId.get(id)}))}])));
+        completeMeet({meet,season:state.season,events:Object.fromEntries(EVENTS.map(e=>[e,{prelim:entries[e].map(id=>({source:'CPU',athlete:byId.get(id)}))}])),relays:[]});
       }
       admissions.push(state.world.filter(a=>a.category==='high'&&a.grade===3&&!a.retired).length-8);
       newSeason();
@@ -248,7 +248,7 @@ test('prodigy stats are random and capped at low A, including already strong arr
   const maxima = new Set();
   for (const sample of result) {
     assert.equal(sample.prodigy, true);
-    assert.ok(['normal', 'late', 'raw'].includes(sample.type));
+    assert.ok(['normal', 'late'].includes(sample.type));
     for (const value of sample.stats) assert.ok(value >= 0 && value <= 158);
     maxima.add(Math.max(...sample.stats));
   }
@@ -417,7 +417,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.39');
+  assert.equal(result.version, 'pwa-v1.40');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
