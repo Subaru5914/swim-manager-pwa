@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.40</title>
+<title>大学競泳監督シミュレーション PWA版 v1.41</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1175,7 +1175,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.40</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.41</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1510,7 +1510,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.40";
+  state.version="pwa-v1.41";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1715,8 +1715,24 @@ function statRankLegendHtml(){
 function statHighlightClass(p,k){
   return statRankClass(p.stats?.[k]||0);
 }
+function recruitAbility(a){
+  return abilityValue(a,scoutSpecialty(a))*200;
+}
+function universityTalentPreference(a,reputation){
+  const attraction=reputation>=280?6:reputation>=160?4:0;
+  if(!attraction)return 1;
+  const talent=clamp((recruitAbility(a)-80)/80,0,1);
+  return 1+attraction*talent*talent;
+}
 function pickGeneralFreshman(candidates){
-  return candidates.length?candidates.splice(Math.floor(rng()*candidates.length),1)[0]:null;
+  if(!candidates.length)return null;
+  const weights=candidates.map(a=>universityTalentPreference(a,state.reputation));
+  let draw=rng()*weights.reduce((sum,w)=>sum+w,0);
+  for(let i=0;i<candidates.length;i++){
+    draw-=weights[i];
+    if(draw<0)return candidates.splice(i,1)[0];
+  }
+  return candidates.pop();
 }
 
 function initialPlayerStatsByReputation(rawStats,year,reputation){
@@ -2138,7 +2154,7 @@ function chooseCpuUniversityForRecruit(a){
     const rep=u.reputation??80,label=reputationLabel(rep);
     const prestige=label==="名門"?8:label==="強豪"?5:label==="中堅"?1.5:1;
     const wish=a.scoutPreferences?.prestigeSchool&&(label==="名門"||label==="強豪")?1.5:1;
-    return prestige*wish/(1+(counts.get(u.name)||0)*.25);
+    return prestige*wish*universityTalentPreference(a,rep)/(1+(counts.get(u.name)||0)*.25);
   });
   let r=rng()*weights.reduce((sum,w)=>sum+w,0);
   for(let i=0;i<available.length;i++){r-=weights[i];if(r<=0)return available[i].name}
@@ -2330,7 +2346,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.40",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.41",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3084,7 +3100,11 @@ function newSeason(){
     if(!(a.alumni&&a.graduationSeason===state.season))a.age++;
     if(a.category!=="adult")a.grade=(a.grade||0)+1;
   }
-  for(let a of state.world){
+  // Reserve CPU university places in ability order, while signed recruits stay guaranteed.
+  const highGraduates=state.world.filter(a=>a.category==="high"&&a.grade>3)
+    .sort((a,b)=>recruitAbility(b)-recruitAbility(a)||a.id.localeCompare(b.id));
+  const advancementOrder=highGraduates.concat(state.world.filter(a=>a.category!=="high"||a.grade<=3));
+  for(let a of advancementOrder){
     if(a.category==="adult"){
       if(a.age>=30&&rng()<Math.min(.92,.35+(a.age-30)*.18)){
         // Only own-team alumni need retirement tracking.
