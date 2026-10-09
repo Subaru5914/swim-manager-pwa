@@ -28,7 +28,7 @@ test('college totals rank ties consistently and distinguish medals, places and s
 test('individual top-ten records retain school-era results through university, adulthood, retirement and reload',()=>{
   const run=game();
   const result=json(run,`(()=>{
-    state.recordRankings={};
+    state.recordRankings={};state.teamTop10={};state.world.forEach(a=>a.accolades=[]);
     let a={id:'career-record',name:'記録選手',category:'high',grade:3,organization:'記録高校',bestTimes:{}};
     recordIndividualResult(a,'fr100',50,'全国高校総体','決勝');
     a.category='university';a.organization='記録大学';state.season++;
@@ -98,7 +98,7 @@ test('relay records preserve each member grade and capture a faster replacement 
 test('legacy record grades recover from school cohorts and graduation seasons without inventing unknown grades',()=>{
   const run=game();
   const result=json(run,`(()=>{
-    state.season=2027;state.recordRankings={high:{fr100:[]},university:{fr100:[]},japan:{fr100:[]}};
+    state.season=2027;state.recordRankings={high:{fr100:[]},university:{fr100:[]},japan:{fr100:[]}};state.teamTop10={};state.world.forEach(a=>a.accolades=[]);
     const own=state.players.find(p=>p.year===2);
     const record=(id,season,time,organization=state.playerUniversity)=>({kind:'individual',event:'fr100',athleteId:id,name:'旧記録選手',season,time,organization,meet:'PB集計',stage:'PB'});
     state.retiredArchive.push({id:'grade-retired',name:'卒業記録選手',season:2026,reason:'大学卒業・競技終了',organization:state.playerUniversity,bestTimes:{},accolades:[]});
@@ -111,11 +111,15 @@ test('legacy record grades recover from school cohorts and graduation seasons wi
     return{original,records:state.recordRankings,once:first===JSON.stringify(state.recordRankings),
       labels:state.recordRankings.japan.fr100.map(recordSchoolLabel)};
   })()`);
-  assert.deepEqual(result.labels,['高3年','大1年','大2年','学年不明']);
+  assert.deepEqual(result.labels,['学年不明','大2年','大1年']);
+  assert.equal(result.records.high.fr100[0].gradeAtRecord,3);
   assert.deepEqual(result.records.university['4x100fr'][0].members.map(m=>m.gradeAtRecord),[1,4,null,2]);
   assert.ok(result.once);
   for(const category of ['high','university','japan'])for(const old of result.original[category].fr100){
     const saved=result.records[category].fr100.find(r=>r.athleteId===old.athleteId&&r.time===old.time);
+    if(category==='japan'&&result.original.japan.fr100.some(r=>r.athleteId===old.athleteId&&r.time<old.time)){
+      assert.equal(saved,undefined);continue;
+    }
     const {schoolCategory,gradeAtRecord,...unchanged}=saved;assert.deepEqual(unchanged,old);
   }
 });
@@ -185,7 +189,7 @@ test('historic record migration recovers retired PBs and old Japanese records wh
 test('v1.32 record repairs retain existing categories and run only once without reseeding current PBs',()=>{
   const run=game();
   const result=json(run,`(()=>{
-    state.recordRankings={};state.recordBook={};
+    state.recordRankings={};state.recordBook={};state.teamTop10={};state.world.forEach(a=>a.accolades=[]);
     let own=state.players[0];recordIndividualResult(own,'fr100',48,'intercollege','決勝');
     state.recordRankingVersion=1;own.bestTimes.fr100=40;
     state.retiredArchive.push({id:'retired-adult-record',name:'引退社会人',organization:state.playerUniversity,season:2025,reason:'社会人引退',bestTimes:{fr100:47},accolades:[]});

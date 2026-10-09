@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.41', 'v1.40'));
+      data = Buffer.from(data.toString().replaceAll('v1.42', 'v1.41'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -388,7 +388,7 @@ test('checkpoint popups, post-intercollege retirement and hidden growth types wo
         await page.locator('.modal-season-notice').waitFor();
         assert.match(await page.locator('.modal-season-notice').innerText(),/発展途上 → 中堅/);
         assert.match(await page.locator('.modal-season-notice').innerText(),/引退確認 選手/);
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.41-season-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.42-season-${mobile?'iphone':'pc'}.png`)});}
         await page.reload();await page.locator('.modal-season-notice').waitFor();
         assert.equal(await page.evaluate(()=>state.reputation),85);assert.equal(await page.evaluate(()=>state.reputationEvaluations.length),1);
         await page.locator('#seasonNoticeNext').click();await page.reload();
@@ -419,12 +419,14 @@ test('college awards and all three historic record categories work on PC and por
     try{
       const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
       const names=await page.evaluate(()=>{
-        state.recordRankings={};
+        state.recordRankings={};state.teamTop10={};state.world.forEach(a=>a.accolades=[]);
         const own=state.players.find(p=>p.year===2);own.name='記録確認選手';
         recordIndividualResult({...own,id:'school-record',category:'high',grade:3,age:18,year:null,organization:'記録高校'},'fr100',50,'全国高校総体','決勝');
-        recordIndividualResult(own,'fr100',49,'intercollege','決勝');
+        updateResultHistory(own,'fr100',49,'intercollege','決勝',1);
         recordIndividualResult({id:'adult-record',name:'社会人選手',category:'adult',organization:'記録チーム'},'fr100',48,'japan_championship','決勝');
         recordRelayResult('4x100fr',{organization:state.playerUniversity,members:[1,2,3,4].map(year=>state.players.find(p=>p.year===year)),race:{total:200}},'intercollege','決勝');
+        delete state.recordRankings.university.fr100;
+        state.recordRankings.japan.fr100=state.recordRankings.japan.fr100.filter(r=>r.athleteId!==own.id);
         const events=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[],heats:[]} ]));
         const scores={[state.playerUniversity]:90,優勝大学:100,三位大学:80,四位大学:70,五位大学:60,六位大学:50,七位大学:40,八位大学:30,九位大学:20,無得点大学:0};
         showMeetSummary({meet:'intercollege',events,relays:[],teamScores:scores},()=>renderAll());
@@ -620,7 +622,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
           await row.scrollIntoViewIfNeeded();
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.41-scout-${mobile?'iphone':'pc'}.png`)});
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.42-scout-${mobile?'iphone':'pc'}.png`)});
         }
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
@@ -852,7 +854,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.40 cache to v1.41 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.41 cache to v1.42 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -861,7 +863,7 @@ test('PWA upgrades its v1.40 cache to v1.41 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.40'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.41'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -871,19 +873,19 @@ test('PWA upgrades its v1.40 cache to v1.41 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.41') && !keys.includes('swim-manager-pwa-v1.40');
+      return keys.includes('swim-manager-pwa-v1.42') && !keys.includes('swim-manager-pwa-v1.41');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.41/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.41');
+    assert.match(await page.title(), /v1\.42/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.42');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.41/);
+    assert.match(await page.title(), /v1\.42/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

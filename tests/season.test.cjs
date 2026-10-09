@@ -72,7 +72,7 @@ test('intercollege retirees are deleted from rosters and plans while qualified s
     seniors[0].bestTimes.fr100=standardFor('japan_open','fr100');seniors[1].bestTimes.br200=standardFor('japan_championship','br200');
     const retired=seniors[2];retired.bestTimes.fr100=(standardFor('intercollege','fr100')+standardFor('japan_open','fr100'))/2;
     selectedTrainingId=retired.id;state.lastTrainingGains=[{id:retired.id,name:retired.name,year:4,changes:[]}];
-    state.recordRankings={};recordIndividualResult(retired,'fr100',70,'intercollege','予選');
+    state.world.forEach(a=>a.accolades=[]);state.recordRankings={};recordIndividualResult(retired,'fr100',70,'intercollege','予選');
     state.teamTop10={};upsertIndividualTop10('fr100',retired,70,'intercollege','予選');
     const records=JSON.stringify(state.recordRankings),top=JSON.stringify(state.teamTop10);
     state.japanTeam={athletes:[{id:retired.id,snapshot:deepClone(retired)}],individual:{fr100:[retired.id]},relays:{}};

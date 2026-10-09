@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.41</title>
+<title>大学競泳監督シミュレーション PWA版 v1.42</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1175,7 +1175,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.41</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.42</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1510,7 +1510,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.41";
+  state.version="pwa-v1.42";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1964,7 +1964,7 @@ function refreshCpuPBs(a){
 function assignInterhigh(){
   let highs=state.world.filter(a=>a.category==="high"&&(a.grade===2||a.grade===3)&&!a.retired),cid=`interhigh_${state.season}`;if(highs.some(a=>a.accolades.some(x=>x.competitionId===cid)))return;
   let pool=[...highs].sort((a,b)=>recruitValue(b)-recruitValue(a));
-  for(let e of EVENTS){let info=INTERHIGH.events[e];if(!info)continue;interhighFinalTargets(e).forEach((target,idx)=>{let cand=pool.filter(a=>a.accolades.filter(x=>x.competitionId===cid).length<2);if(!cand.length)return;let a=cand[Math.floor(rng()*Math.min(cand.length,20+(idx+1)*3))];calibrateToTime(a,e,target);a.bestTimes[e]=target;a.accolades.push({title:`${EVENT_LABEL[e]} インターハイ${idx===0?"優勝":(idx+1)+"位"}`,competitionId:cid,competition:"全国高校総体",stage:"A_final",event:e,rank:idx+1,time:target,season:state.season});a.discovered=true})}
+  for(let e of EVENTS){let info=INTERHIGH.events[e];if(!info)continue;interhighFinalTargets(e).forEach((target,idx)=>{let cand=pool.filter(a=>a.accolades.filter(x=>x.competitionId===cid).length<2);if(!cand.length)return;let a=cand[Math.floor(rng()*Math.min(cand.length,20+(idx+1)*3))];calibrateToTime(a,e,target);a.bestTimes[e]=target;a.accolades.push({title:`${EVENT_LABEL[e]} インターハイ${idx===0?"優勝":(idx+1)+"位"}`,competitionId:cid,competition:"全国高校総体",stage:"A_final",event:e,rank:idx+1,time:target,season:state.season,organization:a.organization,schoolCategory:"high",gradeAtRecord:a.grade});a.discovered=true})}
   for(let a of highs)if(a.accolades.some(x=>x.competitionId===cid)){
     alignScoutSpecialty(a);refreshCpuPBs(a);
     for(let title of a.accolades.filter(x=>x.competitionId===cid))recordIndividualResult(a,title.event,title.time,"全国高校総体","決勝",{season:title.season,slot:null});
@@ -2346,7 +2346,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.41",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.42",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2478,11 +2478,57 @@ function upsertRecordRanking(category,record){
   if(!state.recordRankings)state.recordRankings={};
   let book=state.recordRankings[category]||(state.recordRankings[category]={}),rows=book[record.event]||(book[record.event]=[]);
   let i=rows.findIndex(r=>record.kind==="relay"?r.kind==="relay"&&r.organization===record.organization:r.athleteId===record.athleteId);
-  if(i<0)rows.push(record);else if(record.time<rows[i].time)rows[i]=record;
+  if(i<0)rows.push(record);else if(record.time<rows[i].time||
+    (record.time===rows[i].time&&record.stage&&record.stage!=="PB"&&rows[i].stage==="PB"))rows[i]=record;
   rows.sort((a,b)=>a.time-b.time);rows.splice(10);
+}
+function refreshRecordRankings(){
+  const books=state.recordRankings||{},sources=[];
+  const categories=[...new Set([...Object.keys(books),"high","university","japan"])].filter(c=>["high","university","japan"].includes(c));
+  // Retain every saved historical snapshot; current PBs have no reliable race date.
+  for(const category of categories)for(const [event,rows] of Object.entries(books[category]||{})){
+    for(const row of rows){
+      const record={...deepClone(row),event,kind:row.kind||(RELAYS.includes(event)?"relay":"individual")};
+      sources.push({category,record});
+    }
+  }
+  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)]){
+    if(!athleteRecordCategory(a))continue;
+    for(const history of a.raceHistory||[]){
+      if(!EVENTS.includes(history.event)||!Number.isInteger(history.season))continue;
+      const school=history.schoolCategory===undefined?recordSchoolInfo(a,history.season):{schoolCategory:history.schoolCategory,gradeAtRecord:history.gradeAtRecord??null};
+      const category=school.schoolCategory==="high"?"high":school.schoolCategory==="university"?"university":"japan";
+      const organization=history.organization??(category==="university"?(a.almaMater||state.playerUniversity):a.organization);
+      sources.push({category,record:{kind:"individual",event:history.event,time:history.time,athleteId:a.id,name:a.name,organization,
+        season:history.season,slot:history.slot??null,meet:history.meet,stage:history.stage,...school}});
+    }
+    for(const title of a.accolades||[]){
+      if(title.competition!=="全国高校総体"||!EVENTS.includes(title.event)||!Number.isInteger(title.season))continue;
+      const school=title.schoolCategory===undefined?recordSchoolInfo(a,title.season,"high"):{schoolCategory:title.schoolCategory,gradeAtRecord:title.gradeAtRecord??null};
+      sources.push({category:"high",record:{kind:"individual",event:title.event,time:title.time,athleteId:a.id,name:a.name,
+        organization:title.organization??(a.category==="high"?a.organization:"高校在籍時"),season:title.season,slot:null,meet:"全国高校総体",stage:"決勝",...school}});
+    }
+  }
+  for(const [event,rows] of Object.entries(state.teamTop10||{}))for(const row of rows){
+    sources.push({category:"university",record:{...deepClone(row),event,organization:state.playerUniversity}});
+  }
+  const next=Object.fromEntries(Object.keys(books).filter(c=>categories.includes(c)).map(c=>[c,Object.fromEntries(Object.keys(books[c]).map(e=>[e,[]]))]));
+  // Validate before replacing the saved book, so a broken import stays rejected.
+  for(const {record} of sources)if(record.kind==="relay"&&(!RELAYS.includes(record.event)||!Array.isArray(record.members)||record.members.length!==4))throw new Error("リレーの歴代記録データが不正です。");
+  state.recordRankings=next;
+  for(const {category,record} of sources){
+    if(![...EVENTS,...RELAYS].includes(record.event)||String(record.athleteId||"").startsWith("INT")||WORLD_COUNTRIES.includes(record.organization))continue;
+    upsertRecordRanking(category,record);
+    if(category!=="japan")upsertRecordRanking("japan",deepClone(record));
+  }
+  migrateRecordSchoolInfo();
 }
 function renameRecordOrganization(oldName,newName){
   for(let book of Object.values(state.recordRankings||{}))for(let rows of Object.values(book))for(let r of rows)if(r.organization===oldName)r.organization=newName;
+  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)]){
+    for(const record of [...(a.raceHistory||[]),...(a.accolades||[])])if(record.organization===oldName)record.organization=newName;
+    if(a.almaMater===oldName)a.almaMater=newName;
+  }
 }
 function recordIndividualResult(a,event,time,meet,stage,stamp={}){
   let category=stamp.category||athleteRecordCategory(a);if(!category)return;
@@ -2501,7 +2547,7 @@ function recordRelayResult(kind,team,meet,stage){
   if(category!=="japan"&&team.members.every(a=>athleteRecordCategory(a)===category&&a.organization===team.organization))upsertRecordRanking(category,deepClone(record));
 }
 function initializeRecordRankings(){
-  if(state.recordRankingVersion>=2){migrateRecordSchoolInfo();return}
+  if(state.recordRankingVersion>=2){migrateRecordSchoolInfo();refreshRecordRankings();return}
   if(state.recordRankingVersion!==1){
     for(let a of activeAthletes()){
       for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))recordIndividualResult(a,e,a.bestTimes[e],"PB集計","PB");
@@ -2528,6 +2574,7 @@ function initializeRecordRankings(){
   }
   state.recordRankingVersion=2;
   migrateRecordSchoolInfo();
+  refreshRecordRankings();
 }
 function ranking(e,cat="all",limit=100){return activeAthletes().filter(a=>a.bestTimes[e]!=null&&(cat==="all"||(cat==="player"?state.players.includes(a):(!state.players.includes(a)&&a.category===cat)))).sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]).slice(0,limit)}
 function refreshRecordBook(){EVENTS.forEach(e=>{let a=ranking(e,"all",1)[0];if(!a)return;let old=state.recordBook[e],t=a.bestTimes[e];if(!old||t<old.time)state.recordBook[e]={event:e,time:t,athleteId:a.id,name:a.name,organization:a.organization,season:state.season,meet:"PB集計",...recordSchoolInfo(a,state.season)}})}
@@ -2738,7 +2785,8 @@ function updateResultHistory(a,e,t,meet,stage,rank){
   // Detailed race history is useful only for own swimmers and own-team alumni.
   if(state.players.includes(a)||a.alumni||(meet==="world_championship"&&ownJapanAthlete(a.id))){
     if(!Array.isArray(a.raceHistory))a.raceHistory=[];
-    a.raceHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),date:dateText(activeCompetitionSlot()),meet,event:e,stage,time:round2(t),rank,pb,standardsCleared:newCleared,newlyCleared});
+    a.raceHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),date:dateText(activeCompetitionSlot()),meet,event:e,stage,time:round2(t),rank,pb,standardsCleared:newCleared,newlyCleared,
+      organization:a.organization,...recordSchoolInfo(a)});
     if(a.raceHistory.length>600)a.raceHistory.splice(0,a.raceHistory.length-600);
   }
   if(pb&&state.players.includes(a))upsertIndividualTop10(e,a,t,meet,stage);
@@ -4617,6 +4665,7 @@ function setupLandscapeViewport(){
 
 document.getElementById("nav").addEventListener("click",e=>{
   let b=e.target.closest("button[data-page]");if(!b)return;
+  if(b.dataset.page==="records")refreshRecordRankings();
   document.querySelectorAll("nav button").forEach(x=>{
     x.classList.toggle("active",x===b);
     if(x===b)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");
