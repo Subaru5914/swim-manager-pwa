@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.54</title>
+<title>大学競泳監督シミュレーション PWA版 v1.55</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1184,16 +1184,24 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 #scoutTable .scout-preferences{white-space:normal;line-height:1.4}
 #scoutTable .scout-preferences .tag{white-space:normal}
 .scout-recruited{background:#e8f7ee}
-/* Keep the training list compact and give the focus controls the remaining width. */
-#page-training>.two{grid-template-columns:clamp(350px,calc(var(--game-vw) * 25),390px) minmax(0,1fr);align-items:start}
+/* Group focus controls by stroke and size the list for each device. */
+#page-training>.two{grid-template-columns:clamp(410px,calc(var(--game-vw) * 32),520px) minmax(0,1fr);align-items:start}
 #page-training>.two>.card{min-width:0}
 #trainingPlayers{max-height:calc(var(--game-vh) * 60)}
 #trainingPlayers table{width:100%!important;table-layout:auto!important}
 #trainingPlayers th:nth-child(-n+3),#trainingPlayers td:nth-child(-n+3){width:1%!important}
 #trainingPlayers th:nth-child(4),#trainingPlayers td:nth-child(4){width:auto!important}
+#trainingPlayers .training-list-specialty{display:flex;align-items:center;gap:7px;white-space:nowrap}
+#trainingPlayers .training-specialty-pb{display:inline-flex;align-items:baseline;gap:3px;margin-top:0}
+#trainingPlan{grid-template-columns:repeat(3,minmax(0,190px));gap:8px}
+#trainingPlan [data-focus$="_speed"]{grid-column:1}
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse), (orientation:portrait) and (max-height:950px) and (max-width:500px) and (pointer:coarse){
-  #page-training>.two{grid-template-columns:clamp(250px,calc(var(--game-vw) * 32),290px) minmax(0,1fr)}
-  #trainingPlayers{max-height:calc(var(--game-vh) * 48)}
+  #page-training>.two{grid-template-columns:clamp(250px,calc(var(--game-vw) * 32),290px) minmax(0,1fr);align-items:stretch}
+  #page-training .training-list-card{display:flex;flex-direction:column;min-height:0;contain:size}
+  #trainingPlayers{flex:1 1 0px;min-height:0;height:0;max-height:none}
+  #trainingPlayers .training-list-specialty{display:block}
+  #trainingPlayers .training-specialty-pb{display:block;margin-top:2px}
+  #trainingPlan{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
 }
 @media (max-width:720px) and (pointer:fine){
   #page-training>.two{grid-template-columns:minmax(0,1fr)}
@@ -1213,7 +1221,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.54</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.55</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1273,7 +1281,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <section id="page-training" class="page">
   <div class="page-lead"><div><h1>練習指示</h1><p>各選手で練習する能力を1つ選択してください。施設レベルが高いほど成長し、能力が高いほど伸びにくくなります。</p></div></div>
   <div class="two">
-    <div class="card">
+    <div class="card training-list-card">
       <h2>選手をクリック</h2>
       <div id="trainingPlayers" class="table-wrap training-list-scroll"></div>
     </div>
@@ -1580,7 +1588,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.54";
+  state.version="pwa-v1.55";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2450,7 +2458,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.54",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.55",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4410,7 +4418,7 @@ function renderTrainingPlayers(){
         <td><span class="athlete-name">${esc(p.name)}</span></td>
         <td><span class="grade-pill">${p.year}年</span></td>
         <td><div class="training-player-rank"><span class="stat-rank-badge ${statRankClass(overall)}">${statRank(overall)}</span><b>${Math.round(overall)}</b></div></td>
-        <td>${specialtyTag(p.specialty)}<div class="training-specialty-pb"><span class="pb-caption">PB</span> <b>${pb}</b></div></td>
+        <td><div class="training-list-specialty">${specialtyTag(p.specialty)}<div class="training-specialty-pb"><span class="pb-caption">PB</span> <b>${pb}</b></div></div></td>
       </tr>`;
     }).join("")
   }</tbody></table>`;
