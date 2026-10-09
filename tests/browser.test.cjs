@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.43', 'v1.42'));
+      data = Buffer.from(data.toString().replaceAll('v1.44', 'v1.43'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -388,7 +388,7 @@ test('checkpoint popups, post-intercollege retirement and hidden growth types wo
         await page.locator('.modal-season-notice').waitFor();
         assert.match(await page.locator('.modal-season-notice').innerText(),/発展途上 → 中堅/);
         assert.match(await page.locator('.modal-season-notice').innerText(),/引退確認 選手/);
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.43-season-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.44-season-${mobile?'iphone':'pc'}.png`)});}
         await page.reload();await page.locator('.modal-season-notice').waitFor();
         assert.equal(await page.evaluate(()=>state.reputation),85);assert.equal(await page.evaluate(()=>state.reputationEvaluations.length),1);
         await page.locator('#seasonNoticeNext').click();await page.reload();
@@ -622,7 +622,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
           await row.scrollIntoViewIfNeeded();
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.43-scout-${mobile?'iphone':'pc'}.png`)});
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.44-scout-${mobile?'iphone':'pc'}.png`)});
         }
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
@@ -784,6 +784,7 @@ test('world meet automatically animates own swimmers and mixed national relay, e
       state.season=2027;state.slot=36;renderAll();openMeetEntry('world_championship',36,2027);
     });
     assert.equal(await page.locator('#entryMatrix').count(), 0);
+    await page.locator('#confirmWorldAdditional').click();
     await page.locator('#goRace').click();
     await advanceToRace(page);
     assert.match(await page.locator('.modal-race-live h2').innerText(), /100mFr/);
@@ -837,9 +838,65 @@ test('actual March championship selects a graduating swimmer and April/save/relo
     assert.equal(retained.own, true);
     assert.ok(retained.ids.includes(selected.id));
     await page.evaluate(() => openMeetEntry('world_championship',36,2027));
+    if(await page.locator('#confirmWorldAdditional').count())await page.locator('#confirmWorldAdditional').click();
     assert.match(await page.locator('.modal-entry-confirm').innerText(), new RegExp(selected.name));
     assert.deepEqual(errors, []);
   } finally { await context.close(); await app.close(); }
+});
+
+test('world opening offers vacant slots to registered own swimmers, saves unlimited choices and animates additional races on PC and iPhone',async()=>{
+  const app=await fixture();
+  try{
+    for(const mobile of [false,true]){
+      const context=await testContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
+      try{
+        const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+        const target=await page.evaluate(()=>{
+          const own=state.players.slice(0,3),cpu=state.world.slice(0,4);
+          const individual=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[own[0].id,cpu[0].id]:e==='fr200'?[cpu[0].id]:[]]));
+          const relays={'4x100fr':[own[1].id,...cpu.slice(0,3).map(a=>a.id)]};
+          state.japanTeam={year:2027,individual,relays,athletes:[...own.slice(0,2),...cpu.slice(0,3)].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:own.includes(a)}))};
+          state.season=2027;state.slot=36;renderAll();
+          return {own:own.map(a=>a.id),cpu:cpu[0].id,base:JSON.stringify([individual,relays])};
+        });
+        await page.locator('#advanceBtn').click();await page.locator('.modal-training-result #next').click();
+        await page.locator('.modal-world-additional').waitFor();assert.equal(await page.evaluate(()=>state.slot),37);
+        assert.equal(await page.locator('#worldAdditionalTable select[data-world-event="fr100"]').count(),0);
+        assert.equal(await page.locator('#worldAdditionalTable select[data-world-event="fr200"]').count(),1);
+        const first=page.locator('#worldAdditionalTable select[data-world-event="fr50"][data-world-slot="0"]');
+        assert.equal(await first.locator(`option[value="${target.own[2]}"]`).count(),0);
+        assert.equal(await first.locator(`option[value="${target.cpu}"]`).count(),0);
+        for(const event of ['fr50','ba100','br100','fly100','im400'])await page.locator(`#worldAdditionalTable select[data-world-event="${event}"][data-world-slot="0"]`).selectOption(target.own[0]);
+        const second=page.locator('#worldAdditionalTable select[data-world-event="fr50"][data-world-slot="1"]');
+        assert.equal(await second.locator(`option[value="${target.own[0]}"]`).evaluate(option=>option.disabled),true);await second.selectOption(target.own[1]);
+        await page.locator('#worldAdditionalTable select[data-world-event="fr200"]').selectOption(target.own[1]);
+        await page.locator('#std').click();assert.match(await page.locator('.modal-standards').innerText(),/追加種目の派遣標準突破は不要/);await page.locator('.modal-standards #x').click();
+        assert.equal(await first.inputValue(),target.own[0]);
+        const box=await page.locator('.modal-world-additional').evaluate(m=>{const r=m.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight}});
+        assert.ok(box.left>=-1&&box.right<=box.width+1&&box.top>=-1&&box.bottom<=box.height+1,JSON.stringify(box));
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.44-world-additional-${mobile?'iphone':'pc'}.png`)});}
+        await page.locator('#confirmWorldAdditional').click();
+        assert.equal(await page.evaluate(()=>Object.values(state.japanTeam.additionalIndividual).flat().length),7);
+        assert.equal(await page.evaluate(()=>JSON.stringify([state.japanTeam.individual,state.japanTeam.relays])),target.base);
+        await page.locator('#backEntry').click();await page.locator('.modal-world-additional').waitFor();assert.equal(await first.inputValue(),target.own[0]);
+        await page.locator('#confirmWorldAdditional').click();await page.reload();
+        assert.equal(await page.evaluate(()=>Object.values(state.japanTeam.additionalIndividual).flat().length),7);
+        await page.evaluate(()=>openMeetEntry('world_championship',36,2027));assert.equal(await second.inputValue(),target.own[1]);
+        await page.locator('#clearWorldAdditional').click();assert.match(await page.locator('#worldAdditionalSummary').innerText(),/0件/);
+        await first.selectOption(target.own[1]);await page.locator('#worldAdditionalTable select[data-world-event="im400"][data-world-slot="0"]').selectOption(target.own[0]);
+        await page.locator('#confirmWorldAdditional').click();await page.locator('#goRace').click();
+        const program=[],races=await drainRaces(page,program);
+        assert.ok(races.some(title=>/50mFr.*予選/.test(title)),JSON.stringify(races));assert.ok(races.some(title=>/400mIM.*予選/.test(title)),JSON.stringify(races));
+        assert.ok(program.some(block=>block.event==='fr50'&&block.phase==='prelim'));assert.equal(await page.evaluate(()=>state.slot),37);
+        await page.locator('#resEv').selectOption('fr50');assert.ok(await page.locator('#resBody .result-own').count()>0);
+        assert.equal(await page.evaluate(()=>state.meetHistory.at(-1).slot),36);await page.locator('#x').click();
+        await page.evaluate(()=>{
+          const ids=state.japanTeam.individual.fr100;state.japanTeam.individual=Object.fromEntries(EVENTS.map(e=>[e,[...ids]]));openMeetEntry('world_championship',36,2027);
+        });
+        assert.equal(await page.locator('.modal-world-additional').count(),0);assert.equal(await page.locator('.modal-entry-confirm').count(),1);assert.deepEqual(errors,[]);
+      }finally{await context.close();}
+    }
+  }finally{await app.close();}
 });
 
 test('a world meet with no own representatives skips interim screens and shows every result in its summary', async () => {
@@ -847,6 +904,7 @@ test('a world meet with no own representatives skips interim screens and shows e
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
     await page.evaluate(()=>{state.season=2027;state.slot=36;state.japanTeam=null;openMeetEntry('world_championship',36,2027);});
+    assert.equal(await page.locator('.modal-world-additional').count(),0);
     await page.locator('#goRace').click();
     const program=[],races=await drainRaces(page,program);
     assert.deepEqual(races,[]);
@@ -893,7 +951,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.42 cache to v1.43 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.43 cache to v1.44 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -902,7 +960,7 @@ test('PWA upgrades its v1.42 cache to v1.43 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.42'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.43'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -912,19 +970,19 @@ test('PWA upgrades its v1.42 cache to v1.43 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.43') && !keys.includes('swim-manager-pwa-v1.42');
+      return keys.includes('swim-manager-pwa-v1.44') && !keys.includes('swim-manager-pwa-v1.43');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.43/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.43');
+    assert.match(await page.title(), /v1\.44/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.44');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.43/);
+    assert.match(await page.title(), /v1\.44/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

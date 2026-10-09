@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.43</title>
+<title>大学競泳監督シミュレーション PWA版 v1.44</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -173,6 +173,12 @@ button,.utility-summary{min-height:40px}
 .modal-actions{position:sticky;bottom:-16px;z-index:4;background:linear-gradient(rgba(255,255,255,.92),#fff 24%);padding:13px 0 2px;margin-top:14px;border-top:1px solid #edf1f5}
 .modal-actions .primary{margin-left:auto}
 .entry-table-wrap{max-height:calc(var(--game-vh) * 58)}
+.modal-world-additional{max-width:780px}
+#worldAdditionalTable{min-width:540px}
+#worldAdditionalTable th:first-child{width:110px}
+#worldAdditionalTable th:nth-child(2){width:150px}
+.world-additional-slot{display:flex;gap:6px;align-items:center;margin:4px 0;white-space:nowrap}
+.world-additional-slot select{min-width:0;max-width:100%;flex:1}
 #entryMatrix th:first-child,#entryMatrix td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:1px 0 0 var(--line)}
 #entryMatrix th:first-child{z-index:5;background:#f4f7fb}
 #rosterTable th:first-child,#rosterTable td:first-child,
@@ -954,6 +960,11 @@ nav .nav-action:hover{background:#edf6ff}
   .modal-entry-confirm .entry-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
   .modal-entry-confirm .entry-summary-card{padding:4px}
   .modal-entry-confirm h3{margin:5px 0 3px!important}
+  .modal-world-additional{width:88%!important;max-width:780px!important;max-height:calc(var(--game-vh) * 94)!important;padding:5px!important}
+  .modal-world-additional .notice{padding:4px 6px}
+  .modal-world-additional .entry-table-wrap{max-height:calc(var(--game-vh) * 53)}
+  .modal-world-additional th,.modal-world-additional td{padding:3px 5px!important}
+  .modal-world-additional .modal-actions{padding-top:5px;margin-top:5px}
   .modal-relay-editor{width:76%!important;max-width:720px!important;max-height:calc(var(--game-vh) * 93)!important;padding:5px!important}
   .modal-relay-editor .card{padding:4px;margin-bottom:4px}
   .modal-relay-editor select{min-width:0!important;width:150px!important;max-width:100%}
@@ -1175,7 +1186,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.43</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.44</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1510,7 +1521,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.43";
+  state.version="pwa-v1.44";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2356,7 +2367,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.43",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.44",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2640,7 +2651,7 @@ function selectJapanTeam(results,year){
   }
   relays["4x100medley"]=selectMedleyRelay(results).map(remember);
   let athletes=[...selected.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
-  return state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,athletes,announced:false};
+  return state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,athletes,additionalIndividual:{},announced:false};
 }
 function japanTeamCelebrationDue(season,slot){return slot===1&&state.japanTeam?.year===season&&!state.japanTeam.announced}
 function showJapanTeamCelebration(onClose){
@@ -2662,9 +2673,37 @@ function japanTeamAthlete(id){
 }
 function ownJapanAthlete(id){return state.players.some(p=>p.id===id)||!!state.japanTeam?.athletes.find(x=>x.id===id)?.ownAtSelection}
 function ownsRelayTeam(team){return team.organization===state.playerUniversity||(team.organization==="日本"&&team.members.some(p=>ownJapanAthlete(p.id)))}
+function worldAdditionalEntryOptions(year){
+  const team=state.japanTeam?.year===year?state.japanTeam:null;
+  const registered=new Set([...Object.values(team?.individual||{}).flat(),...Object.values(team?.relays||{}).flat()]);
+  const athletes=[...registered].filter(ownJapanAthlete).map(japanTeamAthlete).filter(Boolean);
+  const vacancies=Object.fromEntries(EVENTS.map(e=>[e,team?Math.max(0,2-new Set(team.individual?.[e]||[]).size):0]));
+  return {athletes,vacancies};
+}
 function worldAutoEntries(year){
-  let team=state.japanTeam?.year===year?state.japanTeam:null;
-  return {individual:Object.fromEntries(EVENTS.map(e=>[e,[...(team?.individual[e]||[])]])),relays:Object.fromEntries(RELAYS.map(k=>[k,[...(team?.relays[k]||[])]]))};
+  const team=state.japanTeam?.year===year?state.japanTeam:null;
+  const individual=Object.fromEntries(EVENTS.map(e=>[e,[...new Set(team?.individual?.[e]||[])].slice(0,2)]));
+  if(team?.additionalIndividual){
+    const eligible=new Set(worldAdditionalEntryOptions(year).athletes.map(a=>a.id));
+    for(const e of EVENTS)for(const id of Array.isArray(team.additionalIndividual[e])?team.additionalIndividual[e]:[]){
+      if(individual[e].length<2&&eligible.has(id)&&!individual[e].includes(id))individual[e].push(id);
+    }
+  }
+  return {individual,relays:Object.fromEntries(RELAYS.map(k=>[k,[...(team?.relays?.[k]||[])]]))};
+}
+function setWorldAdditionalEntries(year,entries){
+  const team=state.japanTeam?.year===year?state.japanTeam:null;
+  if(!team)throw new Error("この年の日本代表選考データがありません。");
+  const {athletes,vacancies}=worldAdditionalEntryOptions(year),eligible=new Set(athletes.map(a=>a.id));
+  const next={};
+  for(const e of EVENTS){
+    const ids=entries[e]||[];
+    if(!Array.isArray(ids)||ids.length>vacancies[e]||new Set(ids).size!==ids.length||
+      ids.some(id=>!eligible.has(id)||(team.individual?.[e]||[]).includes(id)))throw new Error(`${EVENT_LABEL[e]}の追加エントリーが正しくありません。`);
+    next[e]=[...ids];
+  }
+  team.additionalIndividual=next;
+  return worldAutoEntries(year);
 }
 function worldOwnEntries(year){
   let automatic=worldAutoEntries(year);
@@ -3351,6 +3390,7 @@ function showStandards(){
   let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td><td>${fmt(dispatchStandard(e))}</td></tr>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>世界大会</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small">男子・長水路。世界大会は2027年から隔年、8月第2週後半。その年の3月日本選手権A決勝で派遣標準を突破した上位2名を自動選出します（標準と同タイムを含む）。</p>
+    <p class="small">日本代表が2名に満たない個人種目は、世界大会の開幕前に代表登録済みの自チーム選手を追加できます。リレーのみの代表選手も対象で、追加種目の派遣標準突破は不要、1人の出場種目数に上限はありません。</p>
     <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。優勝者が重複する場合は専門泳法を優先し、他の泳法は2位の選手を選出します。</p>
     <p class="small">2026年の派遣標準をゲーム内の隔年大会に使用しています。<a href="${PANPAC_2026_DISPATCH.source}" target="_blank" rel="noopener">日本水泳連盟</a></p>`);
   m.classList.add("modal-standards");m.querySelector("#x").onclick=()=>closeModal(()=>document.getElementById("modalRoot").append(...previous));
@@ -3381,8 +3421,42 @@ function renderTeamTop10(){
 }
 function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER")renamePlayerUniversity(n);else renameOrganization("university",state.universities.findIndex(x=>x.id===id),n);closeModal();showUniversities();renderAll()})}
 
+function openWorldAdditionalEntry(competitionSlot,competitionSeason){
+  const year=calendarYear(competitionSeason,competitionSlot),{athletes,vacancies}=worldAdditionalEntryOptions(year);
+  const events=EVENTS.filter(e=>vacancies[e]>0);
+  if(!athletes.length||!events.length)return false;
+  const original=state.japanTeam.individual,automatic=worldAutoEntries(year);
+  const selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">世界大会 追加エントリー</h2><button id="std">参加・派遣標準</button></div>
+    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。</div>
+    <div class="table-wrap entry-table-wrap"><table id="worldAdditionalTable"><thead><tr><th>種目</th><th>選考済み代表</th><th>追加選手</th></tr></thead><tbody></tbody></table></div>
+    <div id="worldAdditionalSummary" class="small muted"></div>
+    <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">エントリー確認へ</button></div>`);
+  m.classList.add("modal-world-additional");
+  const render=()=>{
+    m.querySelector("tbody").innerHTML=events.map(e=>`<tr data-world-event="${e}"><td><b>${EVENT_LABEL[e]}</b><br><span class="small muted">空き ${vacancies[e]}枠</span></td>
+      <td class="small">${(original[e]||[]).map(id=>esc(japanTeamAthlete(id)?.name||"不明")).join(" / ")||"なし"}</td>
+      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${athletes.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])}</option>`).join("")}</select></label>`).join("")}</td></tr>`).join("");
+    m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
+      selections[select.dataset.worldEvent][Number(select.dataset.worldSlot)]=select.value;
+      render();
+    });
+    const total=EVENTS.reduce((n,e)=>n+selections[e].filter(Boolean).length,0);
+    m.querySelector("#worldAdditionalSummary").textContent=`追加エントリー ${total}件`;
+  };
+  m.querySelector("#std").onclick=showStandards;
+  m.querySelector("#clearWorldAdditional").onclick=()=>{for(const e of EVENTS)selections[e]=[];render()};
+  m.querySelector("#confirmWorldAdditional").onclick=()=>{
+    const entries=Object.fromEntries(EVENTS.map(e=>[e,selections[e].filter(Boolean)]));
+    const combined=setWorldAdditionalEntries(year,entries);
+    autoSaveNow();closeModal();
+    showEntryConfirmation("world_championship",combined.individual,combined.relays,competitionSlot,competitionSeason);
+  };
+  render();return true;
+}
 function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.season,initialSelections=null,initialRelaySel=null){
   if(meet==="world_championship"){
+    if(openWorldAdditionalEntry(competitionSlot,competitionSeason))return;
     let automatic=worldAutoEntries(calendarYear(competitionSeason,competitionSlot));
     showEntryConfirmation(meet,automatic.individual,automatic.relays,competitionSlot,competitionSeason);return;
   }
@@ -3464,6 +3538,8 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
 }
 function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.slot,competitionSeason=state.season){
   const findAthlete=id=>meet==="world_championship"?japanTeamAthlete(id):state.players.find(p=>p.id===id);
+  const worldOptions=meet==="world_championship"?worldAdditionalEntryOptions(calendarYear(competitionSeason,competitionSlot)):null;
+  const canEditWorld=worldOptions?.athletes.length&&Object.values(worldOptions.vacancies).some(n=>n>0);
   let cards=EVENTS.map(e=>{
     let ids=selections[e]||[],names=ids.map(id=>findAthlete(id)?.name).filter(Boolean);
     return`<div class="entry-summary-card ${ids.length?"has":""}"><div>${EVENT_LABEL[e]}</div><b>${ids.length}名</b><div class="small muted">${names.map(esc).join(" / ")||"エントリーなし"}</div></div>`;
@@ -3473,12 +3549,12 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
     return`<div class="entry-summary-card ${ids.length===4?"has":""}"><div>${RELAY_LABEL[k]}</div><b>${ids.length===4?"1チーム":"0"}</b><div class="small muted">${names.map(esc).join(" → ")||"エントリーなし"}</div></div>`;
   }).join(""):"";
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー確認</h2></div>
-    ${meet==="world_championship"?`<div class="notice">3月の日本選手権で選出された日本代表を自動登録しています。自チーム選手が出場するレースは映像、それ以外は結果を表示します。${state.japanTeam?.year===calendarYear(competitionSeason,competitionSlot)?"":"<br>この年の代表選考データがありません。日本代表の出場はありません。"}</div>`:""}
+    ${meet==="world_championship"?`<div class="notice">3月の日本選手権で選出された代表と、空き枠に追加した選手を登録しています。自チーム選手が出場するレースは映像、それ以外は結果を表示します。${state.japanTeam?.year===calendarYear(competitionSeason,competitionSlot)?"":"<br>この年の代表選考データがありません。日本代表の出場はありません。"}</div>`:""}
     ${FOUR_DAY_MEETS.has(meet)?'<p class="small">4日間の日程で進めます。各日の全種目の予選後に決勝を行い、各種目の開始前にその日のエントリー一覧を表示します。</p>':""}
     <h3>個人種目</h3><div class="entry-summary-grid">${cards}</div>
     ${relayCards?`<h3 style="margin-top:14px">リレー予選</h3><p class="small">決勝に進むと、決勝レース前に4名と泳順を変更できます。</p><div class="entry-summary-grid">${relayCards}</div>`:""}
     <div class="row modal-actions">
-      ${meet==="world_championship"?'<button id="std">参加・派遣標準</button>':'<button id="backEntry">エントリーへ戻る</button>'}
+      ${meet==="world_championship"?`<button id="std">参加・派遣標準</button>${canEditWorld?'<button id="backEntry">追加エントリーを変更</button>':""}`:'<button id="backEntry">エントリーへ戻る</button>'}
       <button id="goRace" class="primary">この内容でレースへ進む</button>
     </div>`);
   m.classList.add("modal-entry-confirm");
