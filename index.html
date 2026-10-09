@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.51</title>
+<title>大学競泳監督シミュレーション PWA版 v1.52</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1196,7 +1196,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.51</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.52</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1563,7 +1563,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.51";
+  state.version="pwa-v1.52";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2433,7 +2433,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.51",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.52",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4377,9 +4377,13 @@ function renderHome(){
     }).join("")}</div></div>`).join("")}${gains.length>visibleGains.length?`<div class="muted">ほか ${gains.length-visibleGains.length}名</div>`:""}</div>`
     : "このターンに整数表示で上昇した能力はありません。";
 }
+function comparePlayerSpecialty(a,b){
+  return SPECIALTY_EVENTS.indexOf(a.specialty)-SPECIALTY_EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja");
+}
 function renderTrainingPlayers(){
   let el=document.getElementById("trainingPlayers");
-  let players=[...state.players].sort((a,b)=>a.year-b.year);
+  let players=[...state.players];players.forEach(ensurePlayerSpecialty);
+  players.sort((a,b)=>a.year-b.year||comparePlayerSpecialty(a,b));
   if(!players.some(p=>p.id===selectedTrainingId))selectedTrainingId=players[0]?.id||null;
   let legend=document.getElementById("trainingRankLegend");if(legend)legend.innerHTML=statRankLegendHtml();
   el.innerHTML=`<table><thead><tr><th>選手</th><th>学年</th><th>総合</th><th>専門</th></tr></thead><tbody>${
@@ -4427,11 +4431,10 @@ function renderTrainingPlan(){
 function renderRoster(){
   let rows=[...state.players];rows.forEach(ensurePlayerSpecialty);
   let mode=document.getElementById("rosterSortMode")?.value||"grade_asc",displayEvent=null;
-  const specialtyOrder=(a,b)=>SPECIALTY_EVENTS.indexOf(a.specialty)-SPECIALTY_EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja");
-  if(mode==="grade_asc")rows.sort((a,b)=>a.year-b.year||specialtyOrder(a,b));
-  else if(mode==="grade_desc")rows.sort((a,b)=>b.year-a.year||specialtyOrder(a,b));
+  if(mode==="grade_asc")rows.sort((a,b)=>a.year-b.year||comparePlayerSpecialty(a,b));
+  else if(mode==="grade_desc")rows.sort((a,b)=>b.year-a.year||comparePlayerSpecialty(a,b));
   else if(mode==="overall_desc")rows.sort((a,b)=>overallStatValue(b)-overallStatValue(a)||a.year-b.year);
-  else if(mode==="specialty_pb")rows.sort(specialtyOrder);
+  else if(mode==="specialty_pb")rows.sort(comparePlayerSpecialty);
   else if(mode.startsWith("event_")){
     displayEvent=mode.slice(6);
     rows.sort((a,b)=>(Number.isFinite(a.bestTimes[displayEvent])?a.bestTimes[displayEvent]:99999)-(Number.isFinite(b.bestTimes[displayEvent])?b.bestTimes[displayEvent]:99999)||a.year-b.year);
