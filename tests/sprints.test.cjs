@@ -24,6 +24,21 @@ test('50m stroke standards match official men LCM tables and the ability model u
   assert.equal(generated.events,15);assert.equal(generated.specialties,12);assert.deepEqual(generated.invalid,[]);assert.deepEqual(generated.foreign,[48,48,48]);assert.equal(generated.cpu,true);
 });
 
+test('legacy sprint migration repairs nonpositive CPU PBs while preserving valid PBs and the random sequence',()=>{
+  const run=game(),result=run(`(()=>{
+    const cpu=state.world[0],own=state.players[0];
+    cpu.bestTimes.ba50=0;cpu.bestTimes.br50=-1;cpu.bestTimes.fly50=23;
+    own.bestTimes.ba50=0;
+    const seed=state.rngSeed,stats=JSON.stringify(cpu.stats),original=JSON.stringify(Object.fromEntries(SPECIALTY_EVENTS.map(e=>[e,cpu.bestTimes[e]])));
+    migrateSprintEvents();const saved=JSON.stringify(cpu);migrateSprintEvents();
+    return {ba:cpu.bestTimes.ba50,br:cpu.bestTimes.br50,fly:cpu.bestTimes.fly50,own:own.bestTimes.ba50,
+      stable:saved===JSON.stringify(cpu),rng:state.rngSeed===seed,stats:stats===JSON.stringify(cpu.stats),
+      original:original===JSON.stringify(Object.fromEntries(SPECIALTY_EVENTS.map(e=>[e,cpu.bestTimes[e]])))};
+  })()`);
+  assert.ok(result.ba>0&&result.br>0);assert.equal(result.fly,23);assert.equal(result.own,0);
+  assert.ok(result.stable&&result.rng&&result.stats&&result.original);
+});
+
 test('new 50m races occupy the fourth daily slot and preserve college events, relay days and daily prelim-first order',()=>{
   const run=game();
   for(const meet of ['japan_open','japan_championship','world_championship']){

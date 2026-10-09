@@ -12,6 +12,73 @@ function game(){
   return code=>JSON.parse(run('JSON.stringify('+code+')'));
 }
 
+test('time display carries rounded hundredths across minute boundaries and keeps zero valid for the race clock',()=>{
+  const run=game();
+  const result=run('[0,21.64,59.994,59.995,59.999,60,119.995,119.999,155,null,NaN,Infinity].map(fmt)');
+  assert.deepEqual(result,['0.00','21.64','59.99','1:00.00','1:00.00','1:00.00','2:00.00','2:00.00','2:35.00','-','-','-']);
+});
+
+test('invalid PBs cannot qualify for restricted meets or earn standards in any individual event',()=>{
+  const run=game();
+  const failures=run(`(()=>{
+    const failures=[];
+    for(const event of EVENTS)for(const time of [null,undefined,0,-1,NaN,Infinity,-Infinity,'25']){
+      const a={bestTimes:{[event]:time}};
+      for(const meet of ['kansai_college','intercollege','japan_open','japan_championship']){
+        if(qualified(a,meet,event))failures.push({event,meet});
+      }
+      if(standardsCleared(event,time).length)failures.push({event,standards:true});
+      if(Object.values(ensureStandardAchievements(a)).some(labels=>labels.length))failures.push({event,legacy:true});
+      if(!qualified(a,'team_trial',event))failures.push({event,recordMeet:true});
+    }
+    return failures;
+  })()`);
+  assert.deepEqual(failures,[]);
+});
+
+test('a first valid race replaces invalid legacy PBs, updates every record and earns first standards exactly once',()=>{
+  const run=game();
+  const rows=run(`(()=>{
+    const rows=[];
+    for(const event of ['fr100','ba50'])for(const invalid of [0,-1,null,undefined,NaN]){
+      const a={id:'valid-race-'+rows.length,name:'PB復元選手',year:2,age:20,organization:state.playerUniversity,
+        bestTimes:{[event]:invalid},raceHistory:[],accolades:[]};
+      state.players=[a];state.teamTop10={[event]:[{kind:'individual',event,athleteId:a.id,name:a.name,time:invalid}]};state.recordRankings={};
+      const time=event==='fr100'?49:25,seed=state.rngSeed;
+      const first=updateResultHistory(a,event,time,'japan_championship','予選',1);
+      const equal=updateResultHistory(a,event,time-.001,'japan_championship','決勝',1);
+      const slower=updateResultHistory(a,event,time+1,'japan_championship','決勝',1);
+      refreshRecordRankings();
+      rows.push({first,equal,slower,pb:a.bestTimes[event],time,standards:standardsCleared(event,time),
+        own:state.teamTop10[event].map(r=>r.time),student:state.recordRankings.university[event][0],
+        national:state.recordRankings.japan[event][0].time,rankPB:ranking(event,'university')[0].bestTimes[event],
+        history:a.raceHistory.map(r=>({pb:r.pb,newlyCleared:r.newlyCleared})),rng:state.rngSeed===seed});
+    }
+    return rows;
+  })()`);
+  for(const row of rows){
+    assert.equal(row.first.pb,true);assert.equal(row.first.previousPB,null);assert.deepEqual(row.first.newlyCleared,row.standards);
+    assert.equal(row.equal.pb,false);assert.deepEqual(row.equal.newlyCleared,[]);
+    assert.equal(row.slower.pb,false);assert.deepEqual(row.slower.newlyCleared,[]);
+    assert.deepEqual(row.own,[row.time]);assert.equal(row.pb,row.time);assert.equal(row.student.time,row.time);
+    assert.equal(row.student.gradeAtRecord,2);assert.equal(row.national,row.time);assert.equal(row.rankPB,row.time);
+    assert.deepEqual(row.history,[{pb:true,newlyCleared:row.standards},{pb:false,newlyCleared:[]},{pb:false,newlyCleared:[]}]);assert.ok(row.rng);
+  }
+});
+
+test('invalid race results leave PBs, standards and historical records untouched',()=>{
+  const run=game();
+  const result=run(`(()=>{
+    const a={id:'invalid-race',name:'記録保持選手',year:2,age:20,organization:state.playerUniversity,
+      bestTimes:{fr100:49},raceHistory:[],accolades:[]};state.players=[a];
+    updateResultHistory(a,'fr100',49,'japan_championship','予選',1);
+    const before=JSON.stringify(state),results=[0,-1,null,undefined,NaN,Infinity,.004].map(t=>updateResultHistory(a,'fr100',t,'japan_championship','決勝',1));
+    return {unchanged:before===JSON.stringify(state),results};
+  })()`);
+  assert.ok(result.unchanged);
+  for(const resultRow of result.results){assert.equal(resultRow.pb,false);assert.deepEqual(resultRow.newlyCleared,[]);assert.deepEqual(resultRow.cleared,[]);}
+});
+
 test('refresh merges school records into national records and keeps ten distinct fastest swimmers without losing snapshots',()=>{
   const run=game();
   const r=run(`(()=>{
