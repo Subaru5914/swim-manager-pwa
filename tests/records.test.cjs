@@ -137,7 +137,7 @@ test('CPU PB refresh retains earlier faster times and still accepts improvements
       accolades:[{event:'fr200',time:110}]};
     for(let i=0;i<20;i++)refreshCpuPBs(a);
     const retained=a.bestTimes.fr100===49.01&&a.bestTimes.fr200<=110;
-    a.stats=Object.fromEntries(STATS.map(k=>[k,180]));refreshCpuPBs(a);
+    a.stats=Object.fromEntries(STATS.map(k=>[k,200]));refreshCpuPBs(a);
     return {retained,improved:a.bestTimes.fr100<49.01,valid:EVENTS.every(e=>Number.isFinite(a.bestTimes[e])&&a.bestTimes[e]>0)};
   })()`);
   assert.ok(r.retained&&r.improved&&r.valid,JSON.stringify(r));

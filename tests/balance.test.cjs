@@ -144,7 +144,7 @@ test('initial teammates have visibly different overall abilities within the same
   assert.ok(spreads.filter(spread=>spread>=20).length>=spreads.length*.7);
 });
 
-test('all 12 events use C/B/A/S benchmarks and improve continuously with ability', () => {
+test('all 15 events use C/B/A/S benchmarks and improve continuously with ability', () => {
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify(EVENTS.map(event => {
     const time = value => expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,value]))},event);
@@ -152,7 +152,7 @@ test('all 12 events use C/B/A/S benchmarks and improve continuously with ability
       B:time(138),Bref:INTERCOLLEGE_A_FINAL_REFERENCE[event],A:time(163),
       S:time(188),record:JAPAN_RECORD[event],times:Array.from({length:201},(_,v)=>time(v))};
   }))`));
-  assert.equal(rows.length, 12);
+  assert.equal(rows.length, 15);
   for (const row of rows) {
     assert.ok(Math.abs(row.C - row.Cref) < 1e-8, row.event);
     assert.ok(Math.abs(row.B - row.Bref) < 1e-8, row.event);
@@ -365,7 +365,7 @@ test('player and CPU individual and relay races use the same abilities and time 
     }
     return results;
   })())`));
-  assert.equal(result.length, 51);
+  assert.equal(result.length, 63);
   for (const row of result) {
     assert.equal(row.cTarget, row.pTarget, row.event);
     assert.equal(row.c, row.p, row.event);
@@ -417,7 +417,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.44');
+  assert.equal(result.version, 'pwa-v1.45');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -445,7 +445,7 @@ test('new seasons preserve eight real candidates including prodigy abilities and
   assert.equal(result.welcome, 8);
   assert.equal(result.prodigy, true);
   assert.ok(result.max <= 158);
-  assert.equal(result.pbs,12);assert.ok(result.stats&&result.pb);
+  assert.equal(result.pbs,15);assert.ok(result.stats&&result.pb);
 });
 
 test('facility upgrades progressively improve eight-turn gains while level 100 stays near +30', () => {
@@ -623,7 +623,7 @@ test('generated high-school finals vary level, front-group size and gaps while k
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const editions=Array.from({length:100},()=>interhighFinalTargets('fr100'));
-    const titles=EVENTS.map(e=>state.world.flatMap(a=>a.accolades.filter(t=>t.event===e&&t.competitionId==='interhigh_'+state.season).map(t=>({rank:t.rank,time:t.time,pb:a.bestTimes[e]}))).sort((a,b)=>a.rank-b.rank));
+    const titles=SPECIALTY_EVENTS.map(e=>state.world.flatMap(a=>a.accolades.filter(t=>t.event===e&&t.competitionId==='interhigh_'+state.season).map(t=>({rank:t.rank,time:t.time,pb:a.bestTimes[e]}))).sort((a,b)=>a.rank-b.rank));
     return {editions,titles,reference:INTERHIGH.events.fr100.times[0]};
   })())`));
   const frontSizes=new Set(result.editions.map(times=>times.filter(t=>t-times[0]<result.reference*.005).length));

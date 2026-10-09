@@ -508,7 +508,7 @@ test('foreign swimmers are random, edition-stable, event specialists and stronge
   const result = json(run, `(()=>{
     let international=ensureInternationalWorld(2027),same=international===ensureInternationalWorld(2027);
     let means=EVENTS.map(e=>{
-      let foreign=international.athletes.filter(a=>a.individualEligible&&a.specialty===e).map(a=>expectedTime(a,e)).sort((a,b)=>a-b).slice(0,8);
+      let foreign=international.athletes.filter(a=>a.individualEligible&&(a.individualEvent||a.specialty)===e).map(a=>expectedTime(a,e)).sort((a,b)=>a-b).slice(0,8);
       let domestic=state.world.filter(a=>allowedCpu(a,'japan_championship')&&cpuEntryEvents(a).includes(e)).map(a=>expectedTime(a,e)).sort((a,b)=>a-b).slice(0,8);
       return {e,foreign:foreign.reduce((a,b)=>a+b)/foreign.length,domestic:domestic.reduce((a,b)=>a+b)/domestic.length};
     });
@@ -517,7 +517,7 @@ test('foreign swimmers are random, edition-stable, event specialists and stronge
     return {same,count:international.athletes.length,countries:new Set(international.athletes.map(a=>a.organization)).size,valid:international.athletes.every(a=>STATS.every(k=>a.stats[k]>=0&&a.stats[k]<=200)),changed:oldIds!==next.athletes.map(a=>a.id).join(','),means,relays};
   })()`);
   assert.equal(result.same, true);
-  assert.equal(result.count, 864);
+  assert.equal(result.count, 1008);
   assert.equal(result.countries, 24);
   assert.equal(result.valid, true);
   assert.equal(result.changed, true);
@@ -549,7 +549,7 @@ test('a complete world meet keeps automatic Japan entries and animates only owne
   assert.equal(result.onlyOwn, true);
   assert.equal(result.mixedRelay, true);
   assert.equal(result.empty, 0);
-  assert.equal(result.cpuProgram, 30);
+  assert.equal(result.cpuProgram, 36);
   assert.equal(result.history, 'world_championship');
   assert.equal(result.points, 0);
 });
@@ -570,11 +570,11 @@ test('four-day meets finish every daily prelim before finals and place all three
         races:queue.map(({day,event,phase,eventEnd})=>({day,event,phase,eventEnd})),days:meetEventDays(meet)};
     });
   })()`);
-  const fourDays=[['im400','ba200','fr100'],['fr200','fly200','br100','4x100fr'],['ba100','im200','fr400','4x100medley'],['fr50','fly100','br200','4x200fr']];
-  const singles=['fr50','fr100','fr200','fr400','ba100','ba200','br100','br200','fly100','fly200','im200','im400'];
+  const fourDays=[['im400','ba200','fr100','fly50'],['fr200','fly200','br100','ba50','4x100fr'],['ba100','im200','fr400','br50','4x100medley'],['fr50','fly100','br200','4x200fr']];
+  const singles=['fr50','fr100','fr200','fr400','ba50','ba100','ba200','br50','br100','br200','fly50','fly100','fly200','im200','im400'];
   for(const row of rows){
     const four=!['joint_record','team_trial'].includes(row.meet),relays=['kansai_college','intercollege','world_championship','joint_record'].includes(row.meet);
-    const days=four?fourDays.map(events=>events.filter(e=>relays||!e.startsWith('4x'))):[[...singles,...(relays?['4x100fr','4x200fr','4x100medley']:[])]];
+    const days=four?fourDays.map(events=>events.filter(e=>(relays||!e.startsWith('4x'))&&(!['kansai_college','intercollege'].includes(row.meet)||!['ba50','br50','fly50'].includes(e)))):[[...singles,...(relays?['4x100fr','4x200fr','4x100medley']:[])]];
     const phases=row.meet==='team_trial'?['team_trial']:['prelim','final'];
     const expected=days.flatMap((events,i)=>phases.flatMap(phase=>events.map(event=>({day:i+1,event,phase}))));
     assert.deepEqual(row.days,days,row.meet);
@@ -600,7 +600,7 @@ test('dispatch data matches all twelve user-provided 2026 Pan Pacific standards'
   assert.equal(run('dispatchStandardsReady()'), true);
   assert.equal(run('PANPAC_2026_DISPATCH.year'), 2026);
   assert.equal(run('PANPAC_2026_DISPATCH.sourceType'), 'user_provided');
-  assert.deepEqual(json(run, 'EVENTS.map(dispatchStandard)'), [21.64,47.64,105.60,224.33,52.57,115.64,59.27,129.32,50.88,114.62,117.23,251.52]);
+  assert.deepEqual(json(run, 'SPECIALTY_EVENTS.map(dispatchStandard)'), [21.64,47.64,105.60,224.33,52.57,115.64,59.27,129.32,50.88,114.62,117.23,251.52]);
   assert.match(run('PANPAC_2026_DISPATCH.source'), /^https:\/\//);
 });
 
@@ -644,7 +644,7 @@ test('international names contain no numeric IDs, remain unique, and old names a
     migrateState();
     return {count:names.length,unique:new Set(names).size,numeric:names.some(n=>/\\d/.test(n)),oldId:state.internationalWorld.athletes[0].id,name:state.internationalWorld.athletes[0].name,podium:state.meetHistory[0].podiums.fr100,once:first===JSON.stringify(state.internationalWorld.athletes.map(a=>({id:a.id,name:a.name,stats:a.stats,pb:a.bestTimes})))};
   })()`);
-  assert.equal(result.count,864);assert.equal(result.unique,864);assert.equal(result.numeric,false);
+  assert.equal(result.count,1008);assert.equal(result.unique,1008);assert.equal(result.numeric,false);
   assert.equal(result.name,'Alex Miller');assert.equal(result.once,true);assert.match(result.oldId,/^INT/);
   assert.deepEqual(result.podium,[{name:'Alex Miller',organization:'アメリカ',time:47.12},{name:'代表 123',organization:'日本',time:47.2}]);
 });

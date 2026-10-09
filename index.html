@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.44</title>
+<title>大学競泳監督シミュレーション PWA版 v1.45</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1013,6 +1013,10 @@ nav .nav-action:hover{background:#edf6ff}
 #trainingPlayers th:first-child,#trainingPlayers td:first-child{min-width:0;padding-right:5px}
 #trainingPlayers th:nth-child(2),#trainingPlayers td:nth-child(2){padding-left:3px;padding-right:5px}
 #entryMatrix td.entry-qualified{background:#e5f7e9}
+#entryMatrix.entry-with-sprints th{white-space:nowrap}
+@media (max-width:900px),(max-height:500px){
+  #entryMatrix.entry-with-sprints{min-width:1000px!important}
+}
 #entryMatrix td.entry-unqualified{background:#fff0ef}
 #entryMatrix td.entry-no-pb{background:#edf0f4}
 .entry-standard-status{display:block;font-weight:800;font-size:11px;line-height:1.35}
@@ -1186,7 +1190,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.44</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.45</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1379,8 +1383,19 @@ const STANDARDS = {"kansai_college":{"source":"game rule: Intercollege official 
 const INTERHIGH = {"schema_version":2,"competition_id":"interhigh_2025","competition":"第93回日本高等学校選手権水泳競技大会","season":2025,"gender":"M","course":"LCM","stage":"A_final","stage_label":"A決勝","official_source":"SEIKO Swimming Results System","policy":"Only A-final results may be used for real-meet performance calibration.","events":{"fr50":{"label":"50mFr","times":[22.72,22.75,23.12,23.16,23.27,23.38,23.44,23.45],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R040.pdf"},"fr100":{"label":"100mFr","times":[49.95,50.29,50.62,50.65,50.84,50.98,51.11,51.13],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/04R080.pdf"},"fr200":{"label":"200mFr","times":[108.32,109.25,109.62,109.71,110.25,111.72,111.78,111.89],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R044.pdf"},"fr400":{"label":"400mFr","times":[229.9,231.31,231.59,232.59,233.75,234.38,236.26,237.82],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R014.pdf"},"ba100":{"label":"100mBa","times":[55.68,56.23,56.4,56.41,57.07,57.1,57.39,57.57],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R046.pdf"},"ba200":{"label":"200mBa","times":[121.22,121.29,121.85,123.08,123.32,123.51,123.52,123.68],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R064.pdf"},"br100":{"label":"100mBr","times":[61.52,61.55,61.69,61.75,61.99,61.99,62.1,62.41],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R068.pdf"},"br200":{"label":"200mBr","times":[131.11,132.05,132.42,132.59,132.83,133.75,133.77,134.14],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R018.pdf"},"fly100":{"label":"100mFly","times":[52.96,53.22,53.3,53.76,53.95,54.18,54.19,54.43],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/03R066.pdf"},"fly200":{"label":"200mFly","times":[116.57,118.7,119.7,119.75,119.86,120.18,120.26,122.12],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/02R042.pdf"},"im200":{"label":"200mIM","times":[121.9,122.32,122.33,122.36,123.25,123.43,123.45,124.25],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/01R016.pdf"},"im400":{"label":"400mIM","times":[257.9,258.03,258.26,258.8,260.42,260.7,264.24,268.21],"source_url":"https://swim.seiko.co.jp/2025/S70301/ranking/04R082.pdf"}}};
 const JAPAN_RECORD = {"fr50":21.67,"fr100":47.87,"fr200":104.54,"fr400":223.9,"ba100":52.24,"ba200":112.51,"br100":58.78,"br200":126.4,"fly100":50.81,"fly200":112.53,"im200":115.07,"im400":245.83};
 
-const EVENTS=["fr50","fr100","fr200","fr400","ba100","ba200","br100","br200","fly100","fly200","im200","im400"];
-const EVENT_LABEL={fr50:"50mFr",fr100:"100mFr",fr200:"200mFr",fr400:"400mFr",ba100:"100mBa",ba200:"200mBa",br100:"100mBr",br200:"200mBr",fly100:"100mFly",fly200:"200mFly",im200:"200mIM",im400:"400mIM"};
+const SPECIALTY_EVENTS=["fr50","fr100","fr200","fr400","ba100","ba200","br100","br200","fly100","fly200","im200","im400"];
+const SPRINT_EVENTS=["ba50","br50","fly50"];
+const EVENTS=["fr50","fr100","fr200","fr400","ba50","ba100","ba200","br50","br100","br200","fly50","fly100","fly200","im200","im400"];
+const EVENT_LABEL={fr50:"50mFr",fr100:"100mFr",fr200:"200mFr",fr400:"400mFr",ba50:"50mBa",ba100:"100mBa",ba200:"200mBa",br50:"50mBr",br100:"100mBr",br200:"200mBr",fly50:"50mFly",fly100:"100mFly",fly200:"200mFly",im200:"200mIM",im400:"400mIM"};
+const SPRINT_SOURCES={
+  japanOpen:"https://aquatics.or.jp/fwp/wp-content/uploads/2026/03/26-22_ジャパンオープン2026_260709.pdf",
+  japanChampionship:"https://aquatics.or.jp/fwp/wp-content/uploads/2026/03/2026標準記録_日本選手権_260315-1.pdf",
+  japanRecords:"https://aquatics.or.jp/fwp/wp-content/uploads/2026/09/260913long-NR.pdf",
+  worldStandard:"https://resources.fina.org/fina/document/2024/11/19/87a1d745-842f-4108-849d-0a2d26d3cc3f/Singapore-2025-Standard-Entry-Times_v2_19112024.pdf"
+};
+Object.assign(STANDARDS.japan_open,{ba50:26.38,br50:28.30,fly50:24.42,sprintSource:SPRINT_SOURCES.japanOpen});
+Object.assign(STANDARDS.japan_championship,{ba50:26.00,br50:28.08,fly50:24.24,sprintSource:SPRINT_SOURCES.japanChampionship});
+Object.assign(JAPAN_RECORD,{ba50:24.24,br50:26.65,fly50:23.06});
 const STATS=["start","mental","fr_speed","fr_stamina","fr_turn","ba_speed","ba_stamina","ba_turn","br_speed","br_stamina","br_turn","fly_speed","fly_stamina","fly_turn"];
 const DETAIL_STATS=["start","mental","fr_speed","fr_stamina","ba_speed","ba_stamina","br_speed","br_stamina","fly_speed","fly_stamina","fr_turn","ba_turn","fly_turn","br_turn"];
 const STAT_LABEL={
@@ -1407,17 +1422,19 @@ const RELAYS=["4x100fr","4x200fr","4x100medley"];
 const RELAY_LABEL={"4x100fr":"4×100m フリーリレー","4x200fr":"4×200m フリーリレー","4x100medley":"4×100m メドレーリレー"};
 const FOUR_DAY_MEETS=new Set(["kansai_college","intercollege","japan_open","japan_championship","world_championship"]);
 const FOUR_DAY_EVENTS=[
-  ["im400","ba200","fr100"],
-  ["fr200","fly200","br100","4x100fr"],
-  ["ba100","im200","fr400","4x100medley"],
+  ["im400","ba200","fr100","fly50"],
+  ["fr200","fly200","br100","ba50","4x100fr"],
+  ["ba100","im200","fr400","br50","4x100medley"],
   ["fr50","fly100","br200","4x200fr"]
 ];
 // Men's LCM dispatch table supplied by the user; federation PDF was inaccessible.
 const PANPAC_2026_DISPATCH={year:2026,label:"2026パンパシフィック派遣標準",source:"https://swim.or.jp/",sourceType:"user_provided",
   times:{fr50:21.64,fr100:47.64,fr200:105.60,fr400:224.33,ba100:52.57,ba200:115.64,br100:59.27,br200:129.32,fly100:50.88,fly200:114.62,im200:117.23,im400:251.52}};
+// Pan Pacific does not contest these three events; use Singapore 2025 men's LCM A standards.
+const WORLD_SPRINT_STANDARDS={year:2025,source:SPRINT_SOURCES.worldStandard,times:{ba50:25.11,br50:27.33,fly50:23.36}};
 const WORLD_REFERENCE={year:2023,competition:"福岡世界水泳2023 男子・長水路 決勝",
   source:"https://www.omegatiming.com/File/0001160001FFFFFFFFFFFFFFFFFFFF22.pdf",
-  individual:{fr50:21.06,fr100:47.15,fr200:104.30,fr400:220.68,ba100:52.22,ba200:114.14,br100:57.69,br200:125.48,fly100:50.14,fly200:112.43,im200:114.82,im400:242.50},
+  individual:{fr50:21.06,fr100:47.15,fr200:104.30,fr400:220.68,ba50:24.05,ba100:52.22,ba200:114.14,br50:26.29,br100:57.69,br200:125.48,fly50:22.68,fly100:50.14,fly200:112.43,im200:114.82,im400:242.50},
   relays:{"4x100fr":190.16,"4x200fr":419.08,"4x100medley":207.20}};
 const WORLD_COUNTRIES=["アメリカ","オーストラリア","イギリス","中国","フランス","イタリア","カナダ","ドイツ","ハンガリー","オランダ","ブラジル","韓国","スペイン","スイス","ポーランド","南アフリカ","ニュージーランド","オーストリア","ルーマニア","スウェーデン","チュニジア","ギリシャ","ベルギー","デンマーク"];
 const POTENTIAL_TYPES={
@@ -1484,8 +1501,8 @@ function activeCompetitionSlot(){return state.activeCompetitionSlot||state.slot}
 function activeCompetitionSeason(){return state.activeCompetitionSeason||state.season}
 
 function reputationLabel(v){if(v>=280)return"名門";if(v>=160)return"強豪";if(v>=80)return"中堅";if(v>=30)return"発展途上";return"弱小"}
-function bestSpecialtyByAbility(p){return EVENTS.slice().sort((a,b)=>expectedTime(p,a)/JAPAN_RECORD[a]-expectedTime(p,b)/JAPAN_RECORD[b])[0]||"fr100"}
-function ensurePlayerSpecialty(p){if(!EVENTS.includes(p.specialty))p.specialty=bestSpecialtyByAbility(p);return p.specialty}
+function bestSpecialtyByAbility(p){return SPECIALTY_EVENTS.slice().sort((a,b)=>expectedTime(p,a)/JAPAN_RECORD[a]-expectedTime(p,b)/JAPAN_RECORD[b])[0]||"fr100"}
+function ensurePlayerSpecialty(p){if(!SPECIALTY_EVENTS.includes(p.specialty))p.specialty=SPRINT_EVENTS.includes(p.specialty)?strokeForEvent(p.specialty)+"100":bestSpecialtyByAbility(p);return p.specialty}
 function migrateLegacyOrganizationNames(){
   const sets={
     middle:new Set(MIDDLE_SCHOOLS),
@@ -1521,7 +1538,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.44";
+  state.version="pwa-v1.45";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1611,6 +1628,7 @@ function migrateState(){
   }
 
   maintainWorldPopulation();
+  migrateSprintEvents();
 
   if(!state.teamTop10)state.teamTop10={};
   if(!state.recordBook)state.recordBook={};
@@ -1683,10 +1701,10 @@ function renamePlayerUniversity(newName){
   return{ok:true,msg:`自大学名を「${n}」に変更しました。`};
 }
 function bestScoutEvent(a){
-  let title=(a.accolades||[]).filter(x=>x.competition==="全国高校総体"&&EVENTS.includes(x.event))
+  let title=(a.accolades||[]).filter(x=>x.competition==="全国高校総体"&&SPECIALTY_EVENTS.includes(x.event))
     .sort((x,y)=>y.season-x.season||x.rank-y.rank)[0];
   if(title)return{event:title.event,title};
-  let event=EVENTS.slice().sort((x,y)=>(a.bestTimes[x]/JAPAN_RECORD[x])-(a.bestTimes[y]/JAPAN_RECORD[y]))[0];
+  let event=SPECIALTY_EVENTS.slice().sort((x,y)=>(a.bestTimes[x]/JAPAN_RECORD[x])-(a.bestTimes[y]/JAPAN_RECORD[y]))[0];
   return{event,title:null};
 }
 function alignScoutSpecialty(a){
@@ -1801,6 +1819,9 @@ const ELITE_JR_FACTOR=.99;
   原則2025年A決勝5位、2025年値が欠ける2種目は2026年A決勝実績を使用。
 */
 const INTERCOLLEGE_A_FINAL_REFERENCE={
+  // The extra 50m events are not contested at college meets. Their game anchors
+  // preserve the corresponding 100m final / Japanese-record ratio, using the official 50m records.
+  ba50:25.46,br50:27.46,fly50:24.07,
   fr50:22.67,
   fr100:49.50,
   fr200:108.77,
@@ -1946,7 +1967,7 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65){
   strength=clamp(strength+team.offset+gauss(0,3.5),45,91);
   let talent=clamp(gauss(0,9),-22,18),peak=rng()<.015?rand(178,185):rand(166,175);
   let cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(clamp(peak+rand(-2,2),164,187))]));
-  let specialty=choice(rng()<.38?EVENTS.filter(e=>strokeForEvent(e)===team.stroke):EVENTS),stroke=specialty.startsWith("fly")?"fly":specialty.slice(0,2),stats={};
+  let specialty=choice(rng()<.38?SPECIALTY_EVENTS.filter(e=>strokeForEvent(e)===team.stroke):SPECIALTY_EVENTS),stroke=specialty.startsWith("fly")?"fly":specialty.slice(0,2),stats={};
   STATS.forEach(k=>{
     let base=clamp(gauss(strength*1.5+5+talent,12),40,165);
     if(k==="mental")base+=rand(-5,8);
@@ -1981,6 +2002,20 @@ function updatePersonalBest(a,event,time){
 function refreshCpuPBs(a){
   for(let e of EVENTS)updatePersonalBest(a,e,expectedTime(a,e)*rand(.995,1.025));
   for(let title of a.accolades||[])updatePersonalBest(a,title.event,title.time);
+}
+function migrateSprintEvents(){
+  for(const a of [...(state.players||[]),...(state.world||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)])ensurePlayerSpecialty(a);
+  for(const a of [...(state.world||[]),...(state.internationalWorld?.athletes||[])]){
+    if(a.alumni||a.retired)continue;
+    if(a.category==="international"){
+      if(!a.individualEvent&&a.individualEligible)a.individualEvent=a.specialty;
+      ensurePlayerSpecialty(a);
+    }
+    for(const e of SPRINT_EVENTS)if(!Number.isFinite(a.bestTimes?.[e])){
+      const variation=.995+(profileHash(a.id+":"+e+":sprint-pb")%10001)/10000*.03;
+      updatePersonalBest(a,e,expectedTime(a,e)*variation);
+    }
+  }
 }
 function assignInterhigh(){
   let highs=state.world.filter(a=>a.category==="high"&&(a.grade===2||a.grade===3)&&!a.retired),cid=`interhigh_${state.season}`;if(highs.some(a=>a.accolades.some(x=>x.competitionId===cid)))return;
@@ -2049,7 +2084,7 @@ function diversifyCpuIndividual(a){
   const roll=key=>profileHash(a.id+":individual-v3:"+key)%10001/10000;
   let level=(roll("level")-.5)*44,strokes=["fr","ba","br","fly"],strokeBias=Object.fromEntries(strokes.map(s=>[s,(roll(s)-.5)*18]));
   let mean=strokes.reduce((sum,s)=>sum+strokeBias[s],0)/4;
-  let specialty=EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
+  let specialty=SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
   let distance=distanceOf(specialty),distanceBias=distance<=100?5+roll("distance")*9:distance>=400?-5-roll("distance")*9:(roll("distance")-.5)*16;
   let exceptional=Object.values(a.cpuStatCeilings||{}).some(v=>v>=178)||STATS.some(k=>a.stats[k]>=176),cap=exceptional?187:175;
   let peak=exceptional?178+roll("ceiling")*7:145+roll("ceiling")*29;
@@ -2083,7 +2118,7 @@ function applyCpuCompetitionProfile(a){
   if(a.alumni||a.retired||!["middle","high","university","adult"].includes(a.category))return false;
   if(a.cpuCompetitionProfileVersion===2&&a.cpuCompetitionCategory===a.category)return false;
   const roll=key=>profileHash(a.id+":competition-v1:"+key)%10001/10000;
-  const specialty=EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a),field=cpuCompetitionField(a.category,specialty);
+  const specialty=SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a),field=cpuCompetitionField(a.category,specialty);
   const team=cpuTeamProfile(a.category,a.organization),grade=Math.max(1,a.grade||1),talent=roll("tier");
   const elite=talent>=1-field.eliteRate,contender=talent>=1-field.eliteRate-field.contenderRate&&!elite;
   const settings={
@@ -2304,7 +2339,7 @@ function showMeetSchedule(){
     <div class="table-wrap compact-modal-table schedule-table-wrap"><table class="schedule-table"><thead><tr><th>時期</th><th>大会</th><th>参加標準</th><th>リレー</th></tr></thead><tbody>${
       rows.map(x=>`<tr><td>${x.month}月 第${x.week}週${x.half}</td><td>${MEET_LABEL[x.meet]}${FOUR_DAY_MEETS.has(x.meet)?"（4日間）":""}${x.meet==="japan_championship"&&isWorldChampionshipYear(state.season+1)?"（世界大会代表選考）":""}</td><td>${x.meet==="world_championship"?"日本代表のみ":RESTRICTED.has(x.meet)?"あり":"なし"}</td><td>${RELAY_MEETS.has(x.meet)?"あり":"なし"}</td></tr>`).join("")
     }</tbody></table></div>
-    <details style="margin-top:10px"><summary>4日間大会の種目順</summary>${FOUR_DAY_EVENTS.map((events,i)=>`<p><b>${i+1}日目</b>：${events.map(e=>EVENT_LABEL[e]||RELAY_LABEL[e]).join(" → ")}</p>`).join("")}<p class="small">各日の全種目の予選後に、同じ順番で決勝を行います。ジャパンオープン・日本選手権にはリレーがありません。</p></details>`);
+    <details style="margin-top:10px"><summary>4日間大会の種目順</summary>${FOUR_DAY_EVENTS.map((events,i)=>`<p><b>${i+1}日目</b>：${events.map(e=>EVENT_LABEL[e]||RELAY_LABEL[e]).join(" → ")}</p>`).join("")}<p class="small">各日の全種目の予選後に、同じ順番で決勝を行います。ジャパンオープン・日本選手権にはリレーがありません。50mBa・Br・Flyはジャパンオープン・日本選手権・世界大会で実施します。</p></details>`);
   m.classList.add("modal-schedule");
   m.querySelector("#x").onclick=()=>closeModal();
 }
@@ -2319,7 +2354,7 @@ function applyProdigyBoost(p,year=1){
   let target=rand(125,145);
   let caps=Object.fromEntries(STATS.map(k=>[k,rand(151,158)]));
   if(avg<target){
-    let preferred=EVENTS.includes(p.specialty)?p.specialty:bestSpecialtyByAbility(p);
+    let preferred=SPECIALTY_EVENTS.includes(p.specialty)?p.specialty:bestSpecialtyByAbility(p);
     let st=strokeForEvent(preferred),factor=target/Math.max(1,avg);
     for(let k of STATS){
       let specialtyBoost=(st!=="im"&&k.startsWith(st+"_"))?rand(3,10):0;
@@ -2343,7 +2378,7 @@ function rollProdigy(p,year=1){
 }
 
 function makeInitialPlayer(year,used){
-  let preferred=choice(EVENTS),stroke=strokeForEvent(preferred),raw={};
+  let preferred=choice(SPECIALTY_EVENTS),stroke=strokeForEvent(preferred),raw={};
   STATS.forEach(k=>{
     let v=gauss(76,13);
     if(k==="mental")v+=rand(-4,7);
@@ -2367,7 +2402,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.44",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.45",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2623,7 +2658,7 @@ function initializeRecordRankings(){
 function ranking(e,cat="all",limit=100){return activeAthletes().filter(a=>a.bestTimes[e]!=null&&(cat==="all"||(cat==="player"?state.players.includes(a):(!state.players.includes(a)&&a.category===cat)))).sort((a,b)=>a.bestTimes[e]-b.bestTimes[e]).slice(0,limit)}
 function refreshRecordBook(){EVENTS.forEach(e=>{let a=ranking(e,"all",1)[0];if(!a)return;let old=state.recordBook[e],t=a.bestTimes[e];if(!old||t<old.time)state.recordBook[e]={event:e,time:t,athleteId:a.id,name:a.name,organization:a.organization,season:state.season,meet:"PB集計",...recordSchoolInfo(a,state.season)}})}
 function standardFor(meet,e){return STANDARDS[meet]?.[e]??null}
-function dispatchStandard(e){return PANPAC_2026_DISPATCH.times?.[e]??null}
+function dispatchStandard(e){return PANPAC_2026_DISPATCH.times?.[e]??WORLD_SPRINT_STANDARDS.times[e]??null}
 function dispatchStandardsReady(){return EVENTS.every(e=>Number.isFinite(dispatchStandard(e)))}
 function selectMedleyRelay(results){
   let events=["ba100","br100","fly100","fr100"],finals=events.map(e=>[...(results[e]?.final||[])].sort((a,b)=>a.race.total-b.race.total)),preferred=new Map();
@@ -2751,23 +2786,27 @@ function cleanInternationalNames(){
   }
 }
 function ensureInternationalWorld(year){
-  if(state.internationalWorld?.year===year)return state.internationalWorld;
-  let athletes=[],relayTeams={};
+  const previous=state.internationalWorld?.year===year?state.internationalWorld:null;
+  if(previous?.sprintEventVersion===1)return previous;
+  let athletes=previous?[...previous.athletes]:[],relayTeams=previous?previous.relayTeams:{};
   const first=["Alex","Luca","Max","Leo","Noah","Adam","Daniel","Ryan","Ethan","Oliver","Lucas","Victor","Ben","Tom","Felix","Oscar"];
   const last=["Miller","Martin","Wilson","Brown","Garcia","Young","Taylor","Novak","Anderson","Lewis","Scott","Walker","Smith","Evans","Clark","King"];
-  const usedNames=new Set();
+  const usedNames=new Set(athletes.map(a=>a.name));
   for(let [countryIndex,country] of WORLD_COUNTRIES.entries()){
     let quality=rand(.0005,.006)+countryIndex*.001,roster=[];
     const make=(event,eligible=true)=>{
-      let id=uid("INT"),a={id,name:internationalName(first,last,usedNames),gender:"M",category:"international",nationality:country,organization:country,age:Math.floor(rand(19,30)),grade:null,specialty:event,individualEligible:eligible,
+      let id=uid("INT"),a={id,name:internationalName(first,last,usedNames),gender:"M",category:"international",nationality:country,organization:country,age:Math.floor(rand(19,30)),grade:null,specialty:SPRINT_EVENTS.includes(event)?strokeForEvent(event)+"100":event,individualEvent:event,individualEligible:eligible,
         stats:Object.fromEntries(STATS.map(k=>[k,round2(rand(128,162))])),bestTimes:{},raceHistory:[],accolades:[],retired:false};
       a.stats.mental=round2(rand(154,191));
       calibrateWorldAthlete(a,event,WORLD_REFERENCE.individual[event]*(1+quality+rand(-.002,.010)));
       roster.push(a);athletes.push(a);return a;
     };
-    for(let e of EVENTS){make(e);make(e)}
-    relayTeams[country]={};
-    for(let kind of RELAYS){
+    for(let e of EVENTS){
+      const count=athletes.filter(a=>a.nationality===country&&a.individualEligible&&(a.individualEvent||a.specialty)===e).length;
+      for(let i=count;i<2;i++)make(e);
+    }
+    if(!previous)relayTeams[country]={};
+    for(let kind of previous?[]:RELAYS){
       let events=relayLegEvents(kind),members=events.map(e=>make(e,false));
       let target=WORLD_REFERENCE.relays[kind]*(1+quality+rand(-.001,.010));
       for(let pass=0;pass<3;pass++){
@@ -2778,7 +2817,8 @@ function ensureInternationalWorld(year){
     }
     for(let a of roster)for(let e of EVENTS)a.bestTimes[e]=round2(expectedTime(a,e)*rand(.998,1.008));
   }
-  return state.internationalWorld={year,athletes,relayTeams,referenceYear:WORLD_REFERENCE.year};
+  const world={year,athletes,relayTeams,referenceYear:WORLD_REFERENCE.year,sprintEventVersion:1};
+  return state.internationalWorld=previous?Object.assign(previous,world):world;
 }
 function raceEventField(meet,event,entrants){
   let heats=seedRaceHeats(entrants,event,meet).map(h=>h.map(x=>({...x,race:simulateRace(x.athlete,event,true,x.source==="PLAYER")})).sort((a,b)=>a.race.total-b.race.total));
@@ -2791,7 +2831,7 @@ function raceEventField(meet,event,entrants){
 function runWorldEvent(event,year){
   let automatic=worldAutoEntries(year),international=ensureInternationalWorld(year);
   let japanese=automatic.individual[event].map(japanTeamAthlete).filter(Boolean);
-  let foreign=international.athletes.filter(a=>a.individualEligible&&a.specialty===event).sort((a,b)=>a.bestTimes[event]-b.bestTimes[event]);
+  let foreign=international.athletes.filter(a=>a.individualEligible&&(a.individualEvent||a.specialty)===event).sort((a,b)=>a.bestTimes[event]-b.bestTimes[event]);
   foreign=foreign.slice(0,preliminaryHeatCount("world_championship",event)*8-japanese.length);
   let entrants=japanese.map(a=>({source:ownJapanAthlete(a.id)?"PLAYER":"CPU",athlete:a,entryPB:a.bestTimes[event],nationality:"日本"})).concat(foreign.map(a=>({source:"CPU",athlete:a,entryPB:a.bestTimes[event],nationality:a.nationality})));
   return raceEventField("world_championship",event,entrants);
@@ -2842,7 +2882,8 @@ function ensureStandardAchievements(a){
   }
   a.standardAchievementVersion=1;return a.standardAchievements=cleared;
 }
-function qualified(p,meet,e){let s=standardFor(meet,e);return s==null||(Number.isFinite(p.bestTimes?.[e])&&p.bestTimes[e]<=s)}
+function meetIndividualEvents(meet){return COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?SPECIALTY_EVENTS:EVENTS}
+function qualified(p,meet,e){if(!meetIndividualEvents(meet).includes(e))return false;let s=standardFor(meet,e);return s==null||(Number.isFinite(p.bestTimes?.[e])&&p.bestTimes[e]<=s)}
 function universityName(id){if(id==="PLAYER")return state.playerUniversity;return state.universities.find(x=>x.id===id)?.name||id}
 function meetUniversities(meet){if(meet==="kansai_college")return[state.playerUniversity,...state.kansaiIds.map(universityName)];if(meet==="intercollege")return[state.playerUniversity,...state.interIds.map(universityName)];return[state.playerUniversity,...state.universities.map(x=>x.name)]}
 function allowedCpu(a,meet){if(a.retired)return false;if(meet==="kansai_college"||meet==="intercollege")return a.category==="university"&&meetUniversities(meet).includes(a.organization);if(OPEN_AGE_MEETS.has(meet))return["middle","high","university","adult"].includes(a.category);return false}
@@ -2905,7 +2946,7 @@ function buildCpuCollegeEntries(meet){
 }
 
 function cpuEntryEvents(a){
-  let specialty=EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
+  let specialty=SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
   return EVENTS.filter(e=>strokeForEvent(e)===strokeForEvent(specialty));
 }
 function preliminaryHeatCount(meet,event){
@@ -2932,6 +2973,7 @@ function seedRaceHeats(entrants,event,meet="team_trial"){
 }
 
 const KANSAI_COLLEGE_WIN_TARGET={
+  ba50:26.40,br50:28.02,fly50:24.55,
   fr50:23.40,fr100:50.70,fr200:111.60,fr400:236.70,
   ba100:56.90,ba200:124.20,br100:61.80,br200:133.70,
   fly100:54.10,fly200:120.50,im200:124.00,im400:265.00
@@ -2941,6 +2983,7 @@ function simulateMeetRace(p,event,meet,record=false){
 }
 
 function runEvent(meet,e,userIds,cpuCollegeEntries=null){
+  if(!meetIndividualEvents(meet).includes(e))return {prelim:[],final:[],heats:[]};
   let user=userIds.map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
   let std=standardFor(meet,e),cpu;
   if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)&&cpuCollegeEntries){
@@ -3053,7 +3096,7 @@ function runRelays(meet,manual,deferFinalEntries=false){
 function teamScoring(meet,eventResults,relays){
   if(!TEAM_SCORE_MEETS.has(meet))return{};
   let s=Object.fromEntries(meetUniversities(meet).map(x=>[x,0])),pts=[12,10,8,6,4,3,2,1],rpts=pts.map(x=>x*2);
-  for(let e of EVENTS)eventResults[e].final.slice(0,8).forEach((x,i)=>s[x.athlete.organization]=(s[x.athlete.organization]||0)+pts[i]);
+  for(let e of meetIndividualEvents(meet))eventResults[e].final.slice(0,8).forEach((x,i)=>s[x.athlete.organization]=(s[x.athlete.organization]||0)+pts[i]);
   for(let [k,finals] of relays)finals.forEach((x,i)=>s[x.organization]=(s[x.organization]||0)+rpts[i]);
   return s;
 }
@@ -3073,7 +3116,7 @@ function statGrowthMultiplier(value){
 }
 
 function defaultTrainingFocus(p){
-  let stroke=strokeForEvent(EVENTS.includes(p.specialty)?p.specialty:"fr100");
+  let stroke=strokeForEvent(SPECIALTY_EVENTS.includes(p.specialty)?p.specialty:"fr100");
   return [stroke==="im"?"fr_speed":`${stroke}_speed`];
 }
 function ensureTrainingFocus(p){
@@ -3282,7 +3325,7 @@ function worldToPlayer(a){
   return p;
 }
 function advanceSlot(){state.slot++;if(state.slot>96)newSeason()}
-function scoutSpecialty(a){return EVENTS.includes(a.specialty)?a.specialty:bestScoutEvent(a).event}
+function scoutSpecialty(a){return SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestScoutEvent(a).event}
 function highSchoolScoutRankings(){
   const highs=state.world.filter(a=>a.category==="high"&&!a.retired),rankings=new Map();
   for(let e of EVENTS){
@@ -3387,12 +3430,12 @@ function showModal(html,onClose){
 function closeModal(cb){document.getElementById("modalRoot").innerHTML="";if(cb)cb()}
 function showStandards(){
   let previous=[...document.getElementById("modalRoot").childNodes];
-  let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${fmt(standardFor("kansai_college",e))}</td><td>${fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td><td>${fmt(dispatchStandard(e))}</td></tr>`).join("");
+  let rows=EVENTS.map(e=>`<tr><td>${EVENT_LABEL[e]}</td><td>${SPRINT_EVENTS.includes(e)?"実施なし":fmt(standardFor("kansai_college",e))}</td><td>${SPRINT_EVENTS.includes(e)?"実施なし":fmt(standardFor("intercollege",e))}</td><td>${fmt(standardFor("japan_open",e))}</td><td>${fmt(standardFor("japan_championship",e))}</td><td>${fmt(dispatchStandard(e))}</td></tr>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>世界大会</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small">男子・長水路。世界大会は2027年から隔年、8月第2週後半。その年の3月日本選手権A決勝で派遣標準を突破した上位2名を自動選出します（標準と同タイムを含む）。</p>
     <p class="small">日本代表が2名に満たない個人種目は、世界大会の開幕前に代表登録済みの自チーム選手を追加できます。リレーのみの代表選手も対象で、追加種目の派遣標準突破は不要、1人の出場種目数に上限はありません。</p>
     <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。優勝者が重複する場合は専門泳法を優先し、他の泳法は2位の選手を選出します。</p>
-    <p class="small">2026年の派遣標準をゲーム内の隔年大会に使用しています。<a href="${PANPAC_2026_DISPATCH.source}" target="_blank" rel="noopener">日本水泳連盟</a></p>`);
+    <p class="small">従来12種目は2026パンパシ派遣標準。50mBa・Br・Flyはパンパシで実施されないため、<a href="${SPRINT_SOURCES.worldStandard}" target="_blank" rel="noopener">世界水泳2025 A標準</a>を世界大会の選考基準に使います。追加3種目の国内標準：<a href="${SPRINT_SOURCES.japanOpen}" target="_blank" rel="noopener">ジャパンオープン2026</a> ／ <a href="${SPRINT_SOURCES.japanChampionship}" target="_blank" rel="noopener">日本選手権2026</a></p>`);
   m.classList.add("modal-standards");m.querySelector("#x").onclick=()=>closeModal(()=>document.getElementById("modalRoot").append(...previous));
 }
 function top10AthleteName(id,name){
@@ -3460,18 +3503,19 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     let automatic=worldAutoEntries(calendarYear(competitionSeason,competitionSlot));
     showEntryConfirmation(meet,automatic.individual,automatic.relays,competitionSlot,competitionSeason);return;
   }
-  let selections=initialSelections?deepClone(initialSelections):Object.fromEntries(EVENTS.map(e=>[e,[]])),relaySel=initialRelaySel?deepClone(initialRelaySel):{};
+  const meetEvents=meetIndividualEvents(meet);
+  let selections=Object.fromEntries(EVENTS.map(e=>[e,meetEvents.includes(e)?[...(initialSelections?.[e]||[])]:[]])),relaySel=initialRelaySel?deepClone(initialRelaySel):{};
   let entryDisplayMode="pb";
   let ruleText=RECORD_MEETS.has(meet)
-    ?"記録会：各選手が個人12種目から自由に選択できます。個人種目数の上限はありません。"
+    ?`記録会：各選手が個人${EVENTS.length}種目から自由に選択できます。個人種目数の上限はありません。`
     :COLLEGE_ENTRY_LIMIT_MEETS.has(meet)
       ?`${MEET_LABEL[meet]}：各大学1種目3人まで、1人3種目まで（リレーは別枠）。参加標準記録を満たす種目のみ選択できます。`
       :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
 
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[meet]} エントリー</h2><button id="entryViewToggle">PB表示 → 能力表示</button>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
     <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}</div>
-    <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" style="min-width:1320px">
-      <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${EVENTS.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
+    <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" class="${meetEvents.some(e=>SPRINT_EVENTS.includes(e))?"entry-with-sprints":""}" style="min-width:1320px">
+      <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${meetEvents.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
     </table></div>
     <div class="row modal-actions"><button id="clearAll">個人種目を全解除</button>${RELAY_MEETS.has(meet)?'<button id="relayBtn">リレー予選編成</button>':""}<button id="confirmEntry" class="primary">エントリー確認へ</button></div>
     <div id="entrySummary" class="small muted" style="margin-top:8px"></div>`);
@@ -3495,7 +3539,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     tbody.innerHTML=state.players.map(p=>`<tr>
       <td style="position:sticky;left:0;background:white;z-index:2"><b>${esc(p.name)}</b><br><span class="small muted">${p.year}年 / 専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</span></td>
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
-      ${EVENTS.map(e=>{
+      ${meetEvents.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
         let stats=entryEventSpeedStamina(p,e);
         let statText=`<div class="small entry-stat-view"><b>速${statRank(stats.speed)} ${stats.speed}</b><br><b>持${statRank(stats.stamina)} ${stats.stamina}</b></div>`;
@@ -3540,7 +3584,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
   const findAthlete=id=>meet==="world_championship"?japanTeamAthlete(id):state.players.find(p=>p.id===id);
   const worldOptions=meet==="world_championship"?worldAdditionalEntryOptions(calendarYear(competitionSeason,competitionSlot)):null;
   const canEditWorld=worldOptions?.athletes.length&&Object.values(worldOptions.vacancies).some(n=>n>0);
-  let cards=EVENTS.map(e=>{
+  let cards=meetIndividualEvents(meet).map(e=>{
     let ids=selections[e]||[],names=ids.map(id=>findAthlete(id)?.name).filter(Boolean);
     return`<div class="entry-summary-card ${ids.length?"has":""}"><div>${EVENT_LABEL[e]}</div><b>${ids.length}名</b><div class="small muted">${names.map(esc).join(" / ")||"エントリーなし"}</div></div>`;
   }).join("");
@@ -3636,8 +3680,8 @@ function relayPlaybackRace(team,kind){
 }
 
 function meetEventDays(meet){
-  if(FOUR_DAY_MEETS.has(meet))return FOUR_DAY_EVENTS.map(day=>day.filter(e=>!RELAYS.includes(e)||RELAY_MEETS.has(meet)));
-  return [[...EVENTS,...(RELAY_MEETS.has(meet)?RELAYS:[])]];
+  if(FOUR_DAY_MEETS.has(meet))return FOUR_DAY_EVENTS.map(day=>day.filter(e=>RELAYS.includes(e)?RELAY_MEETS.has(meet):meetIndividualEvents(meet).includes(e)));
+  return [[...meetIndividualEvents(meet),...(RELAY_MEETS.has(meet)?RELAYS:[])]];
 }
 function buildMeetProgram(result,selections){
   let program=[],fourDays=FOUR_DAY_MEETS.has(result.meet);
@@ -3901,6 +3945,8 @@ function openRelayEditor(relaySel,done,options={}){
 }
 function executeMeet(meet,selections,relaySel,options={}){
   if(meet==="world_championship")return executeWorldMeet(options);
+  const meetEvents=meetIndividualEvents(meet);
+  for(const e of EVENTS)selections[e]=meetEvents.includes(e)?[...(selections[e]||[])]:[];
   if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
     let used={};
     for(let e of EVENTS){
@@ -3926,9 +3972,9 @@ function executeMeet(meet,selections,relaySel,options={}){
     markJointScouts();
   }
 
-  let results={};
+  let results=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[],heats:[]}]));
   if(meet==="team_trial"){
-    for(let e of EVENTS){
+    for(let e of meetEvents){
       let entrants=selections[e].map(id=>state.players.find(p=>p.id===id)).filter(Boolean).map(p=>({source:"PLAYER",athlete:p,entryPB:p.bestTimes[e]}));
       let heats=seedRaceHeats(entrants,e).map(h=>h.map(x=>({...x,race:simulateRace(x.athlete,e,false,true)})).sort((a,b)=>a.race.total-b.race.total));
       let rows=heats.flat().sort((a,b)=>a.race.total-b.race.total);
@@ -3937,7 +3983,7 @@ function executeMeet(meet,selections,relaySel,options={}){
     }
   }else{
     let cpuCollegeEntries=COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?buildCpuCollegeEntries(meet):null;
-    for(let e of EVENTS)results[e]=runEvent(meet,e,selections[e],cpuCollegeEntries);
+    for(let e of meetEvents)results[e]=runEvent(meet,e,selections[e],cpuCollegeEntries);
   }
 
   let relays=runRelays(meet,relaySel,!!options.deferRelayFinalEntries),scores=teamScoring(meet,results,relays),teamScoreEntry=null;
@@ -4267,7 +4313,7 @@ function renderTrainingPlan(){
 function renderRoster(){
   let rows=[...state.players];rows.forEach(ensurePlayerSpecialty);
   let mode=document.getElementById("rosterSortMode")?.value||"grade_asc",displayEvent=null;
-  const specialtyOrder=(a,b)=>EVENTS.indexOf(a.specialty)-EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja");
+  const specialtyOrder=(a,b)=>SPECIALTY_EVENTS.indexOf(a.specialty)-SPECIALTY_EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja");
   if(mode==="grade_asc")rows.sort((a,b)=>a.year-b.year||specialtyOrder(a,b));
   else if(mode==="grade_desc")rows.sort((a,b)=>b.year-a.year||specialtyOrder(a,b));
   else if(mode==="overall_desc")rows.sort((a,b)=>overallStatValue(b)-overallStatValue(a)||a.year-b.year);
@@ -4468,7 +4514,7 @@ function showPlayerDetail(id){
 }
 function showSpecialtyPicker(id,onReturn=null){
   let p=state.players.find(x=>x.id===id);if(!p)return;
-  let options=EVENTS.map(e=>`<option value="${e}" ${p.specialty===e?"selected":""}>${EVENT_LABEL[e]}</option>`).join("");
+  let options=SPECIALTY_EVENTS.map(e=>`<option value="${e}" ${p.specialty===e?"selected":""}>${EVENT_LABEL[e]}</option>`).join("");
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} の専門種目</h2><button id="x">閉じる</button></div>
     <div class="row"><select id="spec">${options}</select><button id="ok" class="primary">決定</button></div>`);
   m.classList.add("modal-specialty-picker");
@@ -4755,7 +4801,7 @@ function initSelectors(){
   let r=document.getElementById("rankEvent");
   if(r){r.innerHTML=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");r.value="fr100"}
   let scoutEvent=document.getElementById("scoutEventFilter");
-  if(scoutEvent)scoutEvent.innerHTML='<option value="">すべて</option>'+EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
+  if(scoutEvent)scoutEvent.innerHTML='<option value="">すべて</option>'+SPECIALTY_EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
   let scoutSort=document.getElementById("scoutSortMode");if(scoutSort)scoutSort.value="default";
 }
 
