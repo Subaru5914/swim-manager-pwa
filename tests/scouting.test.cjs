@@ -36,7 +36,7 @@ test('matching wishes add facility and region bonuses while unrelated facilities
     state.reputation=35;
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.specialty='fr100';a.accolades=[];a.bestTimes.fr100=JAPAN_RECORD.fr100;
-    a.scoutPreferences={version:2,worldAmbition:false,preferredRegion:null};
+    a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
     state.facilities=Object.fromEntries(STATS.map(k=>[k,0]));const ordinary=scoutProbability(a);
     state.facilities=Object.fromEntries(STATS.map(k=>[k,100]));const withoutWish=scoutProbability(a);
     a.scoutPreferences.worldAmbition=true;
@@ -53,7 +53,7 @@ test('matching wishes add facility and region bonuses while unrelated facilities
   assert.ok(Math.abs(result.levels[1]-result.levels[0]-.11)<1e-10);
   assert.ok(Math.abs(result.levels[2]-result.levels[0]-.22)<1e-10);
   assert.equal(result.unrelated,result.levels[2]);assert.equal(result.renamed,result.matched);
-  assert.ok(Math.abs(result.matched-result.unrelated-.18)<1e-10);
+  assert.ok(Math.abs(result.matched-result.unrelated-.10)<1e-10);
   assert.equal(result.imPartial.facilityLevel,25);assert.equal(result.imFull.facilityLevel,100);
   assert.equal(result.imPartial.facilityBonus,.055);assert.equal(result.imFull.facilityBonus,.22);
   assert.equal(result.capped,.97);
@@ -63,7 +63,7 @@ test('equal specialty PBs have equal difficulty, faster PBs get harder and other
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=state.world.find(a=>a.category==='high'&&a.grade===3),b=deepClone(a);
-    a.specialty='fr100';a.accolades=[];a.scoutPreferences={version:2,worldAmbition:false,preferredRegion:null};
+    a.specialty='fr100';a.accolades=[];a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
     a.bestTimes.fr100=JAPAN_RECORD.fr100*1.1;b.id='same-pb';b.bestTimes.fr100=a.bestTimes.fr100;b.specialty=a.specialty;b.accolades=[];b.scoutPreferences=deepClone(a.scoutPreferences);state.world.push(b);
     const first=scoutProbabilityDetails(a),same=scoutProbabilityDetails(b);
     state.world.push({...deepClone(a),id:'faster-adult',category:'adult',bestTimes:{fr100:1}});
@@ -164,10 +164,106 @@ test('v1 wishes are thinned once, nonleaders lose world wishes, and no-wish or s
     refreshScoutBoard();const first=JSON.stringify(state);state=JSON.parse(first);refreshScoutBoard();
     return {n,world,kansai,invalidWorld,added,stable:first===JSON.stringify(state),
       signed:state.world[0].scouted&&state.recruits.includes(state.world[0].id)&&JSON.stringify(state.recruits)===recruits,
-      versions:state.world.every(a=>a.scoutPreferences.version===2),rng:rngSeed===state.rngSeed};
+      versions:state.world.every(a=>a.scoutPreferences.version===3),rng:rngSeed===state.rngSeed};
   })())`));
   assert.ok(result.world/result.n>.40&&result.world/result.n<.51,JSON.stringify(result));
   assert.ok(result.kansai/result.n>.28&&result.kansai/result.n<.39,JSON.stringify(result));
   assert.equal(result.invalidWorld,0);assert.equal(result.added,0);
   assert.ok(result.stable&&result.signed&&result.versions&&result.rng,JSON.stringify(result));
+});
+
+test('reputation starts helping at mid-tier and accelerates; prestige and early-entry wishes obey their conditions',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const a=state.world.find(a=>a.category==='high'&&a.grade===3);
+    a.specialty='fr100';a.bestTimes.fr100=50;a.accolades=[];
+    a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
+    const reps=[0,35,79,80,100,120,140,160,280,450,600].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a)});
+    const labels=[279,280,450,600].map(reputationLabel);
+    a.scoutPreferences.prestigeSchool=true;
+    const prestige=[159,160,279,280,600].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a).prestigeBonus});
+    a.scoutPreferences.prestigeSchool=false;a.scoutPreferences.earlyCompetition=true;
+    const p=deepClone(state.players[0]);state.players=[49,49.5,50,48].map((time,i)=>({...deepClone(p),id:'peer-'+i,year:i===3?4:2,bestTimes:{fr100:time}}));
+    state.recruits=[];for(const high of state.world)high.scouted=false;
+    const tied=scoutProbabilityDetails(a);
+    const signed={...deepClone(a),id:'signed-peer',bestTimes:{fr100:49.8}};state.world.push(signed);state.recruits=[signed.id];
+    const fourth=scoutProbabilityDetails(a);signed.bestTimes.fr100=50;
+    const third=scoutProbabilityDetails(a);a.bestTimes.fr100=null;
+    const missing=scoutProbabilityDetails(a);
+    return {reps:reps.map(d=>d.reputationBonus),labels,prestige,tied:{rank:tied.enrollmentRank,bonus:tied.earlyBonus},fourth:{rank:fourth.enrollmentRank,bonus:fourth.earlyBonus},third:{rank:third.enrollmentRank,bonus:third.earlyBonus},missing:{rank:missing.enrollmentRank,bonus:missing.earlyBonus}};
+  })())`));
+  assert.deepEqual(result.reps.slice(0,3),[0,0,0]);assert.ok(result.reps[3]>0&&result.reps[3]<=.02);
+  const increments=result.reps.slice(4,8).map((v,i)=>v-result.reps[i+3]);
+  assert.ok(increments.every((v,i)=>i===0||v>increments[i-1]),JSON.stringify(result));
+  assert.deepEqual(result.labels,['強豪','名門','名門','名門']);
+  assert.deepEqual(result.prestige,[0,.1,.1,.1,.1]);
+  assert.deepEqual(result.tied,{rank:3,bonus:.1});assert.deepEqual(result.fourth,{rank:4,bonus:0});
+  assert.deepEqual(result.third,{rank:3,bonus:.1});assert.deepEqual(result.missing,{rank:null,bonus:0});
+});
+
+test('new wishes each appear about ten percent and v2 wishes migrate once without changing signed recruits or RNG',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const template=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3)),rankings=highSchoolScoutRankings(),rngSeed=state.rngSeed;
+    let early=0,prestige=0;const n=4000;
+    for(let i=0;i<n;i++){
+      const a={...deepClone(template),id:'v3-preference-'+i,scoutPreferences:{version:2,worldAmbition:true,preferredRegion:'kansai'}};
+      const preference=ensureScoutPreferences(a,rankings);early+=preference.earlyCompetition;prestige+=preference.prestigeSchool;
+      if(!preference.worldAmbition||preference.preferredRegion!=='kansai')throw new Error('old hope lost');
+    }
+    const a=state.world.find(a=>a.id===template.id);a.scouted=true;state.recruits=[a.id];a.scoutPreferences={version:2,worldAmbition:true,preferredRegion:'kansai'};
+    const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),athletes=JSON.stringify(state.world.map(p=>[p.id,p.stats,p.bestTimes]));
+    migrateState();const first=JSON.stringify(state);state=JSON.parse(first);migrateState();
+    return {n,early,prestige,stable:first===JSON.stringify(state),rng:rngSeed===state.rngSeed,signed:state.recruits.includes(a.id)&&state.world.find(p=>p.id===a.id).scouted,
+      own:own===JSON.stringify(state.players),records:records===JSON.stringify(state.recordRankings),athletes:athletes===JSON.stringify(state.world.map(p=>[p.id,p.stats,p.bestTimes]))};
+  })())`));
+  assert.ok(result.early/result.n>.08&&result.early/result.n<.12,JSON.stringify(result));
+  assert.ok(result.prestige/result.n>.08&&result.prestige/result.n<.12,JSON.stringify(result));
+  for(const key of ['stable','rng','signed','own','records','athletes'])assert.equal(result[key],true,key);
+});
+
+test('existing candidate identities supply exactly eight freshmen; every other senior advances and only middle-school first years are generated',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const rows=[];
+    for(let year=0;year<8;year++){
+      const board=refreshScoutBoard(),before=new Map(board.map(a=>[a.id,{name:a.name,stats:deepClone(a.stats),pb:deepClone(a.bestTimes),specialty:a.specialty}]));
+      const signed=board.slice(0,year%3===0?8:year%3===1?2:0).map(a=>a.id);state.recruits=signed;
+      signed.forEach(id=>state.world.find(a=>a.id===id).scouted=true);
+      const oldIds=new Set(state.players.concat(state.world).map(a=>a.id)),seniors=state.world.filter(a=>a.category==='high'&&a.grade===3).map(a=>a.id);
+      newSeason();const freshmen=state.players.filter(p=>p.year===1),freshIds=new Set(freshmen.map(p=>p.id));
+      rows.push({year,count:freshmen.length,unique:freshIds.size,signed:signed.every(id=>freshIds.has(id)),candidates:freshmen.every(p=>before.has(p.id)),
+        preserved:freshmen.every(p=>{const a=before.get(p.id);return a.name===p.name&&a.specialty===p.specialty&&JSON.stringify(a.stats)===JSON.stringify(p.stats)&&JSON.stringify(a.pb)===JSON.stringify(p.bestTimes)}),
+        moved:seniors.every(id=>freshIds.has(id)||state.world.some(a=>a.id===id&&a.category==='university'&&a.grade===1)),
+        freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>a.category==='middle'&&a.grade===1&&a.age===13),
+        newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:organizationNames().middle.length*3,
+        removed:freshmen.every(p=>!state.world.some(a=>a.id===p.id)),welcome:state.pendingFreshmenWelcome.length,queue:state.recruits.length});
+      const serial=state.serial,rngSeed=state.rngSeed;maintainWorldPopulation();migrateState();
+      rows.at(-1).reloadNoNew=state.serial===serial&&state.rngSeed===rngSeed;
+    }
+    return rows;
+  })())`));
+  for(const row of result){
+    assert.equal(row.count,8,JSON.stringify(row));assert.equal(row.unique,8);assert.equal(row.welcome,8);assert.equal(row.queue,0);
+    assert.equal(row.newCount,row.expected);
+    for(const key of ['signed','candidates','preserved','moved','freshOnly','removed','reloadNoNew'])assert.equal(row[key],true,JSON.stringify(row));
+  }
+});
+
+test('CPU enrollment prefers strong and prestigious universities, observes available places and never loses a senior when all places fill',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const a=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));
+    state.universities=[35,80,160,280].map((rep,i)=>({id:'destination-'+i,name:'進路大学'+i,reputation:rep}));
+    state.world=[];a.scoutPreferences={prestigeSchool:false};
+    const counts=[0,0,0,0];for(let i=0;i<6000;i++)counts[+chooseCpuUniversityForRecruit(a).slice(-1)]++;
+    state.world=Array.from({length:5},(_,i)=>({...deepClone(a),id:'full-'+i,category:'university',grade:1,organization:'進路大学3'}));
+    const skipsFull=Array.from({length:200},()=>chooseCpuUniversityForRecruit(a)).every(name=>name!=='進路大学3');
+    for(const u of state.universities.slice(0,3))for(let i=0;i<5;i++)state.world.push({...deepClone(a),id:u.id+'-'+i,category:'university',grade:1,organization:u.name});
+    const overflow=chooseCpuUniversityForRecruit(a);
+    return {counts,skipsFull,overflow};
+  })())`));
+  assert.ok(result.counts[3]>result.counts[2]&&result.counts[2]>result.counts[1]&&result.counts[1]>result.counts[0],JSON.stringify(result));
+  assert.ok((result.counts[2]+result.counts[3])/6000>.75,JSON.stringify(result));
+  assert.ok(result.skipsFull);assert.match(result.overflow,/進路大学[0-3]/);
 });

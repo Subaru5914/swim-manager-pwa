@@ -20,13 +20,13 @@ function game(seed = 12345) {
   return run;
 }
 
-test('CPU cohorts and abilities stay stable through twelve full seasons and repeated college participation',()=>{
+test('existing CPU cohorts advance through twelve full seasons without replacements or ability inflation',()=>{
   const run=game();
   const samples=JSON.parse(run(`JSON.stringify((()=>{
-    const samples=[],snapshot=()=>{
+    const samples=[],admissions=[],snapshot=()=>{
       const cpu=state.world.filter(a=>a.category==='university'),values=cpu.map(overallStatValue).sort((a,b)=>a-b);
       const sizes=state.universities.flatMap(u=>[1,2,3,4].map(grade=>cpu.filter(a=>a.organization===u.name&&a.grade===grade).length));
-      return {season:state.season,count:cpu.length,expected:state.universities.length*20,sizes,
+      return {season:state.season,count:cpu.length,expected:admissions.length?admissions.slice(-4).reduce((s,n)=>s+n,0):state.universities.length*20,sizes,
         mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
         reputationBound:state.universities.every(u=>Math.abs(u.reputation-u.baseReputation)<=25.01)};
     };
@@ -37,6 +37,7 @@ test('CPU cohorts and abilities stay stable through twelve full seasons and repe
         const entries=buildCpuCollegeEntries(meet),byId=new Map(state.world.map(a=>[a.id,a]));
         updateCpuUniversityReputations(meet,Object.fromEntries(EVENTS.map(e=>[e,{prelim:entries[e].map(id=>({source:'CPU',athlete:byId.get(id)}))}])));
       }
+      admissions.push(state.world.filter(a=>a.category==='high'&&a.grade===3&&!a.retired).length-8);
       newSeason();
       if(year%4===0)samples.push(snapshot());
     }
@@ -44,7 +45,7 @@ test('CPU cohorts and abilities stay stable through twelve full seasons and repe
   })())`));
   for(const sample of samples){
     assert.equal(sample.count,sample.expected,JSON.stringify(sample));
-    assert.ok(sample.sizes.every(n=>n===5));assert.equal(sample.reputationBound,true);
+    assert.ok(sample.sizes.every(n=>n>=0&&n<=5));assert.equal(sample.reputationBound,true);
     assert.ok(Math.abs(sample.mean-samples[0].mean)<4,JSON.stringify(sample));
     assert.ok(Math.abs(sample.p90-samples[0].p90)<5,JSON.stringify(sample));
   }
@@ -312,7 +313,7 @@ test('school ranking and reputation drive scouting while untitled swimmers recei
     const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
     return [0,10,35,160,310,600].flatMap(rep=>[0,9,49,99,199].map(index=>{
       state.reputation=rep;
-      const a={...deepClone(field[index]),id:'ranked-test-'+index,category:'high',grade:3,specialty:'fr100',accolades:[],scoutPreferences:{version:2,worldAmbition:false,preferredRegion:null}};
+      const a={...deepClone(field[index]),id:'ranked-test-'+index,category:'high',grade:3,specialty:'fr100',accolades:[],scoutPreferences:{version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false}};
       const ordinary=scoutProbability(a),rank=scoutProbabilityDetails(a).rank;
       a.accolades=[{competition:'全国高校総体',event:'fr100',rank:1,season:2026}];
       return {rep,rank,ordinary,titled:scoutProbability(a)};
@@ -416,7 +417,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.38');
+  assert.equal(result.version, 'pwa-v1.39');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -425,24 +426,26 @@ test('legacy save migration preserves player progress and history and runs the C
   assert.equal(result.once, true);
 });
 
-test('new seasons produce exactly eight freshmen and enforce the prodigy cap after normalization', () => {
+test('new seasons preserve eight real candidates including prodigy abilities and all earned PBs', () => {
   const run = game();
   const result = JSON.parse(run(`JSON.stringify((()=>{
     state.reputation=600;
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.prodigy=true;state.recruits=[a.id];
-    a.stats=Object.fromEntries(STATS.map(k=>[k,195]));
+    a.stats=Object.fromEntries(STATS.map((k,i)=>[k,152+i*.1]));
+    const stats=JSON.stringify(a.stats),pb=JSON.stringify(a.bestTimes);
     newSeason();
     const freshmen=state.players.filter(p=>p.year===1),prodigy=freshmen.find(p=>p.id===a.id);
     return {count:freshmen.length,total:state.players.length,welcome:state.pendingFreshmenWelcome.length,
-      max:Math.max(...STATS.map(k=>prodigy.stats[k])),prodigy:prodigy.prodigy,pbs:Object.keys(prodigy.bestTimes).length};
+      max:Math.max(...STATS.map(k=>prodigy.stats[k])),prodigy:prodigy.prodigy,pbs:Object.keys(prodigy.bestTimes).length,
+      stats:stats===JSON.stringify(prodigy.stats),pb:pb===JSON.stringify(prodigy.bestTimes)};
   })())`));
   assert.equal(result.count, 8);
   assert.equal(result.total, 32);
   assert.equal(result.welcome, 8);
   assert.equal(result.prodigy, true);
   assert.ok(result.max <= 158);
-  assert.ok(result.pbs >= 2 && result.pbs <= 4);
+  assert.equal(result.pbs,12);assert.ok(result.stats&&result.pb);
 });
 
 test('facility upgrades progressively improve eight-turn gains while level 100 stays near +30', () => {
@@ -503,7 +506,7 @@ test('scouting uses specialty PB rank rather than ability snapshots and title ab
     const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
     const make=(time,ability,titleRank=null)=>({id:'pb-scout-'+ability+'-'+titleRank,category:'high',grade:3,
       stats:Object.fromEntries(STATS.map(k=>[k,ability])),specialty:'fr100',bestTimes:{fr100:time},
-      scoutPreferences:{version:2,worldAmbition:false,preferredRegion:null},
+      scoutPreferences:{version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false},
       accolades:titleRank?[{competition:'全国高校総体',event:'fr100',rank:titleRank,season:2026}]:[]});
     const fast=field[0].bestTimes.fr100,slow=field[79].bestTimes.fr100;
     return {slow:scoutProbability(make(slow,80)),fast:scoutProbability(make(fast,80)),strongStatsSamePB:scoutProbability(make(fast,173)),
