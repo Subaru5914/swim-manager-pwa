@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.42', 'v1.41'));
+      data = Buffer.from(data.toString().replaceAll('v1.43', 'v1.42'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -388,7 +388,7 @@ test('checkpoint popups, post-intercollege retirement and hidden growth types wo
         await page.locator('.modal-season-notice').waitFor();
         assert.match(await page.locator('.modal-season-notice').innerText(),/発展途上 → 中堅/);
         assert.match(await page.locator('.modal-season-notice').innerText(),/引退確認 選手/);
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.42-season-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.43-season-${mobile?'iphone':'pc'}.png`)});}
         await page.reload();await page.locator('.modal-season-notice').waitFor();
         assert.equal(await page.evaluate(()=>state.reputation),85);assert.equal(await page.evaluate(()=>state.reputationEvaluations.length),1);
         await page.locator('#seasonNoticeNext').click();await page.reload();
@@ -622,7 +622,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
           await row.scrollIntoViewIfNeeded();
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.42-scout-${mobile?'iphone':'pc'}.png`)});
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.43-scout-${mobile?'iphone':'pc'}.png`)});
         }
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
@@ -658,6 +658,45 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         assert.equal(await page.evaluate(()=>state.players.filter(p=>p.year===1).length),8);
         assert.ok(await page.evaluate(id=>state.players.some(p=>p.id===id)&&!state.world.some(p=>p.id===id),fixture.id));
         assert.deepEqual(errors,[]);
+      }finally{await context.close();}
+    }
+  }finally{await app.close();}
+});
+
+test('record repairs show the same senior PB in historic records, high-school rankings and scouting on PC and iPhone',async()=>{
+  const app=await fixture();
+  try{
+    for(const mobile of [false,true]){
+      const context=await testContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
+      try{
+        const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+        const target=await page.evaluate(()=>{
+          const a=state.world.find(p=>p.category==='high'&&p.grade===3);a.name='PB整合 確認選手';a.specialty='fr100';
+          a.accolades=[{competition:'全国高校総体',competitionId:'interhigh_'+state.season,event:'fr100',rank:1,time:49.01,season:state.season,
+            organization:a.organization,schoolCategory:'high',gradeAtRecord:3}];
+          recordIndividualResult(a,'fr100',49.01,'全国高校総体','決勝');
+          // Reproduce an older save whose yearly PB regeneration lost an earned time.
+          a.bestTimes.fr100=53.65;saveLocal();
+          return {id:a.id,name:a.name,stats:JSON.stringify(a.stats)};
+        });
+        await page.reload();
+        assert.equal(await page.evaluate(id=>state.world.find(a=>a.id===id).bestTimes.fr100,target.id),49.01);
+        assert.equal(await page.evaluate(id=>JSON.stringify(state.world.find(a=>a.id===id).stats),target.id),target.stats);
+        await page.locator('#nav [data-page="records"]').click();
+        await page.locator('#recordRankingCategory').selectOption('high');await page.locator('#recordRankingEvent').selectOption('fr100');
+        const historic=page.locator('#recordRankingBody tbody tr').filter({hasText:target.name});
+        assert.equal(await historic.locator('.record-time').innerText(),'49.01');assert.equal(await historic.locator('.record-school-label').innerText(),'高3年');
+        await page.locator('#nav [data-page="rankings"]').click();
+        await page.locator('#rankCategory').selectOption('high');await page.locator('#rankEvent').selectOption('fr100');
+        const ranked=page.locator('#rankingTable tbody tr').filter({hasText:target.name});
+        assert.equal(await ranked.locator('td').last().innerText(),'49.01');
+        await page.locator('#nav [data-page="scout"]').click();
+        await page.locator('#scoutEventFilter').selectOption('fr100');await page.locator('#scoutSortMode').selectOption('pb');
+        const scout=page.locator('#scoutTable tr').filter({has:page.locator('[data-scout="'+target.id+'"]')});
+        assert.equal(await scout.locator('td').nth(3).locator('b').innerText(),'49.01');
+        const before=await page.evaluate(()=>{saveLocal();return JSON.stringify(state)});await page.reload();
+        assert.equal(await page.evaluate(()=>JSON.stringify(state)),before);
+        assert.equal(await page.evaluate(id=>state.world.find(a=>a.id===id).bestTimes.fr100,target.id),49.01);assert.deepEqual(errors,[]);
       }finally{await context.close();}
     }
   }finally{await app.close();}
@@ -854,7 +893,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.41 cache to v1.42 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.42 cache to v1.43 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -863,7 +902,7 @@ test('PWA upgrades its v1.41 cache to v1.42 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.41'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.42'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -873,19 +912,19 @@ test('PWA upgrades its v1.41 cache to v1.42 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.42') && !keys.includes('swim-manager-pwa-v1.41');
+      return keys.includes('swim-manager-pwa-v1.43') && !keys.includes('swim-manager-pwa-v1.42');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.42/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.42');
+    assert.match(await page.title(), /v1\.43/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.43');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.42/);
+    assert.match(await page.title(), /v1\.43/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

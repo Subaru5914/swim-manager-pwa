@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.42</title>
+<title>大学競泳監督シミュレーション PWA版 v1.43</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1175,7 +1175,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.42</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.43</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1510,7 +1510,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.42";
+  state.version="pwa-v1.43";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1954,17 +1954,27 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65){
   refreshCpuPBs(a);
   return a;
 }
-function refreshCpuPBs(a){
-  a.bestTimes={};
-  for(let e of EVENTS)a.bestTimes[e]=round2(expectedTime(a,e)*rand(.995,1.025));
-  for(let title of a.accolades||[]){
-    if(EVENTS.includes(title.event)&&Number.isFinite(title.time))a.bestTimes[title.event]=Math.min(a.bestTimes[title.event],title.time);
+function updatePersonalBest(a,event,time){
+  if(!EVENTS.includes(event)||!Number.isFinite(time)||time<=0)return false;
+  const next=round2(time);if(next<=0)return false;
+  if(!a.bestTimes)a.bestTimes={};
+  const previous=a.bestTimes[event];
+  if(Number.isFinite(previous)&&previous>0&&previous<=next)return false;
+  a.bestTimes[event]=next;
+  if(a.standardAchievementVersion===1){
+    if(!a.standardAchievements)a.standardAchievements={};
+    a.standardAchievements[event]=[...new Set([...(a.standardAchievements[event]||[]),...standardsCleared(event,next)])];
   }
+  return true;
+}
+function refreshCpuPBs(a){
+  for(let e of EVENTS)updatePersonalBest(a,e,expectedTime(a,e)*rand(.995,1.025));
+  for(let title of a.accolades||[])updatePersonalBest(a,title.event,title.time);
 }
 function assignInterhigh(){
   let highs=state.world.filter(a=>a.category==="high"&&(a.grade===2||a.grade===3)&&!a.retired),cid=`interhigh_${state.season}`;if(highs.some(a=>a.accolades.some(x=>x.competitionId===cid)))return;
   let pool=[...highs].sort((a,b)=>recruitValue(b)-recruitValue(a));
-  for(let e of EVENTS){let info=INTERHIGH.events[e];if(!info)continue;interhighFinalTargets(e).forEach((target,idx)=>{let cand=pool.filter(a=>a.accolades.filter(x=>x.competitionId===cid).length<2);if(!cand.length)return;let a=cand[Math.floor(rng()*Math.min(cand.length,20+(idx+1)*3))];calibrateToTime(a,e,target);a.bestTimes[e]=target;a.accolades.push({title:`${EVENT_LABEL[e]} インターハイ${idx===0?"優勝":(idx+1)+"位"}`,competitionId:cid,competition:"全国高校総体",stage:"A_final",event:e,rank:idx+1,time:target,season:state.season,organization:a.organization,schoolCategory:"high",gradeAtRecord:a.grade});a.discovered=true})}
+  for(let e of EVENTS){let info=INTERHIGH.events[e];if(!info)continue;interhighFinalTargets(e).forEach((target,idx)=>{let cand=pool.filter(a=>a.accolades.filter(x=>x.competitionId===cid).length<2);if(!cand.length)return;let a=cand[Math.floor(rng()*Math.min(cand.length,20+(idx+1)*3))];calibrateToTime(a,e,target);updatePersonalBest(a,e,target);a.accolades.push({title:`${EVENT_LABEL[e]} インターハイ${idx===0?"優勝":(idx+1)+"位"}`,competitionId:cid,competition:"全国高校総体",stage:"A_final",event:e,rank:idx+1,time:target,season:state.season,organization:a.organization,schoolCategory:"high",gradeAtRecord:a.grade});a.discovered=true})}
   for(let a of highs)if(a.accolades.some(x=>x.competitionId===cid)){
     alignScoutSpecialty(a);refreshCpuPBs(a);
     for(let title of a.accolades.filter(x=>x.competitionId===cid))recordIndividualResult(a,title.event,title.time,"全国高校総体","決勝",{season:title.season,slot:null});
@@ -2119,8 +2129,8 @@ function diversifyLegacyCpuRoster(){
     for(let k of STATS){let old=a.stats[k];a.stats[k]=round2(clamp(old+shift,40,old>=176?188:175))}
     diversifyCpuIndividual(a);
     applyCpuCompetitionProfile(a);
-    for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))a.bestTimes[e]=round2(a.bestTimes[e]*expectedTime(a,e)/before[e]);
-    for(let title of a.accolades||[])if(EVENTS.includes(title.event)&&Number.isFinite(title.time))a.bestTimes[title.event]=Math.min(a.bestTimes[title.event]??Infinity,title.time);
+    for(let e of EVENTS)if(Number.isFinite(a.bestTimes?.[e]))updatePersonalBest(a,e,a.bestTimes[e]*expectedTime(a,e)/before[e]);
+    for(let title of a.accolades||[])updatePersonalBest(a,title.event,title.time);
     if(!a.cpuStatCeilings){
       let peak=166+(profileHash(a.id+":peak")%901)/100;
       a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(Math.max(a.stats[k],peak+(profileHash(a.id+k)%401)/100-2))]));
@@ -2346,7 +2356,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.42",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.43",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2522,6 +2532,28 @@ function refreshRecordRankings(){
     if(category!=="japan")upsertRecordRanking("japan",deepClone(record));
   }
   migrateRecordSchoolInfo();
+  reconcilePersonalBests();
+}
+function reconcilePersonalBests(){
+  const athletes=[...activeAthletes(),...(state.retiredArchive||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)];
+  const byId=new Map();
+  for(const a of athletes){
+    if(!athleteRecordCategory(a))continue;
+    if(!byId.has(a.id))byId.set(a.id,[]);
+    byId.get(a.id).push(a);
+  }
+  const apply=(id,event,time)=>{for(const a of byId.get(id)||[])updatePersonalBest(a,event,time)};
+  for(const book of Object.values(state.recordRankings||{}))for(const [event,rows] of Object.entries(book))for(const record of rows){
+    if(record.kind!=="relay")apply(record.athleteId,event,record.time);
+  }
+  for(const [event,rows] of Object.entries(state.teamTop10||{}))for(const record of rows){
+    if(record.kind!=="relay")apply(record.athleteId,event,record.time);
+  }
+  for(const [event,record] of Object.entries(state.recordBook||{}))if(record)apply(record.athleteId,event,record.time);
+  for(const a of athletes)if(byId.has(a.id)){
+    for(const record of [...(a.raceHistory||[]),...(a.accolades||[])])apply(a.id,record.event,record.time);
+    for(const [event,time] of Object.entries(a.bestTimes||{}))apply(a.id,event,time);
+  }
 }
 function renameRecordOrganization(oldName,newName){
   for(let book of Object.values(state.recordRankings||{}))for(let rows of Object.values(book))for(let r of rows)if(r.organization===oldName)r.organization=newName;
@@ -2532,6 +2564,7 @@ function renameRecordOrganization(oldName,newName){
 }
 function recordIndividualResult(a,event,time,meet,stage,stamp={}){
   let category=stamp.category||athleteRecordCategory(a);if(!category)return;
+  updatePersonalBest(a,event,time);
   let record={kind:"individual",event,time:round2(time),athleteId:a.id,name:a.name,organization:stamp.organization??a.organization,
     season:stamp.season??activeCompetitionSeason(),slot:stamp.slot===undefined?activeCompetitionSlot():stamp.slot,meet,stage,
     ...recordSchoolInfo(a,stamp.season??activeCompetitionSeason(),category==="high"||category==="university"?category:null)};
@@ -3109,10 +3142,8 @@ function maintainWorldPopulation(){
   // Apply each new category once, after own freshmen have left the CPU pool.
   for(let a of state.world){
     if(a.alumni||a.retired||(a.cpuCompetitionProfileVersion===2&&a.cpuCompetitionCategory===a.category))continue;
-    let previous=deepClone(a.bestTimes||{});
     if(!applyCpuCompetitionProfile(a))continue;
     refreshCpuPBs(a);
-    for(let e of EVENTS)if(Number.isFinite(previous[e]))a.bestTimes[e]=Math.min(a.bestTimes[e],previous[e]);
   }
 }
 
