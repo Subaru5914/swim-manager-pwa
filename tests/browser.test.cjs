@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.47', 'v1.46'));
+      data = Buffer.from(data.toString().replaceAll('v1.48', 'v1.47'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -388,7 +388,7 @@ test('checkpoint popups, post-intercollege retirement and hidden growth types wo
         await page.locator('.modal-season-notice').waitFor();
         assert.match(await page.locator('.modal-season-notice').innerText(),/発展途上 → 中堅/);
         assert.match(await page.locator('.modal-season-notice').innerText(),/引退確認 選手/);
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.47-season-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-season-${mobile?'iphone':'pc'}.png`)});}
         await page.reload();await page.locator('.modal-season-notice').waitFor();
         assert.equal(await page.evaluate(()=>state.reputation),85);assert.equal(await page.evaluate(()=>state.reputationEvaluations.length),1);
         await page.locator('#seasonNoticeNext').click();await page.reload();
@@ -622,7 +622,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
           await row.scrollIntoViewIfNeeded();
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.47-scout-${mobile?'iphone':'pc'}.png`)});
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-scout-${mobile?'iphone':'pc'}.png`)});
         }
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
@@ -783,6 +783,93 @@ test('invalid saved PBs stay ineligible and a valid first race restores PB badge
   }finally{await app.close()}
 });
 
+test('winter cup names follow their dates through entry, race results, history and records on PC and iPhone',async()=>{
+  const app=await fixture();
+  try{
+    for(const options of [{viewport:{width:1280,height:800}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+      const context=await testContext(options);
+      try{
+        const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+        await page.evaluate(()=>showMeetSchedule());
+        const schedule=await page.locator('.schedule-table tbody').innerText();
+        assert.match(schedule,/1月 第2週後半\s+Higashikata CUP/);assert.match(schedule,/2月 第2週後半\s+ダイナミオープン/);
+        await page.locator('.modal-schedule #x').click();
+        for(const [slot,name] of [[76,'Higashikata CUP'],[84,'ダイナミオープン']]){
+          await page.evaluate(slot=>{state.slot=slot;state.players[0].stats=Object.fromEntries(STATS.map(k=>[k,200]));renderAll();openMeetEntry('joint_record',slot,state.season,{fr100:[state.players[0].id]},{})},slot);
+          assert.match(await page.locator('#homeMeet').innerText(),new RegExp(name));
+          assert.equal(await page.locator('.modal h2').innerText(),name+' エントリー');
+          await page.locator('#confirmEntry').click();assert.equal(await page.locator('.modal-entry-confirm h2').innerText(),name+' エントリー確認');
+          await page.locator('#goRace').click();
+          for(let step=0;step<40;step++){
+            await page.waitForSelector('.modal-race-live, .modal-race-result, .modal-event-result, .modal-meet-results');
+            if(await page.locator('.modal-meet-results').count())break;
+            if(await page.locator('.modal-race-live').count()){await page.locator('#skipEvent').click();continue}
+            if(await page.locator('#nextGroup').count()){await page.locator('#nextGroup').click();continue}
+            if(await page.locator('#nextEv').count()){await page.locator('#nextEv').click();continue}
+            assert.fail('unexpected cup screen');
+          }
+          assert.equal(await page.locator('.modal-meet-results h2').innerText(),name+' 結果');
+          const own=await page.evaluate(()=>{
+            const a=state.players[0],rows=a.raceHistory.filter(r=>r.meet==='joint_record'&&r.slot===state.slot);
+            return {id:a.id,stages:rows.map(r=>r.stage),rank:rows.find(r=>r.stage==='A決勝')?.rank};
+          });
+          assert.deepEqual(own.stages,['予選','A決勝']);assert.ok(own.rank>=1&&own.rank<=8);
+          await page.locator('.modal-meet-results #x').click();await page.evaluate(id=>showPlayerDetail(id),own.id);
+          assert.match(await page.locator('#historyTable').innerText(),new RegExp(name));
+          assert.ok(await page.locator('#historyTable .history-rank').count()>0);
+          if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank').first().scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-cup-history-${slot}-${options.isMobile?'iphone':'pc'}.png`)})}
+          await page.locator('.modal-player-detail #x').click();await page.locator('#showTeamTop10Btn').click();
+          await page.locator('#teamTop10Event').selectOption('fr100');
+          assert.match(await page.locator('#teamTop10Body').innerText(),/Higashikata CUP|ダイナミオープン/);
+          await page.locator('#closeTeamTop10').click();
+        }
+        await page.evaluate(()=>saveLocal());await page.reload();
+        await page.evaluate(()=>showPlayerDetail(state.players[0].id));
+        const history=await page.locator('#historyTable').innerText();assert.match(history,/Higashikata CUP/);assert.match(history,/ダイナミオープン/);
+        assert.deepEqual(errors,[]);
+      }finally{await context.close()}
+    }
+  }finally{await app.close()}
+});
+
+test('player history highlights final medals and fourth-to-eighth places while prelims and own time trials keep ordinary ranks',async()=>{
+  const app=await fixture();
+  try{
+    for(const options of [{viewport:{width:1280,height:800}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+      const context=await testContext(options);
+      try{
+        const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);
+        await page.evaluate(()=>{
+          const a=state.players[0];a.raceHistory=[];
+          for(let rank=1;rank<=9;rank++){
+            a.raceHistory.push({season:2026,slot:76,meet:'joint_record',event:'fr100',stage:rank%2?'A決勝':'決勝',rank,time:48+rank,newlyCleared:[],pb:false});
+            a.raceHistory.push({season:2026,slot:84,meet:'joint_record',event:'fr100',stage:'予選',rank,time:48+rank,newlyCleared:[],pb:false});
+            a.raceHistory.push({season:2026,slot:8,meet:'team_trial',event:'fr100',stage:'決勝',rank,time:48+rank,newlyCleared:[],pb:false});
+          }
+          saveLocal();showPlayerDetail(a.id);
+        });
+        assert.equal(await page.locator('#historyTable .history-rank-first').count(),1);
+        assert.equal(await page.locator('#historyTable .history-rank-second').count(),1);
+        assert.equal(await page.locator('#historyTable .history-rank-third').count(),1);
+        assert.equal(await page.locator('#historyTable .history-rank-place').count(),5);
+        const finalRows=page.locator('#historyTable tbody tr').filter({hasText:'Higashikata CUP'});
+        for(let i=0;i<9;i++){
+          const rank=finalRows.nth(i).locator('td').nth(4);assert.equal(await rank.innerText(),i<3?(i+1)+'位':i<8?(i+1)+'位 入賞':'9');
+        }
+        assert.equal(await page.locator('#historyTable tbody tr').filter({hasText:'予選'}).locator('.history-rank').count(),0);
+        assert.equal(await page.locator('#historyTable tbody tr').filter({hasText:'自チーム記録会'}).locator('.history-rank').count(),0);
+        const colors=await page.locator('#historyTable .history-rank').evaluateAll(rows=>rows.slice(0,3).map(row=>getComputedStyle(row).backgroundColor));
+        assert.equal(new Set(colors).size,3);
+        if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank-first').scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-history-awards-${options.isMobile?'iphone':'pc'}.png`)})}
+        await page.locator('#historySort').selectOption('only_ba50');assert.equal(await page.locator('#historyTable .history-rank').count(),0);
+        await page.locator('#historySort').selectOption('event');assert.equal(await page.locator('#historyTable .history-rank').count(),8);
+        await page.locator('.modal-player-detail #x').click();await page.reload();await page.evaluate(()=>showPlayerDetail(state.players[0].id));
+        assert.equal(await page.locator('#historyTable .history-rank').count(),8);assert.deepEqual(errors,[]);
+      }finally{await context.close()}
+    }
+  }finally{await app.close()}
+});
+
 test('entry badges expose qualified, unqualified and missing PB in both views; standards preserve entry', async () => {
   const app = await fixture();
   const context = await testContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
@@ -923,7 +1010,7 @@ test('world opening offers vacant slots to registered own swimmers, saves unlimi
         assert.equal(await first.inputValue(),target.own[0]);
         const box=await page.locator('.modal-world-additional').evaluate(m=>{const r=m.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight}});
         assert.ok(box.left>=-1&&box.right<=box.width+1&&box.top>=-1&&box.bottom<=box.height+1,JSON.stringify(box));
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.47-world-additional-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-world-additional-${mobile?'iphone':'pc'}.png`)});}
         await page.locator('#confirmWorldAdditional').click();
         assert.equal(await page.evaluate(()=>Object.values(state.japanTeam.additionalIndividual).flat().length),7);
         assert.equal(await page.evaluate(()=>JSON.stringify([state.japanTeam.individual,state.japanTeam.relays])),target.base);
@@ -1030,7 +1117,7 @@ test('new stroke sprints show standards, remain unavailable as specialties and c
         await page.locator('#std').click();
         for(const label of ['50mBa','50mBr','50mFly'])assert.match(await page.locator('.modal-standards').innerText(),new RegExp(label));
         assert.match(await page.locator('.modal-standards').innerText(),/世界水泳2025/);await page.locator('.modal-standards #x').click();
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.47-sprint-entry-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-sprint-entry-${mobile?'iphone':'pc'}.png`)});}
         // Hold normal form here to isolate the new program and representative-selection paths.
         await page.evaluate(()=>{rng=()=>.5;});
         await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
@@ -1103,7 +1190,7 @@ test('legacy sprint rankings and every top ten agree on PC and iPhone, include o
           assert.match(await page.locator('#teamTop10Body .active-athlete').innerText(),/2年/);
           await page.locator('#closeTeamTop10').click();
         }
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.47-sprint-records-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.48-sprint-records-${mobile?'iphone':'pc'}.png`)});}
         const saved=await page.evaluate(()=>{saveLocal();return JSON.stringify([state.recordRankings,state.teamTop10]);});
         await page.reload();assert.equal(await page.evaluate(()=>JSON.stringify([state.recordRankings,state.teamTop10])),saved);assert.deepEqual(errors,[]);
       }finally{await context.close();}
@@ -1111,7 +1198,7 @@ test('legacy sprint rankings and every top ten agree on PC and iPhone, include o
   }finally{await app.close();}
 });
 
-test('PWA upgrades its v1.46 cache to v1.47 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.47 cache to v1.48 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -1120,7 +1207,7 @@ test('PWA upgrades its v1.46 cache to v1.47 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.46'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.47'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -1130,19 +1217,19 @@ test('PWA upgrades its v1.46 cache to v1.47 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.47') && !keys.includes('swim-manager-pwa-v1.46');
+      return keys.includes('swim-manager-pwa-v1.48') && !keys.includes('swim-manager-pwa-v1.47');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.47/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.47');
+    assert.match(await page.title(), /v1\.48/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.48');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.47/);
+    assert.match(await page.title(), /v1\.48/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);

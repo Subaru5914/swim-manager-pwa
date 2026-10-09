@@ -297,6 +297,68 @@ test('CPU college entries follow specialties and three-per-event / three-per-ath
   }
 });
 
+test('both winter cups include a changing subset of all four CPU age categories and retain PB-seeded lanes',()=>{
+  for(const seed of [12345,5914]){
+    const run=game(seed);
+    const meets=json(run,`(()=>{
+      const results=[];
+      for(const slot of [76,84]){
+        state.slot=slot;const result=executeMeet('joint_record',{fr100:[state.players[0].id]},{});
+        const counts={},ids=new Set(),errors=[];
+        for(const [event,rows] of Object.entries(result.events)){
+          for(const row of rows.prelim.filter(r=>r.source==='CPU')){
+            const a=row.athlete;counts[a.category]=(counts[a.category]||0)+1;ids.add(a.id);
+            if(!allowedCpu(a,'joint_record')||!cpuEntryEvents(a).includes(event))errors.push(a.id);
+          }
+          for(const heat of rows.heats){
+            if(heat.length>8)errors.push('overfull heat');
+            const seeded=heat.slice().sort((a,b)=>entrySeedTime(a,event)-entrySeedTime(b,event)||SEEDED_LANES.indexOf(a.heatLane)-SEEDED_LANES.indexOf(b.heatLane));
+            if(seeded.some((r,i)=>r.heatLane!==SEEDED_LANES[i]))errors.push('unseeded lanes');
+          }
+          if(rows.prelim.length>preliminaryHeatCount('joint_record',event)*8)errors.push('overfull event');
+        }
+        results.push({name:meetLabel(result.meet,result.slot),counts,ids:[...ids].sort(),errors,
+          eligible:state.world.filter(a=>allowedCpu(a,'joint_record')).length,own:result.events.fr100.prelim.some(r=>r.source==='PLAYER')});
+      }
+      return results;
+    })()`);
+    assert.deepEqual(meets.map(r=>r.name),['Higashikata CUP','ダイナミオープン']);
+    for(const result of meets){
+      assert.deepEqual(Object.keys(result.counts).sort(),['adult','high','middle','university']);
+      assert.ok(result.ids.length>0&&result.ids.length<result.eligible);assert.ok(result.own);assert.deepEqual(result.errors,[]);
+    }
+    assert.notDeepEqual(meets[0].ids,meets[1].ids);
+  }
+});
+
+test('actual college prelims enforce three swimmers per university/event and three events per CPU and own swimmer',()=>{
+  for(const seed of [12345,5914]){
+    const run=game(seed);
+    const meets=json(run,`(()=>{
+      const rows=[];
+      for(const [meet,slot] of [['kansai_college',30],['intercollege',42]]){
+        state.slot=slot;
+        for(const a of state.players)for(const event of SPECIALTY_EVENTS)a.bestTimes[event]=standardFor(meet,event)-.01;
+        const entries=Object.fromEntries(EVENTS.map(e=>[e,state.players.map(a=>a.id)]));
+        const result=executeMeet(meet,entries,{}),counts={},organizations={},sources={},errors=[];
+        for(const [event,field] of Object.entries(result.events))for(const row of field.prelim){
+          const a=row.athlete,org=row.source==='PLAYER'?state.playerUniversity:a.organization;
+          counts[a.id]=(counts[a.id]||0)+1;organizations[org+'|'+event]=(organizations[org+'|'+event]||0)+1;
+          sources[row.source]=(sources[row.source]||0)+1;
+          if(!SPECIALTY_EVENTS.includes(event)||!qualified(a,meet,event))errors.push('ineligible event');
+          if(row.source==='CPU'&&(!allowedCpu(a,meet)||!cpuEntryEvents(a).includes(event)))errors.push('ineligible CPU');
+        }
+        rows.push({meet,counts:Object.values(counts),organizations:Object.values(organizations),sources,errors});
+      }
+      return rows;
+    })()`);
+    for(const result of meets){
+      assert.ok(result.sources.CPU>0&&result.sources.PLAYER>0);assert.ok(result.counts.every(n=>n<=3));
+      assert.ok(result.organizations.every(n=>n<=3));assert.deepEqual(result.errors,[]);
+    }
+  }
+});
+
 test('the eight fastest swimmers across all prelim heats qualify for the final', () => {
   const run = game();
   const result = json(run, `(()=>{
