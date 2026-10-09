@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.37</title>
+<title>大学競泳監督シミュレーション PWA版 v1.38</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1149,7 +1149,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   .final-qualifier{font-size:9px;padding:1px 4px}
 }
 
-/* Scouting priorities and probability details share one layout on PC and touch. */
+/* Scouting wishes share one layout on PC and touch. */
 #scoutTable th:nth-child(1),#scoutTable td:nth-child(1){width:14%}
 #scoutTable th:nth-child(2),#scoutTable td:nth-child(2){width:14%}
 #scoutTable th:nth-child(3),#scoutTable td:nth-child(3){width:15%}
@@ -1159,13 +1159,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 #scoutTable th:nth-child(7),#scoutTable td:nth-child(7){width:11%}
 #scoutTable .scout-preferences{white-space:normal;line-height:1.4}
 #scoutTable .scout-preferences .tag{white-space:normal}
-.scout-ranked-tag{font-size:10px;padding:2px 4px}
 .scout-recruited{background:#e8f7ee}
-.scout-probability{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.modal-scout-probability{width:min(560px,calc(var(--game-vw) * 90))!important;max-width:560px!important}
-.scout-probability-breakdown{margin:14px 0}
-.scout-probability-breakdown>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
-.scout-probability-breakdown b{white-space:nowrap}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -1181,7 +1175,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.37</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.38</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1336,7 +1330,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
       <label>並び順 <select id="scoutSortMode"><option value="default">肩書・ランキング順</option><option value="pb">種目別・PBが速い順</option></select></label>
     </div>
     <p class="muted small">高校生区分の各種目50位以内の高校3年生は、専門種目以外でのランクインも含めて掲載します。専門種目を選ぶとPB順になります。</p>
-    <p class="muted small">自大学は関西の大学です。「世界を目指す」希望は専門泳法の施設平均Lv（IMは4泳法）、「関西希望」は所在地が合うことで成功率が上がります。「内訳」で計算を確認できます。</p>
+    <p class="muted small">自大学は関西の大学です。「世界を目指す」希望は専門泳法の施設平均Lv（IMは4泳法）、「関西希望」は所在地が合うことで成功率が上がります。</p>
     <div id="scoutTable" class="table-wrap" style="margin-top:10px"></div>
   </div>
 </section>
@@ -1497,7 +1491,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.37";
+  state.version="pwa-v1.38";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2280,7 +2274,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.37",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.38",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3206,13 +3200,24 @@ function scoutHighSchoolRank(a,e,rankings=null){
   return field.byId.get(a.id)??1+field.rows.filter(b=>b.id!==a.id&&b.bestTimes[e]<time).length;
 }
 function scoutRankedEvents(a,rankings){return EVENTS.filter(e=>{const rank=rankings.get(e).byId.get(a.id);return rank!=null&&rank<=50})}
-function ensureScoutPreferences(a){
+const SCOUT_WORLD_RANK_LIMIT=8,SCOUT_WORLD_WISH_RATE=.15,SCOUT_KANSAI_WISH_RATE=.10;
+function ensureScoutPreferences(a,rankings=null){
   if(a.category!=="high"||a.grade!==3)return {worldAmbition:false,preferredRegion:null};
   let preference=a.scoutPreferences;
-  if(preference?.version===1&&typeof preference.worldAmbition==="boolean"&&(preference.preferredRegion===null||preference.preferredRegion==="kansai"))return preference;
-  const seed=state.cpuCompetitionSeed??state.rngSeed,roll=profileHash(`${seed}:${a.id}:scout-preferences-v1`)%10000/10000;
-  // Optional wishes are generated once without consuming the race/training RNG.
-  a.scoutPreferences={version:1,worldAmbition:roll>=.45&&roll<.70||roll>=.92,preferredRegion:roll>=.70?"kansai":null};
+  const valid=typeof preference?.worldAmbition==="boolean"&&(preference.preferredRegion===null||preference.preferredRegion==="kansai");
+  if(preference?.version===2&&valid)return preference;
+  const seed=state.cpuCompetitionSeed??state.rngSeed,roll=key=>{
+    let hash=profileHash(`${seed}:${a.id}:scout-preferences-v2:${key}`);
+    hash=Math.imul(hash^(hash>>>16),0x7feb352d);hash=Math.imul(hash^(hash>>>15),0x846ca68b);
+    return ((hash^(hash>>>16))>>>0)/4294967296;
+  };
+  const rank=scoutHighSchoolRank(a,scoutSpecialty(a),rankings),eligible=rank!=null&&rank<=SCOUT_WORLD_RANK_LIMIT;
+  const legacy=preference?.version===1&&valid;
+  // Thin old wishes once; old no-wish candidates do not gain new wishes.
+  // Rank eligibility is checked when assigning the wish, then the wish stays saved.
+  const world=eligible&&(legacy?preference.worldAmbition&&roll("world")<SCOUT_WORLD_WISH_RATE/.33:roll("world")<SCOUT_WORLD_WISH_RATE);
+  const kansai=legacy?preference.preferredRegion==="kansai"&&roll("region")<SCOUT_KANSAI_WISH_RATE/.30:roll("region")<SCOUT_KANSAI_WISH_RATE;
+  a.scoutPreferences={version:2,worldAmbition:world,preferredRegion:kansai?"kansai":null};
   return a.scoutPreferences;
 }
 function scoutFacilityLevel(e){
@@ -3225,7 +3230,7 @@ function scoutProbabilityDetails(a,rankings=null){
   const difficulty=rank==null?0:Math.exp(-(rank-1)/45);
   const reputation=clamp(+state.reputation||0,0,550),reputationPower=Math.pow(clamp(reputation/500,0,1),.9);
   const base=.58-.54*difficulty,reputationBonus=reputationPower*(.36+.12*difficulty),untitledBonus=title?0:.04;
-  const preference=ensureScoutPreferences(a),facilityLevel=scoutFacilityLevel(event);
+  const preference=ensureScoutPreferences(a,rankings),facilityLevel=scoutFacilityLevel(event);
   const facilityBonus=preference.worldAmbition ? .22*facilityLevel/100 : 0;
   // Our university belongs to Kansai; changing its display name does not relocate it.
   const regionBonus=preference.preferredRegion==="kansai" ? .18 : 0;
@@ -3236,7 +3241,7 @@ function scoutProbability(a,rankings=null){return scoutProbabilityDetails(a,rank
 function scoutRecruitCount(){return state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired&&(a.scouted||state.recruits.includes(a.id))).length}
 function refreshScoutBoard(rankings=highSchoolScoutRankings()){
   const highs=state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired);
-  highs.forEach(ensureScoutPreferences);
+  highs.forEach(a=>ensureScoutPreferences(a,rankings));
   const recruited=highs.filter(a=>a.scouted||state.recruits.includes(a.id));
   const available=highs.filter(a=>!recruited.includes(a));
   const ih=available.filter(a=>(a.accolades||[]).some(x=>x.competition==="全国高校総体"))
@@ -4181,20 +4186,6 @@ function scoutPreferenceHtml(details){
   if(preference.preferredRegion==="kansai")lines.push('<div><span class="tag good">関西の大学希望</span></div>');
   return lines.length?`<div class="scout-preferences">${lines.join("")}</div>`:'<span class="muted small">希望指定なし</span>';
 }
-function showScoutProbability(id){
-  const a=state.world.find(x=>x.id===id);if(!a)return;
-  const d=scoutProbabilityDetails(a),percent=value=>`${(value*100).toFixed(1)}%`,bonus=value=>`+${(value*100).toFixed(1)}ポイント`;
-  const rows=[['高校ランキングによる基礎成功率',percent(d.base)],['大学評判 '+d.reputation.toFixed(1),bonus(d.reputationBonus)],
-    [d.title?'肩書あり':'肩書なし',bonus(d.untitledBonus)],
-    ['世界を目指す希望・対象施設',bonus(d.facilityBonus)],['関西希望・所在地一致',bonus(d.regionBonus)]];
-  const m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(a.name)}の勧誘成功率</h2><button id="closeScoutProbability">閉じる</button></div>
-    <p>${specialtyTag(d.event)} PB ${fmt(a.bestTimes?.[d.event])} ／ ${d.rank==null?'高校順位なし':`高校${d.rank}位`}</p>
-    ${scoutPreferenceHtml(d)}
-    <div class="scout-probability-breakdown">${rows.map(([label,value])=>`<div><span>${esc(label)}</span><b>${value}</b></div>`).join("")}</div>
-    <p><b>今回の成功率 ${percent(d.probability)}</b></p>
-    <p class="muted small">PB順位が高いほど難しく、大学評判が高いほど成功しやすくなります。同タイムは同じ順位で計算します。肩書なしは+4ポイント、世界を目指す希望は対象施設平均Lv.100で最大+22ポイント、関西希望は+18ポイント。成功率の上限は97%です。</p>`);
-  m.classList.add("modal-scout-probability");m.querySelector("#closeScoutProbability").onclick=()=>closeModal();
-}
 function renderScout(){
   const selectedEvent=document.getElementById("scoutEventFilter").value,sortMode=document.getElementById("scoutSortMode").value;
   const rankings=highSchoolScoutRankings(),recruitedCount=scoutRecruitCount();
@@ -4211,19 +4202,18 @@ function renderScout(){
     <tbody>${rows.map(({athlete:a,info,event:e})=>{
       const details=scoutProbabilityDetails(a,rankings),pct=details.probability*100,joined=a.scouted||state.recruits.includes(a.id);
       const titleText=info.title?esc(info.title.title):(a.discovered?"合同記録会出場":"肩書なし");
-      const ranked=scoutRankedEvents(a,rankings).length>0,pc=pct>=55?"easy":pct>=25?"mid":pct>=8?"hard":"very-hard";
+      const pc=pct>=55?"easy":pct>=25?"mid":pct>=8?"hard":"very-hard";
       return`<tr class="${joined?'scout-recruited':''}">
-        <td><span class="athlete-name">${esc(a.name)}</span>${ranked?'<br><span class="tag scout-ranked-tag">高校50位以内</span>':''}</td>
+        <td><span class="athlete-name">${esc(a.name)}</span></td>
         <td>${esc(a.organization)} <span class="grade-pill">高${a.grade}</span></td>
         <td>${titleText}</td>
         <td>${specialtyTag(e)} <b>${fmt(a.bestTimes[e])}</b><div class="small muted">${details.rank==null?'高校順位なし':`高校${details.rank}位`}</div></td>
         <td>${scoutPreferenceHtml(details)}</td>
-        <td><div class="scout-probability"><span class="prob-pill ${pc}">${pct.toFixed(1)}%</span><button data-scout-probability="${a.id}">内訳</button></div></td>
+        <td><span class="prob-pill ${pc}">${pct.toFixed(1)}%</span></td>
         <td><button data-scout="${a.id}" class="primary" ${joined||recruitedCount>=8?'disabled':''}>${joined?'加入予定':recruitedCount>=8?'枠満員':'1ptで勧誘'}</button></td>
       </tr>`;
     }).join("")||'<tr><td colspan="7" class="muted">この専門種目のスカウト候補はいません。</td></tr>'}</tbody></table>`;
   document.querySelectorAll("[data-scout]").forEach(b=>b.onclick=()=>doScout(b.dataset.scout));
-  document.querySelectorAll("[data-scout-probability]").forEach(b=>b.onclick=()=>showScoutProbability(b.dataset.scoutProbability));
 }
 function renderFacilities(){
   document.getElementById("facilityGrid").innerHTML=STATS.map(k=>{

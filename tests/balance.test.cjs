@@ -312,7 +312,7 @@ test('school ranking and reputation drive scouting while untitled swimmers recei
     const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
     return [0,10,35,160,310,600].flatMap(rep=>[0,9,49,99,199].map(index=>{
       state.reputation=rep;
-      const a={...deepClone(field[index]),id:'ranked-test-'+index,category:'high',grade:3,specialty:'fr100',accolades:[],scoutPreferences:{version:1,worldAmbition:false,preferredRegion:null}};
+      const a={...deepClone(field[index]),id:'ranked-test-'+index,category:'high',grade:3,specialty:'fr100',accolades:[],scoutPreferences:{version:2,worldAmbition:false,preferredRegion:null}};
       const ordinary=scoutProbability(a),rank=scoutProbabilityDetails(a).rank;
       a.accolades=[{competition:'全国高校総体',event:'fr100',rank:1,season:2026}];
       return {rep,rank,ordinary,titled:scoutProbability(a)};
@@ -416,7 +416,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.37');
+  assert.equal(result.version, 'pwa-v1.38');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -503,7 +503,7 @@ test('scouting uses specialty PB rank rather than ability snapshots and title ab
     const field=state.world.filter(a=>a.category==='high').sort((a,b)=>a.bestTimes.fr100-b.bestTimes.fr100);
     const make=(time,ability,titleRank=null)=>({id:'pb-scout-'+ability+'-'+titleRank,category:'high',grade:3,
       stats:Object.fromEntries(STATS.map(k=>[k,ability])),specialty:'fr100',bestTimes:{fr100:time},
-      scoutPreferences:{version:1,worldAmbition:false,preferredRegion:null},
+      scoutPreferences:{version:2,worldAmbition:false,preferredRegion:null},
       accolades:titleRank?[{competition:'全国高校総体',event:'fr100',rank:titleRank,season:2026}]:[]});
     const fast=field[0].bestTimes.fr100,slow=field[79].bestTimes.fr100;
     return {slow:scoutProbability(make(slow,80)),fast:scoutProbability(make(fast,80)),strongStatsSamePB:scoutProbability(make(fast,173)),

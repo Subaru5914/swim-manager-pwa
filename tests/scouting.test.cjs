@@ -36,7 +36,7 @@ test('matching wishes add facility and region bonuses while unrelated facilities
     state.reputation=35;
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.specialty='fr100';a.accolades=[];a.bestTimes.fr100=JAPAN_RECORD.fr100;
-    a.scoutPreferences={version:1,worldAmbition:false,preferredRegion:null};
+    a.scoutPreferences={version:2,worldAmbition:false,preferredRegion:null};
     state.facilities=Object.fromEntries(STATS.map(k=>[k,0]));const ordinary=scoutProbability(a);
     state.facilities=Object.fromEntries(STATS.map(k=>[k,100]));const withoutWish=scoutProbability(a);
     a.scoutPreferences.worldAmbition=true;
@@ -63,7 +63,7 @@ test('equal specialty PBs have equal difficulty, faster PBs get harder and other
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=state.world.find(a=>a.category==='high'&&a.grade===3),b=deepClone(a);
-    a.specialty='fr100';a.accolades=[];a.scoutPreferences={version:1,worldAmbition:false,preferredRegion:null};
+    a.specialty='fr100';a.accolades=[];a.scoutPreferences={version:2,worldAmbition:false,preferredRegion:null};
     a.bestTimes.fr100=JAPAN_RECORD.fr100*1.1;b.id='same-pb';b.bestTimes.fr100=a.bestTimes.fr100;b.specialty=a.specialty;b.accolades=[];b.scoutPreferences=deepClone(a.scoutPreferences);state.world.push(b);
     const first=scoutProbabilityDetails(a),same=scoutProbabilityDetails(b);
     state.world.push({...deepClone(a),id:'faster-adult',category:'adult',bestTimes:{fr100:1}});
@@ -89,7 +89,7 @@ test('optional hopes survive reload and old-save migration once without consumin
     return {own:JSON.stringify(state.players)===own,records:JSON.stringify(state.recordRankings)===records,
       stats:JSON.stringify(state.world.map(a=>[a.id,a.stats,a.bestTimes,a.accolades]))===stats,rng:state.rngSeed===rngSeed,
       stable:JSON.stringify(state)===first,none:preferences.some(p=>!p.worldAmbition&&!p.preferredRegion),
-      world:preferences.some(p=>p.worldAmbition),regional:preferences.some(p=>p.preferredRegion==='kansai')};
+      world:state.world.filter(a=>a.category==='high'&&a.grade===3&&a.scoutPreferences.worldAmbition).every(a=>scoutHighSchoolRank(a,scoutSpecialty(a))<=8),regional:preferences.some(p=>p.preferredRegion==='kansai')};
   })())`));
   assert.ok(Object.values(result).every(Boolean),JSON.stringify(result));
 });
@@ -113,4 +113,61 @@ test('actual scouting uses the displayed odds, charges attempts once, respects e
   assert.ok(result.failure&&result.success&&result.repeat&&result.cap&&result.enrolled&&result.removed&&result.newRanking,JSON.stringify(result));
   assert.equal(result.classSize,8);assert.equal(result.renders,9);assert.equal(result.saves,9);
   assert.ok(alerts.some(text=>text.includes('スカウトに失敗'))&&alerts.some(text=>text.includes('スカウトに成功'))&&alerts.some(text=>text.includes('8名')));
+});
+
+test('world wishes are rare and only assigned at specialty ranks 1 through 8; Kansai wishes occur about ten percent',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const template=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));delete template.scoutPreferences;
+    state.world=Array.from({length:20},(_,i)=>({...deepClone(template),id:'wish-rank-'+i,specialty:'fr100',bestTimes:{fr100:50+i*.1}}));
+    const rankings=highSchoolScoutRankings(),rngSeed=state.rngSeed,n=2000;
+    let fastWorld=0,eighthWorld=0,ninthWorld=0,missingWorld=0,kansai=0,stored=null;
+    for(let i=0;i<n;i++){
+      for(const [kind,time] of [['fast',49.9],['eighth',50.7],['ninth',50.8],['missing',null]]){
+        const a={...deepClone(template),id:'wish-sample-'+kind+'-'+i,specialty:'fr100',bestTimes:{fr100:time}};
+        const p=ensureScoutPreferences(a,rankings);
+        if(kind==='fast'){fastWorld+=p.worldAmbition;kansai+=p.preferredRegion==='kansai';if(p.worldAmbition&&!stored)stored=a}
+        if(kind==='eighth')eighthWorld+=p.worldAmbition;
+        if(kind==='ninth')ninthWorld+=p.worldAmbition;
+        if(kind==='missing')missingWorld+=p.worldAmbition;
+      }
+    }
+    const saved=JSON.stringify(stored.scoutPreferences);stored.bestTimes.fr100=100;
+    ensureScoutPreferences(stored,rankings);
+    return {n,fastWorld,eighthWorld,ninthWorld,missingWorld,kansai,rng:rngSeed===state.rngSeed,stable:saved===JSON.stringify(stored.scoutPreferences)};
+  })())`));
+  assert.ok(result.fastWorld/result.n>.11&&result.fastWorld/result.n<.19,JSON.stringify(result));
+  assert.ok(result.eighthWorld/result.n>.11&&result.eighthWorld/result.n<.19,JSON.stringify(result));
+  assert.ok(result.kansai/result.n>.07&&result.kansai/result.n<.13,JSON.stringify(result));
+  assert.equal(result.ninthWorld,0);assert.equal(result.missingWorld,0);assert.ok(result.rng&&result.stable);
+});
+
+test('v1 wishes are thinned once, nonleaders lose world wishes, and no-wish or signed candidates retain their status',()=>{
+  const {run}=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const template=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));delete template.scoutPreferences;
+    state.world=Array.from({length:20},(_,i)=>({...deepClone(template),id:'legacy-rank-'+i,specialty:'fr100',bestTimes:{fr100:50+i*.1}}));
+    const rankings=highSchoolScoutRankings(),n=2000;
+    let world=0,kansai=0,invalidWorld=0,added=0;
+    for(let i=0;i<n;i++){
+      for(const [kind,time] of [['leader',49.9],['outside',51],['none',49.9]]){
+        const a={...deepClone(template),id:'legacy-wish-'+kind+'-'+i,specialty:'fr100',bestTimes:{fr100:time},
+          scoutPreferences:{version:1,worldAmbition:kind!=='none',preferredRegion:kind==='none'?null:'kansai'}};
+        const p=ensureScoutPreferences(a,rankings);
+        if(kind==='leader'){world+=p.worldAmbition;kansai+=p.preferredRegion==='kansai'}
+        if(kind==='outside')invalidWorld+=p.worldAmbition;
+        if(kind==='none')added+=p.worldAmbition||p.preferredRegion!==null;
+      }
+    }
+    for(const a of state.world)a.scoutPreferences={version:1,worldAmbition:true,preferredRegion:'kansai'};
+    state.world[0].scouted=true;state.recruits=[state.world[0].id];const recruits=JSON.stringify(state.recruits),rngSeed=state.rngSeed;
+    refreshScoutBoard();const first=JSON.stringify(state);state=JSON.parse(first);refreshScoutBoard();
+    return {n,world,kansai,invalidWorld,added,stable:first===JSON.stringify(state),
+      signed:state.world[0].scouted&&state.recruits.includes(state.world[0].id)&&JSON.stringify(state.recruits)===recruits,
+      versions:state.world.every(a=>a.scoutPreferences.version===2),rng:rngSeed===state.rngSeed};
+  })())`));
+  assert.ok(result.world/result.n>.40&&result.world/result.n<.51,JSON.stringify(result));
+  assert.ok(result.kansai/result.n>.28&&result.kansai/result.n<.39,JSON.stringify(result));
+  assert.equal(result.invalidWorld,0);assert.equal(result.added,0);
+  assert.ok(result.stable&&result.signed&&result.versions&&result.rng,JSON.stringify(result));
 });

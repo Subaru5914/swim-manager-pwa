@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.37', 'v1.36'));
+      data = Buffer.from(data.toString().replaceAll('v1.38', 'v1.37'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -75,7 +75,7 @@ test('PC and iPhone account screens share real game saves, handle offline confli
     await pc.goto(app.url);await pc.waitForFunction(()=>cloudSync?.config);
     const scoutId=await pc.evaluate(()=>{
       state.points=321;state.players[0].stats.fr_speed=111.22;state.players[0].bestTimes.fr100=47.89;
-      const a=state.world.find(a=>a.category==='high'&&a.grade===3);a.scoutPreferences={version:1,worldAmbition:true,preferredRegion:'kansai'};
+      const a=state.world.find(a=>a.category==='high'&&a.grade===3);a.scoutPreferences={version:2,worldAmbition:true,preferredRegion:'kansai'};
       saveLocal();return a.id;
     });
     for(const [page,create] of [[pc,true],[phone,false]]){
@@ -89,7 +89,7 @@ test('PC and iPhone account screens share real game saves, handle offline confli
     assert.equal(await phone.evaluate(()=>state.points),321);
     assert.equal(await phone.evaluate(()=>state.players[0].stats.fr_speed),111.22);
     assert.equal(await phone.evaluate(()=>state.players[0].bestTimes.fr100),47.89);
-    assert.deepEqual(await phone.evaluate(id=>state.world.find(a=>a.id===id).scoutPreferences,scoutId),{version:1,worldAmbition:true,preferredRegion:'kansai'});
+    assert.deepEqual(await phone.evaluate(id=>state.world.find(a=>a.id===id).scoutPreferences,scoutId),{version:2,worldAmbition:true,preferredRegion:'kansai'});
     assert.ok((await phone.locator('.modal-cloud').boundingBox()).width<=620);
     await phone.locator('#cloudClose').click();await pc.locator('#cloudClose').click();
     await pc.evaluate(()=>{state.points=333;saveLocal()});
@@ -549,7 +549,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         await page.goto(app.url);
         const fixture=await page.evaluate(()=>{
           const a=state.world.find(a=>a.category==='high'&&a.grade===3);a.name='希望確認 高校生';a.specialty='fr100';a.accolades=[];
-          a.bestTimes.fr100=JAPAN_RECORD.fr100*.99;a.scoutPreferences={version:1,worldAmbition:true,preferredRegion:'kansai'};
+          a.bestTimes.fr100=JAPAN_RECORD.fr100*.99;a.scoutPreferences={version:2,worldAmbition:true,preferredRegion:'kansai'};
           state.points=50;state.reputation=35;state.facilities=Object.fromEntries(STATS.map(k=>[k,0]));renderAll();
           return {id:a.id,probability:scoutProbability(a),ranked:[...new Set(EVENTS.flatMap(e=>ranking(e,'high',50)).filter(a=>a.grade===3).map(a=>a.id))]};
         });
@@ -559,15 +559,14 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         const row=page.locator('#scoutTable tr').filter({has:page.locator(`[data-scout="${fixture.id}"]`)});
         assert.match(await row.innerText(),/高校1位/);assert.match(await row.innerText(),/100mFrで世界を目指す/);assert.match(await row.innerText(),/関西の大学希望/);
         assert.equal(await row.locator('.prob-pill').innerText(),(fixture.probability*100).toFixed(1)+'%');
-        await row.locator('[data-scout-probability]').click();
-        assert.ok((await page.locator('.modal-scout-probability').boundingBox()).width<=560.1);
-        assert.match(await page.locator('.modal-scout-probability').innerText(),/肩書なし[\s\S]*\+4\.0ポイント/);
-        assert.match(await page.locator('.modal-scout-probability').innerText(),/所在地一致[\s\S]*\+18\.0ポイント/);
+        assert.equal(await page.locator('[data-scout-probability], .scout-probability-breakdown, .scout-ranked-tag').count(),0);
+        assert.equal(await page.locator('#scoutTable button').filter({hasText:'内訳'}).count(),0);
+        assert.doesNotMatch(await row.locator('td').first().innerText(),/50位以内/);
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.37-scout-details-${mobile?'iphone':'pc'}.png`)});
+          await row.scrollIntoViewIfNeeded();
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.38-scout-${mobile?'iphone':'pc'}.png`)});
         }
-        await page.locator('#closeScoutProbability').click();
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
           for(const k of ['fr_speed','fr_stamina','fr_turn'])state.facilities[k]=100;
@@ -578,7 +577,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         assert.ok(improved.reputation>improved.facilities);
         assert.equal(await row.locator('.prob-pill').innerText(),(improved.reputation*100).toFixed(1)+'%');
         await page.locator('#saveBtn').click();await page.reload();await page.locator('#nav [data-page="scout"]').click();
-        assert.deepEqual(await page.evaluate(id=>state.world.find(a=>a.id===id).scoutPreferences,fixture.id),{version:1,worldAmbition:true,preferredRegion:'kansai'});
+        assert.deepEqual(await page.evaluate(id=>state.world.find(a=>a.id===id).scoutPreferences,fixture.id),{version:2,worldAmbition:true,preferredRegion:'kansai'});
         assert.equal(await row.locator('.prob-pill').innerText(),(improved.reputation*100).toFixed(1)+'%');
         await page.evaluate(()=>{window.originalScoutingRng=rng;rng=()=>0});
         await row.locator('[data-scout]').click();
@@ -785,7 +784,7 @@ test('a training turn can enter and finish a record meet through the UI', async 
   } finally { await context.close(); await app.close(); }
 });
 
-test('PWA upgrades its v1.36 cache to v1.37 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.37 cache to v1.38 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -794,7 +793,7 @@ test('PWA upgrades its v1.36 cache to v1.37 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.36'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.37'));
     await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -804,19 +803,19 @@ test('PWA upgrades its v1.36 cache to v1.37 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.37') && !keys.includes('swim-manager-pwa-v1.36');
+      return keys.includes('swim-manager-pwa-v1.38') && !keys.includes('swim-manager-pwa-v1.37');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.37/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.37');
+    assert.match(await page.title(), /v1\.38/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.38');
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.37/);
+    assert.match(await page.title(), /v1\.38/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(errors, []);
