@@ -207,10 +207,11 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
     state.players.slice(0,4).forEach(p=>{p.stats=Object.fromEntries(STATS.map(k=>[k,200]));EVENTS.forEach(e=>p.bestTimes[e]=expectedTime(p,e))});
     state.players.slice(4,8).forEach(p=>p.stats=Object.fromEntries(STATS.map(k=>[k,50])));
     const original=state.players.slice(0,4).map(p=>p.id),replacements=state.players.slice(4,8).map(p=>p.id);
+    const personalBest=JSON.stringify(state.players.map(p=>p.bestTimes));
     const entries=Object.fromEntries(RELAYS.map(k=>[k,[...original]]));
     const relays=runRelays('intercollege',entries,true),events=Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[]} ]));
     const result={meet:'intercollege',events,relays,relayEntries:entries,historyEntry:{},teamScoreEntry:{}};
-    return RELAYS.map(kind=>{
+    const rows=RELAYS.map(kind=>{
       const entry=relays.find(r=>r[0]===kind),own=entry[1].find(ownsRelayTeam),prelim=JSON.stringify(entry[2].prelim);
       const lane=own.heatLane,abandonedTime=own.race.total;
       const ownPrelim=entry[2].prelim.find(ownsRelayTeam),beforeRecord=state.recordRankings.university[kind].find(r=>r.organization===state.playerUniversity).time;
@@ -223,8 +224,16 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
         pending:entry[2].finalEntryPending,abandonedSaved:state.teamTop10[kind].some(r=>r.memberKey===original.join('|')&&r.time===abandonedTime),
         replacementSaved:state.teamTop10[kind].some(r=>r.memberKey===replacements.join('|')&&r.time===own.race.total),
         beforeRecord,prelimTime:round2(ownPrelim.race.total),nationalRecord:state.recordRankings.japan[kind].find(r=>r.organization===state.playerUniversity).time,
-        expectedRecord:Math.min(round2(ownPrelim.race.total),round2(own.race.total))};
+        expectedRecord:Math.min(round2(ownPrelim.race.total),round2(own.race.total)),
+        prelimHistory:state.players.slice(0,4).map(p=>p.raceHistory.filter(h=>h.event===kind)),
+        finalHistory:state.players.slice(4,8).map(p=>p.raceHistory.filter(h=>h.event===kind)),
+        expectedPrelim:ownPrelim.race.legs.map(round2),expectedFinal:own.race.legs.map(round2),prelimRank:ownPrelim.prelimRank,finalTime:own.race.total};
     });
+    const history=JSON.stringify(state.players.map(p=>p.raceHistory));
+    const pbUnchanged=personalBest===JSON.stringify(state.players.map(p=>p.bestTimes));
+    state=deepClone(state);migrateState();
+    rows.forEach(r=>{r.historySaved=history===JSON.stringify(state.players.map(p=>p.raceHistory));r.pbUnchanged=pbUnchanged});
+    return rows;
   })()`);
   for(const row of result){
     assert.ok(row.rejected&&row.unchangedAfterReject&&row.prelimUnchanged&&row.scoresAgree);
@@ -233,6 +242,17 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
     assert.deepEqual(row.ranks,[1,2,3,4,5,6,7,8]);
     assert.equal(row.abandonedSaved,false);assert.equal(row.replacementSaved,true);
     assert.equal(row.beforeRecord,row.prelimTime);assert.equal(row.nationalRecord,row.expectedRecord);
+    assert.ok(row.historySaved&&row.pbUnchanged);
+    for(let i=0;i<4;i++){
+      assert.equal(row.prelimHistory[i].length,1);assert.equal(row.finalHistory[i].length,1);
+      const prelim=row.prelimHistory[i][0],final=row.finalHistory[i][0];
+      assert.equal(prelim.stage,'予選');assert.equal(final.stage,'決勝');
+      assert.equal(prelim.time,row.prelimTime);assert.equal(final.time,row.finalTime);
+      assert.equal(prelim.rank,row.prelimRank);assert.equal(final.rank,row.rank);
+      assert.equal(prelim.lapTime,row.expectedPrelim[i]);assert.equal(final.lapTime,row.expectedFinal[i]);
+      assert.equal(prelim.legIndex,i);assert.equal(final.legIndex,i);
+      assert.equal(final.legEvent,row.kind==='4x200fr'?'fr200':row.kind==='4x100medley'?['ba100','br100','fly100','fr100'][i]:'fr100');
+    }
   }
 });
 
@@ -241,7 +261,8 @@ test('world relay final replacements are restricted to selected Japanese represe
   const result=json(run,`(()=>{
     let own=state.players[0],cpu=state.world.filter(p=>p.category==='university').slice(0,7),members=[own,...cpu.slice(0,3)];
     state.japanTeam={year:2027,athletes:[own,...cpu].map(p=>({id:p.id,snapshot:deepClone(p),ownAtSelection:p.id===own.id}))};
-    let preliminary={organization:'日本',members:[...members],heatLane:4,race:{total:210}},final={...preliminary,members:[...members],race:simulateRelay(members,'4x100fr',false)};
+    let preliminary={organization:'日本',members:[...members],heatLane:4,prelimRank:2,race:{total:210,legs:[52,53,54,51]}},final={...preliminary,members:[...members],race:simulateRelay(members,'4x100fr',false)};
+    recordRelayResult('4x100fr',preliminary,'world_championship','予選');
     let meta={prelim:[preliminary],heats:[[preliminary]],finalEntryPending:true};
     let result={meet:'world_championship',events:Object.fromEntries(EVENTS.map(e=>[e,{prelim:[],final:[]} ])),relays:[['4x100fr',[final],meta]],relayEntries:{'4x100fr':members.map(p=>p.id)}};
     let rejected=false;try{setRelayFinalEntry(result,'4x100fr',state.players.slice(0,4).map(p=>p.id))}catch(e){rejected=true}
@@ -251,11 +272,16 @@ test('world relay final replacements are restricted to selected Japanese represe
     return{rejected,qualified,prelimUnchanged:prelim===JSON.stringify(preliminary),
       members:final.members.map(p=>p.id),wanted:cpu.slice(3,7).map(p=>p.id),
       finalOwn:ownsRelayTeam(final),finalShown:queue.some(q=>q.phase==='final'),prelimShown:queue.some(q=>q.phase==='prelim'),
-      finalExists:program.some(p=>p.phase==='final'),pending:meta.finalEntryPending};
+      finalExists:program.some(p=>p.phase==='final'),pending:meta.finalEntryPending,
+      ownHistory:own.raceHistory.filter(h=>h.meet==='world_championship'),cpuHistory:cpu.map(p=>p.raceHistory.length)};
   })()`);
   assert.ok(result.rejected&&result.qualified&&result.prelimUnchanged);
   assert.deepEqual(result.members,result.wanted);assert.equal(result.finalOwn,false);
   assert.equal(result.finalShown,false);assert.equal(result.prelimShown,true);assert.equal(result.finalExists,true);assert.equal(result.pending,false);
+  assert.equal(result.ownHistory.length,1);assert.equal(result.ownHistory[0].stage,'予選');
+  assert.equal(result.ownHistory[0].time,210);assert.equal(result.ownHistory[0].lapTime,52);
+  assert.equal(result.ownHistory[0].rank,2);assert.equal(result.ownHistory[0].organization,'日本');
+  assert.ok(result.cpuHistory.every(n=>n===0));
 });
 
 test('domestic heats use 6/5/4 groups, world heats use 4/3/2, each with at most eight lanes', () => {
@@ -598,10 +624,19 @@ test('a complete world meet keeps automatic Japan entries and animates only owne
     let groups=EVENTS.map(e=>({e,count:meet.events[e].heats.length,expected:preliminaryHeatCount('world_championship',e),japan:meet.events[e].prelim.filter(x=>x.nationality==='日本').map(x=>x.athlete.id),automatic:automatic.individual[e],top:meet.events[e].prelim.slice(0,8).map(x=>x.athlete.id).sort(),final:meet.events[e].final.map(x=>x.athlete.id).sort()}));
     let onlyOwn=queue.every(q=>q.rows.some(x=>x.source==='PLAYER'));
     let mixedRelay=queue.some(q=>q.event==='4x100medley'&&q.rows.some(x=>x.athlete.organization==='日本'&&x.source==='PLAYER'));
+    const relayHistory=[];
+    for(const [kind,finals,meta] of meet.relays)for(const [stage,teams] of [['予選',meta.prelim],['決勝',finals]]){
+      const japan=teams.find(t=>t.organization==='日本');if(!japan)continue;
+      japan.members.forEach((a,i)=>{
+        if(!ownJapanAthlete(a.id))return;
+        const rows=a.raceHistory.filter(h=>h.event===kind&&h.meet==='world_championship'&&h.stage===stage);
+        relayHistory.push(rows.length===1&&rows[0].time===round2(japan.race.total)&&rows[0].lapTime===round2(japan.race.legs[i])&&rows[0].legIndex===i&&rows[0].rank===(stage==='予選'?japan.prelimRank:japan.rank));
+      });
+    }
     state.japanTeam.athletes.forEach(a=>a.ownAtSelection=false);state.players=[];
     let cpuOnly=worldOwnEntries(2027),empty=buildMeetRaceQueue({...meet,relayEntries:cpuOnly.relays},cpuOnly.individual);
     let cpuProgram=buildMeetProgram({...meet,relayEntries:cpuOnly.relays},cpuOnly.individual);
-    return {groups,onlyOwn,mixedRelay,empty:empty.length,cpuProgram:cpuProgram.length,history:state.meetHistory.at(-1).meet,points:state.points};
+    return {groups,onlyOwn,mixedRelay,empty:empty.length,cpuProgram:cpuProgram.length,history:state.meetHistory.at(-1).meet,points:state.points,relayHistory};
   })()`);
   for (const row of result.groups) {
     assert.equal(row.count, row.expected);
@@ -610,6 +645,7 @@ test('a complete world meet keeps automatic Japan entries and animates only owne
   }
   assert.equal(result.onlyOwn, true);
   assert.equal(result.mixedRelay, true);
+  assert.ok(result.relayHistory.length>0&&result.relayHistory.every(Boolean));
   assert.equal(result.empty, 0);
   assert.equal(result.cpuProgram, 36);
   assert.equal(result.history, 'world_championship');

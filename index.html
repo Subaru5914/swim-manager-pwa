@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.49</title>
+<title>大学競泳監督シミュレーション PWA版 v1.50</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1192,7 +1192,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.49</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.50</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1559,7 +1559,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.49";
+  state.version="pwa-v1.50";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2423,7 +2423,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.49",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.50",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2678,12 +2678,44 @@ function recordIndividualResult(a,event,time,meet,stage,stamp={}){
   if(category!=="japan")upsertRecordRanking(category,deepClone(record));
 }
 function recordRelayResult(kind,team,meet,stage){
-  if(team.members.length!==4||team.members.some(a=>!athleteRecordCategory(a)))return;
+  if(!RELAYS.includes(kind)||team.members?.length!==4||!validRaceTime(team.race?.total)||!validRaceTime(round2(team.race.total)))return;
   let record={kind:"relay",event:kind,time:round2(team.race.total),organization:team.organization,
-    members:team.members.map(a=>({id:a.id,name:a.name,...recordSchoolInfo(a)})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage};
+    members:team.members.map(a=>({id:a.id,name:a.name,...recordSchoolInfo(a)})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage,
+    rank:stage==="予選"?team.prelimRank??null:team.rank??null,heatLane:team.heatLane??null,
+    legs:team.members.map((a,i)=>validRaceTime(team.race.legs?.[i])?round2(team.race.legs[i]):null)};
+  team.members.forEach((a,i)=>{
+    if(!state.players.includes(a)&&!a.alumni&&!(meet==="world_championship"&&ownJapanAthlete(a.id)))return;
+    if(!Array.isArray(a.raceHistory))a.raceHistory=[];
+    let history=relayMemberHistory(record,i),key=relayHistoryKey(history);
+    let existing=a.raceHistory.findIndex(h=>RELAYS.includes(h.event)&&relayHistoryKey(h)===key);
+    if(existing<0)a.raceHistory.push(history);else a.raceHistory[existing]=history;
+    if(a.raceHistory.length>600)a.raceHistory.splice(0,a.raceHistory.length-600);
+  });
+  if(team.members.some(a=>!athleteRecordCategory(a)))return;
   upsertRecordRanking("japan",record);
   let category=athleteRecordCategory(team.members[0]);
   if(category!=="japan"&&team.members.every(a=>athleteRecordCategory(a)===category&&a.organization===team.organization))upsertRecordRanking(category,deepClone(record));
+}
+function relayHistoryKey(h){return JSON.stringify([h.season,h.slot??null,h.meet,h.event,h.stage,h.organization??state.playerUniversity])}
+function relayMemberHistory(record,i){
+  let member=record.members[i];
+  return{kind:"relay",season:record.season,slot:record.slot??null,meet:record.meet,event:record.event,stage:record.stage,
+    time:round2(record.time),rank:record.rank??null,organization:record.organization??state.playerUniversity,
+    legIndex:i,legEvent:relayLegEvent(record.event,i),lapTime:validRaceTime(record.legs?.[i])?round2(record.legs[i]):null,
+    heatLane:record.heatLane??null,schoolCategory:member.schoolCategory,gradeAtRecord:member.gradeAtRecord};
+}
+function playerRaceHistory(p){
+  let history=[...(p.raceHistory||[])],known=new Set(history.filter(h=>RELAYS.includes(h.event)).map(relayHistoryKey));
+  // Old saves retain only some relay totals in the record books. Recover those
+  // appearances without estimating missing splits or places or changing the save.
+  let books=[state.recordRankings?.university,state.recordRankings?.japan,state.teamTop10];
+  for(let book of books)for(let event of RELAYS)for(let r of book?.[event]||[]){
+    let i=r.members?.findIndex(a=>a.id===p.id)??-1;
+    if(i<0||!validRaceTime(r.time))continue;
+    let row=relayMemberHistory({...r,event},i),key=relayHistoryKey(row);
+    if(!known.has(key)){history.push(row);known.add(key)}
+  }
+  return history;
 }
 function initializeRecordRankings(){
   if(state.recordRankingVersion>=2){migrateRecordSchoolInfo();refreshRecordRankings();initializeSprintRecordRankings();return}
@@ -4537,7 +4569,8 @@ function raceHistoryRank(h){
 function showPlayerDetail(id){
   let p=state.players.find(x=>x.id===id);if(!p)return;
   let historyOptions=`<option value="recent">新しい順</option><option value="event">種目順</option>`+
-    EVENTS.map(e=>`<option value="only_${e}">${EVENT_LABEL[e]}のみ</option>`).join("");
+    `<option value="only_relays">リレーのみ</option>`+
+    [...EVENTS,...RELAYS].map(e=>`<option value="only_${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}のみ</option>`).join("");
   let overall=overallStatValue(p);
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)}</h2><button id="x">閉じる</button></div>
     <div class="row" style="margin:8px 0">${specialtyTag(ensurePlayerSpecialty(p),"専門 ")} <button id="detailSpecialtyBtn">専門変更</button> <span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span> <b>総合 ${Math.round(overall)}</b></div>
@@ -4574,14 +4607,19 @@ function showPlayerDetail(id){
   renderDetailFocus();
   const body=m.querySelector("#historyTable"),sortSel=m.querySelector("#historySort");
   function renderHistory(){
-    let mode=sortSel.value,rows=[...p.raceHistory];
+    let mode=sortSel.value,rows=playerRaceHistory(p),eventOrder=[...EVENTS,...RELAYS];
     if(mode==="recent")rows.sort((a,b)=>b.season-a.season||b.slot-a.slot);
-    else if(mode==="event")rows.sort((a,b)=>EVENTS.indexOf(a.event)-EVENTS.indexOf(b.event)||b.season-a.season||b.slot-a.slot);
+    else if(mode==="event")rows.sort((a,b)=>eventOrder.indexOf(a.event)-eventOrder.indexOf(b.event)||b.season-a.season||b.slot-a.slot);
+    else if(mode==="only_relays")rows=rows.filter(h=>RELAYS.includes(h.event)).sort((a,b)=>b.season-a.season||b.slot-a.slot);
     else if(mode.startsWith("only_")){
       let e=mode.slice(5);rows=rows.filter(h=>h.event===e).sort((a,b)=>b.season-a.season||b.slot-a.slot);
     }
-    body.innerHTML=`<table><thead><tr><th>年度</th><th>大会</th><th>種目</th><th>区分</th><th>順位</th><th>記録</th><th>標準突破</th><th>PB</th></tr></thead><tbody>${
-      rows.map(h=>`<tr><td>${h.season}</td><td>${meetMonthLabel(h.meet,h.slot)}</td><td>${EVENT_LABEL[h.event]}</td><td>${h.stage}</td><td>${raceHistoryRank(h)}</td><td>${fmt(h.time)}</td><td>${(h.newlyCleared||[]).map(x=>`<span class="std-new">NEW ${standardDisplay(h.event,x)}</span>`).join("")||"-"}</td><td>${h.pb?'<span class="pb-badge">自己PB</span>':""}</td></tr>`).join("")||'<tr><td colspan="8">戦績なし</td></tr>'
+    let hasRelay=rows.some(h=>RELAYS.includes(h.event));
+    body.innerHTML=`<table><thead><tr><th>年度</th><th>大会</th><th>種目</th><th>区分</th><th>順位</th><th>${hasRelay?"記録／総合":"記録"}</th>${hasRelay?'<th>泳順・本人ラップ</th>':""}<th>標準突破</th><th>PB</th></tr></thead><tbody>${
+      rows.map(h=>{
+        let relay=RELAYS.includes(h.event),lap=relay?`<span class="small muted">第${h.legIndex+1}泳者・${EVENT_LABEL[h.legEvent]}</span><br><b>${fmt(h.lapTime)}</b>`:"—";
+        return `<tr data-history-event="${h.event}"><td>${h.season}</td><td>${meetMonthLabel(h.meet,h.slot)}</td><td>${EVENT_LABEL[h.event]||RELAY_LABEL[h.event]}</td><td>${h.stage||"—"}</td><td>${raceHistoryRank(h)}</td><td class="history-time">${fmt(h.time)}</td>${hasRelay?`<td class="history-lap">${lap}</td>`:""}<td>${(h.newlyCleared||[]).map(x=>`<span class="std-new">NEW ${standardDisplay(h.event,x)}</span>`).join("")||"-"}</td><td>${!relay&&h.pb?'<span class="pb-badge">自己PB</span>':""}</td></tr>`;
+      }).join("")||'<tr><td colspan="8">戦績なし</td></tr>'
     }</tbody></table>`;
   }
   sortSel.onchange=renderHistory;renderHistory();

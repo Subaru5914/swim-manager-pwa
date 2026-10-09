@@ -12,6 +12,50 @@ function game(){
   return code=>JSON.parse(run('JSON.stringify('+code+')'));
 }
 
+test('legacy relay appearances recover saved totals once, keep real history authoritative and never invent splits or places',()=>{
+  const run=game();
+  const result=run(`(()=>{
+    const members=Array.from({length:5},(_,i)=>({id:'legacy-relay-'+i,name:'旧リレー選手'+i,year:2,age:20,organization:state.playerUniversity,bestTimes:{fr100:55},raceHistory:[]}));
+    state.players=members;state.slot=43;
+    upsertRelayTop10('4x100fr',members.slice(0,4),200,'intercollege','予選');
+    upsertRelayTop10('4x100fr',[...members.slice(0,3),members[4]],208,'intercollege','決勝');
+    const saved=deepClone(state.teamTop10['4x100fr'][0]);saved.organization=state.playerUniversity;
+    state.recordRankings={university:{'4x100fr':[saved]},japan:{'4x100fr':[deepClone(saved)]}};
+    members[0].raceHistory=[{kind:'relay',event:'4x100fr',season:state.season,slot:43,meet:'intercollege',stage:'予選',organization:state.playerUniversity,time:197,rank:2,lapTime:49,legIndex:0,legEvent:'fr100'}];
+    const before=JSON.stringify(state),seed=state.rngSeed;
+    const rows=playerRaceHistory(members[0]),other=playerRaceHistory(members[3]);
+    playerRaceHistory(members[0]);
+    return{rows,other,unchanged:before===JSON.stringify(state),rng:seed===state.rngSeed};
+  })()`);
+  assert.equal(result.rows.length,2);assert.equal(result.other.length,1);
+  assert.equal(result.rows[0].time,197);assert.equal(result.rows[0].rank,2);assert.equal(result.rows[0].lapTime,49);
+  assert.equal(result.rows[1].time,208);assert.equal(result.rows[1].rank,null);assert.equal(result.rows[1].lapTime,null);
+  assert.equal(result.other[0].time,200);assert.equal(result.other[0].rank,null);assert.equal(result.other[0].lapTime,null);
+  assert.ok(result.unchanged&&result.rng);
+});
+
+test('relay history retains selected graduate splits, is idempotent and cannot change individual PBs or standards',()=>{
+  const run=game();
+  const result=run(`(()=>{
+    const members=Array.from({length:4},(_,i)=>({id:'JPN-relay-'+i,name:'代表選手'+i,category:'university',grade:4,age:22,organization:'代表大学',bestTimes:{fr100:60},raceHistory:[],standardAchievements:{fr100:[]},standardAchievementVersion:1}));
+    state.japanTeam={year:2027,selectedSeason:2026,athletes:members.map((a,i)=>({id:a.id,snapshot:a,ownAtSelection:i===2}))};
+    state.season=2027;state.slot=36;
+    const team={organization:'日本',members,rank:3,heatLane:5,race:{total:210,legs:[52,53,54,51]}};
+    const before=JSON.stringify(members.map(a=>[a.bestTimes,a.standardAchievements]));
+    recordRelayResult('4x100medley',team,'world_championship','決勝');
+    recordRelayResult('4x100medley',team,'world_championship','決勝');
+    const stable=JSON.stringify(state);
+    for(const time of [0,-1,null,NaN,Infinity])recordRelayResult('4x100medley',{...team,race:{total:time}},'world_championship','予選');
+    return{histories:members.map(a=>a.raceHistory),unchanged:before===JSON.stringify(members.map(a=>[a.bestTimes,a.standardAchievements])),invalidUnchanged:stable===JSON.stringify(state)};
+  })()`);
+  assert.deepEqual(result.histories.map(h=>h.length),[0,0,1,0]);
+  const row=result.histories[2][0];
+  assert.equal(row.event,'4x100medley');assert.equal(row.time,210);assert.equal(row.lapTime,54);
+  assert.equal(row.legIndex,2);assert.equal(row.legEvent,'fly100');assert.equal(row.rank,3);
+  assert.equal(row.organization,'日本');assert.equal(row.season,2027);assert.equal(row.heatLane,5);
+  assert.ok(result.unchanged&&result.invalidUnchanged);
+});
+
 test('time display carries rounded hundredths across minute boundaries and keeps zero valid for the race clock',()=>{
   const run=game();
   const result=run('[0,21.64,59.994,59.995,59.999,60,119.995,119.999,155,null,NaN,Infinity].map(fmt)');
