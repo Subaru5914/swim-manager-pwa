@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.48</title>
+<title>大学競泳監督シミュレーション PWA版 v1.49</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -774,7 +774,7 @@ nav .nav-action:hover{background:#edf6ff}
   .top10-table th:nth-child(5),.top10-table td:nth-child(5){width:22%}
 
   /* Common page/card spacing for the named screens */
-  #page-training .card,#page-roster .card,#page-rankings .card,#page-records .card,
+  #page-training .card,#page-roster .card,#page-rankings .card,#page-records .card,#page-team-top10 .card,
   #page-scout .card,#page-facilities .card{
     padding-left:3px;
     padding-right:3px;
@@ -1114,12 +1114,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .college-ranking-table .college-own td:nth-child(2){border-left:4px solid #2276bd;color:#125faa;font-weight:850}
 .college-award{display:inline-block;border-radius:5px;padding:3px 7px;border:1px solid currentColor;font-weight:850;white-space:nowrap}
 #showTeamTop10Btn{flex-shrink:0}
-.modal-team-top10{width:min(960px,calc(var(--game-vw) * 92));max-width:960px;max-height:calc(var(--game-vh) * 92);display:flex;flex-direction:column;overflow:hidden}
-.modal-team-top10>.row,.modal-team-top10>p{flex-shrink:0}
-.modal-team-top10 #teamTop10Body{min-height:0;overflow:auto}
-.modal-team-top10 .top10-table-wrap{width:100%!important;max-width:100%!important}
-.modal-team-top10 .top10-table{width:100%!important;min-width:0!important;table-layout:auto!important}
-.modal-team-top10 .top10-table th,.modal-team-top10 .top10-table td{padding:6px 8px}
+#page-team-top10 .top10-table-wrap{width:100%!important;max-width:100%!important}
+#page-team-top10 .top10-table{width:100%!important;min-width:0!important;table-layout:auto!important}
+#page-team-top10 .top10-table th,#page-team-top10 .top10-table td{padding:6px 8px}
 .entrant-team{font-weight:700;color:#465d75}
 .modal-meet-program{width:min(1000px,calc(var(--game-vw) * 92));max-width:1000px;display:flex;flex-direction:column;overflow:hidden}
 .modal-meet-program>.row,.modal-meet-program>.notice{flex-shrink:0}
@@ -1195,7 +1192,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.48</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.49</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1221,7 +1218,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   <button data-page="roster">選手一覧</button>
   <button data-page="rankings">全選手ランキング</button>
   <button data-page="records">記録</button>
-  <button id="showTeamTop10Btn" class="nav-action">自チーム歴代10傑</button>
+  <button id="showTeamTop10Btn" data-page="team-top10">自チーム歴代10傑</button>
   <button data-page="scout">スカウト</button>
   <button data-page="facilities">施設</button>
   <button id="scheduleBtn" class="nav-action">大会日程</button>
@@ -1332,13 +1329,22 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 </section>
 
 <section id="page-records" class="page">
-  <div class="page-lead"><div><h1>記録</h1><p>高校・学生・日本の歴代10傑、自チームの記録と卒業後の進路を確認できます。</p></div></div>
+  <div class="page-lead"><div><h1>記録</h1><p>高校・学生・日本の歴代10傑と卒業後の進路を確認できます。</p></div></div>
   <div class="card records-national">
     <div class="row"><h2 id="recordRankingTitle" style="margin-right:auto">日本記録10傑</h2><label>区分 <select id="recordRankingCategory"><option value="high">高校記録</option><option value="university">学生記録</option><option value="japan" selected>日本記録</option></select></label><label>種目 <select id="recordRankingEvent"></select></label></div>
     <p class="muted small">男子・長水路のゲーム内記録。個人は選手ごと、リレーはチームごとの最速記録を10位まで保存します。選手名横の学年は記録時点のものです。進学・卒業・引退後も学年・区分・所属を保持します。</p>
     <div id="recordRankingBody"></div>
   </div>
   <div class="card"><h2>卒業・進路アーカイブ</h2><div id="archiveTable" class="table-wrap"></div></div>
+</section>
+
+<section id="page-team-top10" class="page">
+  <div class="page-lead"><div><h1>自チーム歴代10傑</h1><p>個人15種目・リレー3種目の歴代記録を確認できます。卒業・引退した選手の記録も残ります。</p></div></div>
+  <div class="card">
+    <div class="row"><h2 id="teamTop10Title" style="margin-right:auto">100mFr 歴代10傑</h2><label>種目 <select id="teamTop10Event"></select></label></div>
+    <p class="muted small">現役の自チーム選手を青色と学年で表示しています。</p>
+    <div id="teamTop10Body"></div>
+  </div>
 </section>
 
 <section id="page-scout" class="page">
@@ -1553,7 +1559,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.48";
+  state.version="pwa-v1.49";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2417,7 +2423,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.48",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.49",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3515,21 +3521,10 @@ function top10AthleteName(id,name){
   let p=state.players.find(p=>p.id===id);
   return p?`<b>${esc(p.name)}</b> <span class="active-athlete">現役 ${p.year}年</span>`:esc(name);
 }
-function showTeamTop10(){
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">自チーム歴代10傑</h2><button id="closeTeamTop10">閉じる</button></div>
-    <div class="row"><label>種目 <select id="teamTop10Event"></select></label></div>
-    <p class="muted small">現役の自チーム選手を青色と学年で表示しています。</p><div id="teamTop10Body"></div>`);
-  m.classList.add("modal-team-top10");
-  let selector=m.querySelector("#teamTop10Event");
-  selector.innerHTML=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
-  selector.value=selectedTeamTop10Event;
-  selector.onchange=()=>{selectedTeamTop10Event=selector.value;renderTeamTop10()};
-  m.querySelector("#closeTeamTop10").onclick=()=>closeModal();
-  renderTeamTop10();
-}
 function renderTeamTop10(){
     let selector=document.getElementById("teamTop10Event");if(!selector)return;
     let e=selector.value,rows=state.teamTop10[e]||[];
+    document.getElementById("teamTop10Title").textContent=(EVENT_LABEL[e]||RELAY_LABEL[e])+" 歴代10傑";
     document.getElementById("teamTop10Body").innerHTML=`<div class="table-wrap top10-table-wrap"><table class="top10-table"><thead><tr><th>順位</th><th>記録</th><th>${RELAYS.includes(e)?"メンバー":"選手"}</th><th>年度</th><th>大会</th></tr></thead><tbody>${rows.map((r,i)=>{
       let active=r.kind==="relay"?r.members.some(x=>state.players.some(p=>p.id===x.id)):state.players.some(p=>p.id===r.athleteId);
       return `<tr class="${active?"top10-active":""}"><td>${i+1}</td><td>${fmt(r.time)}</td><td>${r.kind==="relay"?r.members.map(x=>top10AthleteName(x.id,x.name)).join(" → "):top10AthleteName(r.athleteId,r.name)}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`;
@@ -4309,7 +4304,7 @@ function playRaceCanvas(event,rows,options={}){
   raf=requestAnimationFrame(frame);
 }
 function renderAll(){
-  renderStatus();renderHome();renderTrainingPlayers();renderRoster();renderRankings();renderRecords();renderScout();renderFacilities();renderSettings();
+  renderStatus();renderHome();renderTrainingPlayers();renderRoster();renderRankings();renderRecords();renderTeamTop10();renderScout();renderFacilities();renderSettings();
   scheduleAutoSave();
 }
 function renderStatus(){
@@ -4445,7 +4440,6 @@ function renderRecords(){
   recordSelector.innerHTML=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
   recordSelector.value=[...EVENTS,...RELAYS].includes(recordEvent)?recordEvent:"fr100";
   recordSelector.onchange=renderRecordRankings;document.getElementById("recordRankingCategory").onchange=renderRecordRankings;renderRecordRankings();
-  document.getElementById("showTeamTop10Btn").onclick=showTeamTop10;renderTeamTop10();
 
   let career=(state.alumniCareer||[]).slice().reverse();
   let retired=state.retiredArchive.slice().reverse().filter(a=>a.organization===state.playerUniversity&&!career.some(c=>c.id===a.id));
@@ -4881,6 +4875,12 @@ async function initializeCloudSync(){
 function initSelectors(){
   let r=document.getElementById("rankEvent");
   if(r){r.innerHTML=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");r.value="fr100"}
+  let teamEvent=document.getElementById("teamTop10Event");
+  if(teamEvent){
+    teamEvent.innerHTML=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
+    teamEvent.value=selectedTeamTop10Event;
+    teamEvent.onchange=()=>{selectedTeamTop10Event=teamEvent.value;renderTeamTop10()};
+  }
   let scoutEvent=document.getElementById("scoutEventFilter");
   if(scoutEvent)scoutEvent.innerHTML='<option value="">すべて</option>'+SPECIALTY_EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");
   let scoutSort=document.getElementById("scoutSortMode");if(scoutSort)scoutSort.value="default";
@@ -4899,7 +4899,7 @@ function setupLandscapeViewport(){
 
 document.getElementById("nav").addEventListener("click",e=>{
   let b=e.target.closest("button[data-page]");if(!b)return;
-  if(b.dataset.page==="records")refreshRecordRankings();
+  if(b.dataset.page==="records"||b.dataset.page==="team-top10")refreshRecordRankings();
   document.querySelectorAll("nav button").forEach(x=>{
     x.classList.toggle("active",x===b);
     if(x===b)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");
