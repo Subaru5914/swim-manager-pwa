@@ -78,3 +78,73 @@ test('new sprint races respect PB qualification, eight finalists, domestic recor
   for(const c of result.checks)assert.deepEqual(c,{above:false,equal:true,college:false});
   for(const r of result.races){assert.ok(r.prelim>=8);assert.equal(r.final,8);assert.deepEqual(r.lanes.slice().sort((a,b)=>a-b),[1,2,3,4,5,6,7,8]);assert.equal(r.selected,true);assert.equal(r.record,r.pb);assert.equal(r.ranking,r.pb);}
 });
+
+test('legacy saves initialize all sprint category top tens from the same PBs as current rankings once',()=>{
+  const run=game(),result=run(`(()=>{
+    delete state.sprintRecordRankingVersion;
+    for(const event of SPRINT_EVENTS){
+      for(const book of Object.values(state.recordRankings))delete book[event];
+      delete state.recordBook[event];delete state.teamTop10[event];
+      for(const a of [...state.players,...state.world])delete a.bestTimes[event];
+    }
+    const abilities=JSON.stringify([...state.players,...state.world].map(a=>({id:a.id,stats:a.stats,pb:Object.fromEntries(SPECIALTY_EVENTS.map(e=>[e,a.bestTimes[e]]))}))),seed=state.rngSeed;
+    migrateState();
+    const records=SPRINT_EVENTS.flatMap(event=>['high','university','japan'].map(category=>({event,category,
+      actual:state.recordRankings[category][event].map(r=>[r.athleteId,r.time]),
+      expected:ranking(event,category==='japan'?'all':category,10).map(a=>[a.id,a.bestTimes[event]])})));
+    const saved=JSON.stringify(state);migrateState();
+    return{records,version:state.sprintRecordRankingVersion,stable:saved===JSON.stringify(state),rng:seed===state.rngSeed,
+      kept:abilities===JSON.stringify([...state.players,...state.world].map(a=>({id:a.id,stats:a.stats,pb:Object.fromEntries(SPECIALTY_EVENTS.map(e=>[e,a.bestTimes[e]]))}))),
+      unrecorded:state.players.every(p=>SPRINT_EVENTS.every(e=>p.bestTimes[e]==null))};
+  })()`);
+  for(const r of result.records){assert.equal(r.actual.length,10);assert.deepEqual(r.actual,r.expected,r.event+' '+r.category);}
+  assert.equal(result.version,1);assert.ok(result.stable&&result.rng&&result.kept&&result.unrecorded);
+});
+
+test('sprint initialization preserves school-era records and never labels undated admission or foreign PBs as own student results',()=>{
+  const run=game(),result=run(`(()=>{
+    delete state.sprintRecordRankingVersion;state.recordRankings={};state.teamTop10={};
+    const a=state.world.find(a=>a.category==='high'&&a.grade===3),own=state.players[0];
+    for(const event of SPRINT_EVENTS){recordIndividualResult(a,event,22,'japan_open','決勝');own.bestTimes[event]=24;}
+    const high=JSON.stringify(SPRINT_EVENTS.map(e=>state.recordRankings.high[e].find(r=>r.athleteId===a.id)));a.category='university';a.grade=1;a.age=19;a.organization='進学後の大学';state.season++;
+    for(const event of SPRINT_EVENTS)a.bestTimes[event]=25;
+    state.world.push({id:'INT-unranked',name:'外国選手',category:'international',nationality:'アメリカ',organization:'アメリカ',bestTimes:Object.fromEntries(SPRINT_EVENTS.map(e=>[e,20]))});
+    initializeRecordRankings();const saved=JSON.stringify(state.recordRankings);initializeRecordRankings();
+    return{high:high===JSON.stringify(SPRINT_EVENTS.map(e=>state.recordRankings.high[e].find(r=>r.athleteId===a.id))),stable:saved===JSON.stringify(state.recordRankings),
+      relabeled:SPRINT_EVENTS.some(e=>(state.recordRankings.university?.[e]||[]).some(r=>r.athleteId===a.id||r.athleteId===own.id)),
+      own:SPRINT_EVENTS.map(e=>state.teamTop10[e]||[]),foreign:SPRINT_EVENTS.some(e=>(state.recordRankings.japan?.[e]||[]).some(r=>r.athleteId==='INT-unranked'))};
+  })()`);
+  assert.ok(result.high&&result.stable);assert.equal(result.relabeled,false);assert.deepEqual(result.own,[[],[],[]]);assert.equal(result.foreign,false);
+});
+
+test('missing own sprint top tens recover ten distinct swimmers with original race grades and exclude high-school or post-graduation PBs',()=>{
+  const run=game(),result=run(`(()=>{
+    state.recordRankings={};state.teamTop10={};
+    const own=state.players.slice(0,12);
+    for(const [i,a] of own.entries())for(const event of SPRINT_EVENTS){
+      a.raceHistory.push({event,time:30+i/10,season:2026,slot:8,meet:'team_trial',stage:'記録会',schoolCategory:'university',gradeAtRecord:a.year,organization:state.playerUniversity});
+      a.raceHistory.push({event,time:20,season:2025,meet:'japan_open',stage:'決勝',schoolCategory:'high',gradeAtRecord:3,organization:'以前の高校'});
+      a.bestTimes[event]=20;
+    }
+    const grad={id:'sprint-graduate',name:'卒業後選手',category:'adult',age:24,alumni:true,almaMater:state.playerUniversity,organization:'実業団',bestTimes:{},raceHistory:[]};
+    for(const event of SPRINT_EVENTS){grad.bestTimes[event]=19;grad.raceHistory.push({event,time:29,season:2025,slot:42,meet:'intercollege',stage:'決勝',schoolCategory:'university',gradeAtRecord:4,organization:state.playerUniversity});}
+    state.world.push(grad);const seed=state.rngSeed;refreshRecordRankings();const saved=JSON.stringify(state.teamTop10);refreshRecordRankings();
+    return{own:SPRINT_EVENTS.map(e=>state.teamTop10[e]),stable:saved===JSON.stringify(state.teamTop10),rng:seed===state.rngSeed,grades:own.slice(0,9).map(a=>a.year)};
+  })()`);
+  for(const rows of result.own){
+    assert.equal(rows.length,10);assert.equal(new Set(rows.map(r=>r.athleteId)).size,10);
+    assert.deepEqual(rows.map(r=>r.time),[29,30,30.1,30.2,30.3,30.4,30.5,30.6,30.7,30.8]);
+    assert.equal(rows[0].season,2025);assert.equal(rows[0].gradeAtRecord,4);assert.deepEqual(rows.slice(1).map(r=>r.gradeAtRecord),result.grades);
+  }
+  assert.ok(result.stable&&result.rng);
+});
+
+test('all sprint rankings include own students in university and own categories and omit invalid or unrecorded PBs',()=>{
+  const run=game(),result=run(`(()=>{
+    const own=state.players[0];for(const event of SPRINT_EVENTS)own.bestTimes[event]=21;
+    const invalid=state.players.slice(1,6),values=[null,NaN,Infinity,0,-1];
+    invalid.forEach((a,i)=>SPRINT_EVENTS.forEach(e=>a.bestTimes[e]=values[i]));
+    return SPRINT_EVENTS.map(event=>({all:ranking(event,'all',50).map(a=>a.id),students:ranking(event,'university',50).map(a=>a.id),own:ranking(event,'player',50).map(a=>a.id),high:ranking(event,'high',50).map(a=>a.id),id:own.id,invalid:invalid.map(a=>a.id)}));
+  })()`);
+  for(const r of result){assert.equal(r.all.length,50);assert.equal(r.students.length,50);assert.equal(r.all[0],r.id);assert.equal(r.students[0],r.id);assert.deepEqual(r.own,[r.id]);assert.ok(!r.high.includes(r.id));for(const id of r.invalid)assert.ok(!r.all.includes(id)&&!r.students.includes(id)&&!r.own.includes(id));}
+});
