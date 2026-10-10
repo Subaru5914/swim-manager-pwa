@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.57</title>
+<title>大学競泳監督シミュレーション PWA版 v1.58</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1255,7 +1255,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.57</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.58</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1538,8 +1538,59 @@ function ensurePlayerGrowthType(p){
   p.potentialType=type;p.growthProfile=deepClone(PLAYER_GROWTH_TYPES[type].profile);p.playerGrowthModelVersion=1;
   return type;
 }
-const FIRST=["悠真","蓮","湊","海斗","陸","颯太","翔","蒼","大和","陽斗","樹","翼","直人","亮","晴","拓海","健太","智也","陽","颯","怜","航","駿","悠斗","颯真","玲央","一真","朝陽","瑛太","煌","悠人","大翔","優斗","隼人","颯介","壮真","伊織","圭吾","奏太","光希","凌","遼","康太","誠","祐樹","龍之介","俊介","和真","慧","拓真","瑛介","孝太郎","悠生","海翔","健吾","直哉","雄大","誠也","大輝","健介","翔太","悠希","碧","琉生","宗一郎","慶太","侑真","蒼生","啓介","諒","晴紀","恭平","泰成","昂輝","将吾","瑛人","圭介","悠馬","隼","尚人","凪","凪人","凪翔","朔","朔也","朔太郎","結翔","結人","絃","碧人","翠","結仁","仁","璃空","柊","柊真","旭","新","叶翔","律","蓮斗","凌久","尊","透真","天","虎太郎","柚希","壱成","世那","玲","瑛士","燈","頼","珀","岳","環","伊吹","惺","怜央","絢斗","維吹","蒼空","理仁","琥太郎","晴翔","空良","大雅","惟月","紫苑","櫂","瑞樹","千隼","冬馬","弦","蒼士","景虎","雅楽","颯希","晴臣","悠月"];
-const LAST=["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田","松本","井上","木村","林","清水","斎藤","山口","森田","池田","橋本","阿部","石井","藤田","岡田","後藤","近藤","前田","藤原","西村","福田","太田","三浦","松田","原田","小川","竹内","中川","中島","中野","石川","村上","長谷川","青木","坂本","遠藤","藤井","岡本","長田","森","金子","和田","上田","酒井","工藤","横山","宮崎","宮本","内田","高木","安藤","谷口","大野","丸山","今井","河野","武田","杉山","増田","小島","平野","菅原","久保","松井","千葉","岩崎","桜井","野口","松尾","野村","新井","佐々木","本田","荒木","川口","永井","北村","大西","関口","古川","飯田","川崎","辻","望月","服部","星野","堀","片山","栗原","藤堂","神谷","早乙女","九条","東雲","一ノ瀬","二階堂","橘","榊原","鷹野","水無瀬","久世","御子柴","相楽","鳴海","白石","黒川","深澤","瀬川","雨宮","朝倉","篠宮","秋月","有馬","葛西","椎名","高瀬","柊木","桐生","如月","三神","小鳥遊","倉橋","神崎","鷲尾","碓氷","藤代","八神","西園寺","城戸"];
+const FIRST=[
+  "悠真","蓮","湊","海斗","陸","颯太","翔","蒼","大和","陽斗","樹","翼","直人","亮","晴","拓海",
+  "健太","智也","陽","颯","怜","航","駿","悠斗","颯真","玲央","一真","朝陽","瑛太","煌","悠人","大翔",
+  "優斗","隼人","颯介","壮真","伊織","圭吾","奏太","光希","凌","遼","康太","誠","祐樹","龍之介","俊介","和真",
+  "慧","拓真","瑛介","孝太郎","悠生","海翔","健吾","直哉","雄大","誠也","大輝","健介","翔太","悠希","碧","琉生",
+  "宗一郎","慶太","侑真","蒼生","啓介","諒","晴紀","恭平","泰成","昂輝","将吾","瑛人","圭介","悠馬","隼","尚人",
+  "凪","凪人","凪翔","朔","朔也","朔太郎","結翔","結人","絃","碧人","翠","結仁","仁","璃空","柊","柊真",
+  "旭","新","叶翔","律","蓮斗","凌久","尊","透真","天","虎太郎","柚希","壱成","世那","玲","瑛士","燈",
+  "頼","珀","岳","環","伊吹","惺","怜央","絢斗","維吹","蒼空","理仁","琥太郎","晴翔","空良","大雅","惟月",
+  "紫苑","櫂","瑞樹","千隼","冬馬","弦","蒼士","景虎","雅楽","颯希","晴臣","悠月","健一","健二","健三","健太郎",
+  "健人","健志","健悟","健斗","健","亮太","亮介","亮平","亮一","亮輔","涼","涼太","涼介","涼平","涼真","涼輔",
+  "翔平","翔也","翔真","翔吾","翔大","翔一","翔人","拓也","拓哉","拓人","拓己","拓斗","拓磨","拓郎","拓馬","祐太",
+  "祐介","祐一","祐也","祐斗","祐輔","祐希","優太","優介","優人","優樹","優真","優一","優希","優輝","優哉","優吾",
+  "裕太","裕介","裕也","裕貴","裕樹","裕一","裕斗","裕人","裕輔","一樹","一輝","一也","一哉","一馬","一郎","一歩",
+  "和也","和哉","和樹","和輝","和希","和紀","和人","和馬","和彦","和生","和久","大地","大智","大樹","大貴","大誠",
+  "大志","大介","大祐","大悟","大輔","駿介","駿太","駿也","駿平","駿輔","駿人","駿斗","俊太","俊也","俊平","俊輔",
+  "俊一","俊樹","俊哉","俊彦","直樹","直紀","直輝","直希","直也","直仁","尚哉","尚樹","尚輝","尚吾","尚也","尚希",
+  "智樹","智紀","智貴","智哉","智輝","智弘","智人","智希","智大","智志","悠介","悠輔","悠太","悠也","悠輝","悠哉",
+  "悠仁","悠吾","悠晴","悠利","悠登","悠誠","航太","航平","航介","航大","航輝","航希","航也","航生","洸平","洸太",
+  "洸介","洸輝","洸希","康平","康介","康輔","康樹","康輝","康佑","康祐","康弘","康成","慎","慎也","慎吾","慎太郎",
+  "慎一","慎之介","慎平","真也","真一","真太郎","真吾","真人","真輝","真樹","真司","真宏","真幸","真斗","真央","誠一",
+  "誠太郎","誠人","誠司","誠志","誠之","晃","晃一","晃平","晃太","晃也","晃生","晃大","晃輝","智明","隆","隆太",
+  "隆也","隆一","隆介","隆平","隆人","隆之介","達也","達哉","達人","達樹","達輝","達郎","哲也","哲哉","哲平","哲朗",
+  "哲志","哲太","仁志","仁也","仁太","仁哉","仁樹","仁一","奏","奏人","奏介","奏斗","圭","圭太","圭一","圭人",
+  "圭輝","圭佑","圭祐","圭樹","彰","彰人","彰吾","彰太","敦","敦也","敦志","敦史","敦樹","雄太","雄介","雄輔",
+  "雄也","雄一","雄人","雄志","雄貴","泰斗","泰輔","泰介","泰樹","泰雅","泰希","泰地","泰我","泰生","雅人","雅也",
+  "雅樹","雅輝","雅斗","雅紀","雅彦","雅仁","雅弘","雅志","隆志","佑","佑太","佑介","佑樹","佑真","佑人","佑斗",
+  "佑輔","慶","慶介","慶佑","慶祐","慶一","慶吾","慶人","慶輔","慶斗","慶志","慶司"
+];
+const LAST=[
+  "佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田","松本","井上","木村","林",
+  "清水","斎藤","山口","森田","池田","橋本","阿部","石井","藤田","岡田","後藤","近藤","前田","藤原","西村","福田",
+  "太田","三浦","松田","原田","小川","竹内","中川","中島","中野","石川","村上","長谷川","青木","坂本","遠藤","藤井",
+  "岡本","長田","森","金子","和田","上田","酒井","工藤","横山","宮崎","宮本","内田","高木","安藤","谷口","大野",
+  "丸山","今井","河野","武田","杉山","増田","小島","平野","菅原","久保","松井","千葉","岩崎","桜井","野口","松尾",
+  "野村","新井","佐々木","本田","荒木","川口","永井","北村","大西","関口","古川","飯田","川崎","辻","望月","服部",
+  "星野","堀","片山","栗原","藤堂","神谷","早乙女","九条","東雲","一ノ瀬","二階堂","橘","榊原","鷹野","水無瀬","久世",
+  "御子柴","相楽","鳴海","白石","黒川","深澤","瀬川","雨宮","朝倉","篠宮","秋月","有馬","葛西","椎名","高瀬","柊木",
+  "桐生","如月","三神","小鳥遊","倉橋","神崎","鷲尾","碓氷","藤代","八神","西園寺","城戸","石田","長谷部","池上","大塚",
+  "小山","塚本","高田","小池","大橋","寺田","西田","中山","岩田","森本","福島","吉川","市川","水野","小松","安田",
+  "吉岡","大久保","五十嵐","田口","宮田","川上","平田","西川","久保田","土屋","川村","小沢","菊地","菊池","早川","北川",
+  "鈴村","松岡","中西","浅野","永田","吉村","田村","浜田","山崎","安井","萩原","宮川","内藤","岩本","横田","尾崎",
+  "広瀬","角田","武井","古賀","平井","堀田","浅井","三宅","大石","小田","大谷","須藤","坂口","成田","児玉","宮下",
+  "小西","岡村","黒田","高山","土井","今村","青山","古田","植田","小泉","宇野","岡崎","片岡","橋口","岩井","松永",
+  "内山","竹田","石橋","松浦","上原","野田","南","奥田","辻本","福井","坂田","多田","奥村","宮野","豊田","金井",
+  "小笠原","平山","小倉","河合","山下","中田","佐野","坪井","戸田","島田","福岡","水谷","杉本","小原","畠山","奥野",
+  "森山","川島","新田","関","大川","岡野","富田","小森","片桐","安部","大森","浜崎","中井","岸","及川","今野",
+  "浅田","長岡","川瀬","松崎","赤松","西尾","三好","稲垣","米田","稲葉","上村","村田","石原","北野","西本","内海",
+  "大沢","篠原","岩瀬","上野","戸松","川田","宮沢","菅野","根本","西野","竹中","上杉","黒木","谷","中原","長尾",
+  "花田","大場","亀井","柳沢","坂井","矢野","吉原","藤本","尾形","土田","本間","飯塚","天野","安達","金沢","岸本",
+  "沢田","大槻","宮原","大庭","大山","竹下","日野","坂野","入江","桑原","齋藤","渡部","江口","梅田","宮島","加納",
+  "井口","小坂","西岡","中沢","堀内","牧野","徳永","泉","徳田","松下","平松","池内"
+];
 const MIDDLE_SCHOOLS=["札幌北辰中","仙台青葉中","盛岡中央中","秋田南中","水戸東中","宇都宮中央中","前橋南中","浦和青葉中","千葉海浜中","東京東雲中","横浜港南中","新潟中央中","金沢白山中","松本旭中","静岡葵中","名古屋東中","京都洛北中","大阪城南中","神戸海浜中","岡山旭東中","広島中央中","高松青葉中","福岡城南中","熊本東中"];
 const HIGH_SCHOOLS=["札幌北星高","青森海洋高","仙台青陵高","盛岡中央高","秋田南高","山形城北高","水戸第一高","宇都宮東高","前橋育英高","浦和青葉高","千葉海浜高","東京東雲高","横浜港南高","新潟中央高","富山北辰高","金沢白山高","松本旭高","静岡葵高","東海中央高","京都洛北高","大阪桜陵高","神戸海浜高","岡山旭東高","広島中央高","高松青葉高","松山海星高","福岡城南高","熊本東高","鹿児島中央高","那覇海邦高"];
 const ADULT_TEAMS=["北海エナジー","東北テクノ","仙台アクア","北関東精機","関東ウォーターズ","東京ベイスポーツ","横浜マリン","信越テクノ","北陸精機","東海モビリティ","中京アクア","関西電工","近畿スポーツ","瀬戸内マリン","中国テクノ","四国エナジー","福岡アクア","九州モビリティ","南九州物流","沖縄マリン","首都圏システムズ","東日本スポーツ","西日本テクノ","全国アクアクラブ"];
@@ -1622,7 +1673,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.57";
+  state.version="pwa-v1.58";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2500,7 +2551,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.57",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.58",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -2609,7 +2660,7 @@ function recordSchoolInfo(a,season=activeCompetitionSeason(),hint=null){
 }
 function recordSchoolLabel(record){
   let prefix={middle:"中",high:"高",university:"大"}[record.schoolCategory];
-  if(prefix&&Number.isInteger(record.gradeAtRecord))return `${prefix}${record.gradeAtRecord}${record.schoolCategory==="university"?"年":""}`;
+  if(prefix&&Number.isInteger(record.gradeAtRecord))return `${prefix}${record.gradeAtRecord}`;
   return record.schoolCategory==="adult"?"社会人":record.schoolCategory==="graduate"?"卒業後":"学年不明";
 }
 function migrateRecordSchoolInfo(){
@@ -3632,7 +3683,7 @@ function showStandards(){
 }
 function top10AthleteName(id,name){
   let p=state.players.find(p=>p.id===id);
-  return p?`<b>${esc(p.name)}</b> ${gradeBadge(p.year,`現役 ${p.year}年`,"active-athlete")}`:esc(name);
+  return p?`<b>${esc(p.name)}</b> ${gradeBadge(p.year,`現役 大${p.year}`,"active-athlete")}`:esc(name);
 }
 function renderTeamTop10(){
     let selector=document.getElementById("teamTop10Event");if(!selector)return;
@@ -4540,12 +4591,13 @@ function renderRankings(){
   let rows=ranking(e,cat,50);
   table.innerHTML=`<table><thead><tr><th>順位</th><th>選手</th><th>所属</th><th>区分</th><th>学年 / 年齢</th><th>PB</th></tr></thead>
     <tbody>${rows.map((a,i)=>{
-      let own=state.players.includes(a),topClass=i===0?"top1":i===1?"top2":i===2?"top3":"";
+      let own=state.players.includes(a),topClass=i===0?"top1":i===1?"top2":i===2?"top3":"",grade=own?a.year:a.grade;
+      let gradeHtml=own||a.category==="university"?gradeBadge(grade,`大${grade||"-"}`):athleteGradeHtml(a);
       return`<tr class="${own?"own-ranking":""}">
         <td><span class="rank-pill ${topClass}">${i+1}</span></td>
         <td><span class="athlete-name">${own?"★ ":""}${esc(a.name)}</span></td><td>${esc(a.organization)}</td>
         <td>${own?'<span class="tag good">自大学</span>':({middle:"中学",high:"高校",university:"大学",adult:"社会人"}[a.category]||"-")}</td>
-        <td>${own||a.grade?`${athleteGradeHtml(a)} / ${a.age}歳`:`${a.age}歳`}</td>
+        <td>${own||a.grade?`${gradeHtml} / ${a.age}歳`:`${a.age}歳`}</td>
         <td><b>${fmt(a.bestTimes[e])}</b></td>
       </tr>`;
     }).join("")||'<tr><td colspan="6"><div class="empty-state">まだ記録がありません。</div></td></tr>'}</tbody></table>`;

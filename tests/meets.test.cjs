@@ -72,7 +72,7 @@ test('record grades stay at the race year after progression, graduation and save
     const after=JSON.parse(result.after)[category].fr100.find(r=>r.athleteId==='grade-career');
     assert.deepEqual(after,before);
   }
-  assert.deepEqual(result.labels,['高3','大1年','社会人']);
+  assert.deepEqual(result.labels,['高3','大1','社会人']);
   assert.equal(result.own.gradeAtRecord,4);assert.equal(result.own.schoolCategory,'university');
 });
 
@@ -111,7 +111,7 @@ test('legacy record grades recover from school cohorts and graduation seasons wi
     return{original,records:state.recordRankings,once:first===JSON.stringify(state.recordRankings),
       labels:state.recordRankings.japan.fr100.map(recordSchoolLabel)};
   })()`);
-  assert.deepEqual(result.labels,['学年不明','大2年','大1年']);
+  assert.deepEqual(result.labels,['学年不明','大2','大1']);
   assert.equal(result.records.high.fr100[0].gradeAtRecord,3);
   assert.deepEqual(result.records.university['4x100fr'][0].members.map(m=>m.gradeAtRecord),[1,4,null,2]);
   assert.ok(result.once);
