@@ -29,7 +29,7 @@ test('endurance matters more than speed in 200m strokes and 400m races, with a l
   }
 });
 
-test('low endurance costs more time at 200m and 400m while balanced benchmarks and 200m IM stay intact',()=>{
+test('low endurance costs more time at 200m and 400m while balanced stroke benchmarks stay intact',()=>{
   const run=game(),rows=run(`(()=>{
     const rows=[];
     for(const e of ['fr200','ba200','br200','fly200','fr400']){
@@ -39,15 +39,14 @@ test('low endurance costs more time at 200m and 400m while balanced benchmarks a
     }
     const p={stats:Object.fromEntries(STATS.map(k=>[k,163])),bestTimes:{}};
     const race=replayRaceToOfficialTime(p,'im200',expectedTime(p,'im200'));
-    return {rows,im200:{total:race.total,splits:race.splits,mid:round2(stateAt(replayRaceToOfficialTime(p,'im200',135),67.5).distance)}};
+    return {rows,im200:{total:race.total,splits:race.splits}};
   })()`);
   for(const row of rows.rows){
     assert.equal(row.base,row.oldBase,JSON.stringify(row));
     assert.ok(row.weak-row.base>(row.oldWeak-row.oldBase)*1.5,JSON.stringify(row));
   }
-  assert.equal(rows.im200.total,115.89);
-  assert.deepEqual(rows.im200.splits,[25.50,28.97,32.45,28.97]);
-  assert.equal(rows.im200.mid,107.59);
+  assert.equal(rows.im200.total,116.58);
+  assert.deepEqual(rows.im200.splits,[25.31,30.50,33.95,26.82]);
 });
 
 test('all 200m strokes and 400m freestyle visibly fade with low endurance instead of merely starting more slowly',()=>{

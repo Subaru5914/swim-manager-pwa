@@ -56,7 +56,7 @@ test('CPU individuals vary within one team and the new legacy spread preserves p
   const result=JSON.parse(run(`JSON.stringify((()=>{
     let used=new Set(),sample=Array.from({length:80},()=>makeAthlete('university','同じ大学',used,20,2,82));
     let values=sample.map(overallStatValue),mean=values.reduce((a,b)=>a+b)/values.length;
-    let own=JSON.stringify(state.players),alumni={...deepClone(state.players[0]),id:'preserved-alumni',category:'adult',age:26,alumni:true};
+    let own=JSON.stringify(state.players),alumni=attachMedleyStats({...deepClone(state.players[0]),id:'preserved-alumni',category:'adult',age:26,alumni:true});
     state.world.push(alumni);let savedAlumni=JSON.stringify(alumni);
     for(let a of state.world.filter(a=>a.category==='university')){
       delete a.cpuCompetitionProfileVersion;delete a.cpuCompetitionCategory;
@@ -93,7 +93,7 @@ test('v2 CPU saves gain event differences once while player, alumni, awards and 
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),titles=JSON.stringify(state.world.flatMap(a=>a.accolades));
-    const alumni={...deepClone(state.players[0]),id:'v3-preserved-alumni',category:'adult',age:26,alumni:true};state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
+    const alumni=attachMedleyStats({...deepClone(state.players[0]),id:'v3-preserved-alumni',category:'adult',age:26,alumni:true});state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
     const cpu=state.world.filter(a=>a.category==='university');
     for(const a of cpu){
       delete a.cpuCompetitionProfileVersion;delete a.cpuCompetitionCategory;
@@ -148,9 +148,8 @@ test('all 15 events use C/B/A/S benchmarks and improve continuously with ability
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify(EVENTS.map(event => {
     const time = value => expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,value]))},event);
-    const medleyFactor=event.startsWith('im')?.99:1;
-    return {event,C:time(113),Cref:KANSAI_COLLEGE_WIN_TARGET[event]*1.02*medleyFactor,
-      B:time(138),Bref:INTERCOLLEGE_A_FINAL_REFERENCE[event]*medleyFactor,A:time(163),
+    return {event,C:time(113),Cref:KANSAI_COLLEGE_WIN_TARGET[event]*1.02,
+      B:time(138),Bref:INTERCOLLEGE_A_FINAL_REFERENCE[event],A:time(163),
       S:time(188),record:JAPAN_RECORD[event],times:Array.from({length:201},(_,v)=>time(v))};
   }))`));
   assert.equal(rows.length, 15);
@@ -165,7 +164,7 @@ test('all 15 events use C/B/A/S benchmarks and improve continuously with ability
   }
 });
 
-test('medley pacing improves at unchanged ability while saved stats, PBs and record anchors stay intact',()=>{
+test('derived IM pacing uses real Intercollege references while save migration preserves earned stats, PBs and records',()=>{
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const rows=[113,138,163].flatMap(value=>{
@@ -177,11 +176,11 @@ test('medley pacing improves at unchanged ability while saved stats, PBs and rec
     return {rows,preserved:saved===snapshot(),records:records===JSON.stringify(state.recordRankings),version:state.version};
   })())`));
   for(const row of result.rows){
-    assert.ok(Math.abs(row.current/row.previous-.99)<1e-10,JSON.stringify(row));
-    assert.ok(row.previous-row.current>.8&&row.previous-row.current<3,JSON.stringify(row));
+    if(row.value<163)assert.equal(row.current,row.previous,JSON.stringify(row));
+    else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.63');
+  assert.equal(result.version,'pwa-v1.64');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -229,7 +228,7 @@ test('balanced A medley swimmers can win against the strongest college entrants 
   const rows=JSON.parse(run(`JSON.stringify((()=>{
     const p={id:'medley-A-player',stats:Object.fromEntries(STATS.map(k=>[k,80])),bestTimes:{}};
     for(const s of ['fr','ba','br','fly'])for(const k of ['speed','stamina'])p.stats[s+'_'+k]=163;
-    const cpu={...deepClone(p),id:'medley-A-cpu',category:'university'};
+    const cpu={...deepClone(p),category:'university'};
     state.players.push(p);
     const entries=buildCpuCollegeEntries('intercollege'),byId=new Map(state.world.map(a=>[a.id,a]));
     return ['im200','im400'].map(e=>{
@@ -371,7 +370,7 @@ test('player and CPU individual and relay races use the same abilities and time 
     const results=[];
     for(const value of [113,138,163,188])for(const e of EVENTS){
       let player={id:'p',name:'p',stats:Object.fromEntries(STATS.map(k=>[k,value]))};
-      let cpu={...player,id:'cpu',category:'university',organization:state.universities[0].name};
+      let cpu={...player,category:'university',organization:state.universities[0].name};
       state.players=[player];state.rngSeed=7654321;
       let pRace=simulateRace(player,e,true,false);state.rngSeed=7654321;
       let cRace=simulateMeetRace(cpu,e,'kansai_college',false);
@@ -438,7 +437,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.63');
+  assert.equal(result.version, 'pwa-v1.64');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -454,6 +453,7 @@ test('new seasons preserve eight real candidates including prodigy abilities and
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.prodigy=true;state.recruits=[a.id];
     a.stats=Object.fromEntries(STATS.map((k,i)=>[k,152+i*.1]));
+    attachMedleyStats(a);
     const stats=JSON.stringify(a.stats),pb=JSON.stringify(a.bestTimes);
     newSeason();
     const freshmen=state.players.filter(p=>p.year===1),prodigy=freshmen.find(p=>p.id===a.id);
@@ -502,7 +502,9 @@ test('upper A can break each dispatch standard on a good day in actual player an
     return {e,value,chance:passes/5000,player,cpu,slow,standard:dispatchStandard(e)};
   })))`));
   for(const row of rows){
-    assert.ok(row.chance>.003&&row.chance<.98,JSON.stringify(row));
+    // The real Intercollege 400m IM winning benchmark already beats dispatch;
+    // upper A should usually qualify but can still miss it on a poor day.
+    assert.ok(row.chance>.003&&row.chance<(row.e==='im400'?.999:.98),JSON.stringify(row));
     assert.ok(row.player<row.standard&&row.cpu<row.standard&&row.slow>row.standard,JSON.stringify(row));
     assert.ok(Math.abs(row.player-row.cpu)<.001,JSON.stringify(row));
   }
@@ -603,7 +605,7 @@ test('CPU universities and swimmers have wider differences and legacy diversity 
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     let teams=state.universities.map(u=>({rep:u.reputation,mean:state.world.filter(a=>a.category==='university'&&a.organization===u.name).reduce((s,a)=>s+overallStatValue(a),0)/20}));
-    let p=state.players[0],own=JSON.stringify(p),alumni={...deepClone(p),id:'alumni-profile',category:'adult',age:26,alumni:true};state.world.push(alumni);
+    let p=state.players[0],own=JSON.stringify(p),alumni=attachMedleyStats({...deepClone(p),id:'alumni-profile',category:'adult',age:26,alumni:true});state.world.push(alumni);
     const oldAlumni=JSON.stringify(alumni);delete state.cpuDiversityVersion;state.cpuUniversityRepModelVersion=2;
     state.universities.forEach(u=>{u.baseReputation=clamp(35+(u.strength-65)*8.5,20,320);u.reputation=u.baseReputation+10});
     migrateState();let first=JSON.stringify(state.world),reps=JSON.stringify(state.universities);migrateState();
@@ -708,7 +710,7 @@ test('v4 CPU saves receive new distributions once without changing own players, 
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),titles=JSON.stringify(state.world.flatMap(a=>a.accolades));
-    const alumni={...deepClone(state.players[0]),id:'v4-preserved-alumni',category:'adult',age:26,alumni:true};state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
+    const alumni=attachMedleyStats({...deepClone(state.players[0]),id:'v4-preserved-alumni',category:'adult',age:26,alumni:true});state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
     for(const a of state.world.filter(a=>!a.alumni))a.cpuCompetitionProfileVersion=1;
     state.cpuDiversityVersion=4;delete state.cpuCompetitionSeed;migrateState();
     const first=JSON.stringify(state),profiles=state.world.filter(a=>!a.alumni).every(a=>a.cpuCompetitionProfileVersion===2);
@@ -724,7 +726,7 @@ test('v3 CPU saves gain competition profiles once and preserve own players, alum
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const own=JSON.stringify(state.players),records=JSON.stringify(state.recordRankings),titles=JSON.stringify(state.world.flatMap(a=>a.accolades));
-    const alumni={...deepClone(state.players[0]),id:'field-preserved-alumni',category:'adult',age:26,alumni:true};state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
+    const alumni=attachMedleyStats({...deepClone(state.players[0]),id:'field-preserved-alumni',category:'adult',age:26,alumni:true});state.world.push(alumni);const savedAlumni=JSON.stringify(alumni);
     for(const a of state.world.filter(a=>!a.alumni)){
       delete a.cpuCompetitionProfileVersion;delete a.cpuCompetitionCategory;
       a.stats=Object.fromEntries(STATS.map(k=>[k,120]));a.bestTimes=Object.fromEntries(EVENTS.map(e=>[e,expectedTime(a,e)*1.01]));

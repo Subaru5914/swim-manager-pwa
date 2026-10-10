@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.63</title>
+<title>大学競泳監督シミュレーション PWA版 v1.64</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -45,6 +45,7 @@ canvas{display:block;width:100%;background:#eaf8ff;border:1px solid var(--line);
 .focus-ba{background:#e8f8f5;border-color:#61b9a9}.focus-ba.selected{background:#258d7a;color:#fff}
 .focus-br{background:#fff0e7;border-color:#e9a16d}.focus-br.selected{background:#d47735;color:#fff}
 .focus-fly{background:#fceaf2;border-color:#d989ad}.focus-fly.selected{background:#b94e80;color:#fff}
+.focus-im{background:#eeeafd;border-color:#a492d5}
 .player-select-row{cursor:pointer}.player-select-row.selected{background:#eaf3ff!important;border-left:5px solid var(--accent)}
 .player-select-row td:first-child{font-weight:800}
 .growth-list{display:grid;gap:8px}.growth-athlete{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fbfdff}
@@ -1203,6 +1204,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 #trainingPlayers .training-specialty-pb{display:inline-flex;align-items:baseline;gap:3px;margin-top:0}
 #trainingPlan{grid-template-columns:repeat(3,minmax(0,190px));gap:8px}
 #trainingPlan [data-focus$="_speed"]{grid-column:1}
+#trainingPlan [data-derived-stat="im_speed"]{grid-column:1}
+#trainingPlan .focus-derived{cursor:default}
+.derived-stat-note{font-size:10px;font-weight:normal;white-space:nowrap}
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse), (orientation:portrait) and (max-height:950px) and (max-width:500px) and (pointer:coarse){
   #page-training>.two{grid-template-columns:clamp(250px,calc(var(--game-vw) * 32),290px) minmax(0,1fr);align-items:stretch}
   #page-training .training-list-card{display:flex;flex-direction:column;min-height:0;contain:size}
@@ -1263,7 +1267,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.63</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.64</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1341,6 +1345,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
         <span class="legend-dot focus-start">基礎</span><span class="legend-dot focus-fr">自由形</span>
         <span class="legend-dot focus-ba">背泳ぎ</span><span class="legend-dot focus-br">平泳ぎ</span>
         <span class="legend-dot focus-fly">バタフライ</span>
+        <span class="legend-dot focus-im">個人メドレー</span>
       </div>
       <div id="trainingRankLegend"></div>
       <div id="trainingPlan" class="focus-grid"></div>
@@ -1479,15 +1484,19 @@ Object.assign(STANDARDS.japan_open,{ba50:26.38,br50:28.30,fly50:24.42,sprintSour
 Object.assign(STANDARDS.japan_championship,{ba50:26.00,br50:28.08,fly50:24.24,sprintSource:SPRINT_SOURCES.japanChampionship});
 Object.assign(JAPAN_RECORD,{ba50:24.24,br50:26.65,fly50:23.06});
 const STATS=["start","mental","fr_speed","fr_stamina","fr_turn","ba_speed","ba_stamina","ba_turn","br_speed","br_stamina","br_turn","fly_speed","fly_stamina","fly_turn"];
-const DETAIL_STATS=["start","mental","fr_speed","fr_stamina","ba_speed","ba_stamina","br_speed","br_stamina","fly_speed","fly_stamina","fr_turn","ba_turn","fly_turn","br_turn"];
+const DERIVED_STATS=["im_speed","im_stamina"];
+const TRAINING_DISPLAY_STATS=[...STATS,...DERIVED_STATS];
+const DETAIL_STATS=["start","mental","fr_speed","fr_stamina","ba_speed","ba_stamina","br_speed","br_stamina","fly_speed","fly_stamina","im_speed","im_stamina","fr_turn","ba_turn","fly_turn","br_turn"];
 const STAT_LABEL={
  start:"スタート",mental:"メンタル",
  fr_speed:"Fr スピード",fr_stamina:"Fr スタミナ",fr_turn:"Fr ターン",
  ba_speed:"Ba スピード",ba_stamina:"Ba スタミナ",ba_turn:"Ba ターン",
  br_speed:"Br スピード",br_stamina:"Br スタミナ",br_turn:"Br ターン",
- fly_speed:"Fly スピード",fly_stamina:"Fly スタミナ",fly_turn:"Fly ターン"
+ fly_speed:"Fly スピード",fly_stamina:"Fly スタミナ",fly_turn:"Fly ターン",
+ im_speed:"IM スピード",im_stamina:"IM スタミナ"
 };
 const STAT_CLASS={start:"focus-start",mental:"focus-mental",fr_speed:"focus-fr",fr_stamina:"focus-fr",fr_turn:"focus-fr",ba_speed:"focus-ba",ba_stamina:"focus-ba",ba_turn:"focus-ba",br_speed:"focus-br",br_stamina:"focus-br",br_turn:"focus-br",fly_speed:"focus-fly",fly_stamina:"focus-fly",fly_turn:"focus-fly"};
+Object.assign(STAT_CLASS,{im_speed:"focus-im",im_stamina:"focus-im"});
 const FIXED_TRAINING_LEVEL=100;
 const BALANCE_MODEL_VERSION=1;
 const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
@@ -1681,7 +1690,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.63";
+  state.version="pwa-v1.64";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1748,6 +1757,8 @@ function migrateState(){
     }
   }
 
+  for(const a of [...(state.internationalWorld?.athletes||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)])attachMedleyStats(a);
+
   // Rebalance previously generated CPU swimmers once; earned player/alumni
   // abilities and historical meet results remain intact.
   if(state.balanceModelVersion!==BALANCE_MODEL_VERSION){
@@ -1791,6 +1802,7 @@ function fixedCapNormalize(a){
   if(!a)return;
   a.potential=Object.fromEntries(STATS.map(k=>[k,200]));
   STATS.forEach(k=>a.stats[k]=round2(clamp(+a.stats[k]||0,0,200)));
+  attachMedleyStats(a);
 }
 function organizationNames(){
   if(!state.organizationNames)state.organizationNames={
@@ -1892,7 +1904,7 @@ function overallStatValue(p){
   return STATS.reduce((s,k)=>s+(+p.stats?.[k]||0),0)/STATS.length;
 }
 function topStatKeys(p,count=3){
-  return [...STATS].sort((a,b)=>(p.stats?.[b]||0)-(p.stats?.[a]||0)).slice(0,count);
+  return [...TRAINING_DISPLAY_STATS].sort((a,b)=>displayStatValue(p,b)-displayStatValue(p,a)).slice(0,count);
 }
 function statRankLegendHtml(){
   return `<div class="stat-rank-legend">${STAT_RANKS.map(x=>`<span class="rank-legend-item ${"rank-"+x.rank.toLowerCase()}"${x.level?` title="${x.level}"`:""}><b>${x.rank}</b> ${x.min}–${x.max}</span>`).join("")}</div>`;
@@ -1944,24 +1956,37 @@ function distanceOf(e){return +(e.match(/\d+/)||[100])[0]}
 function strokeForEvent(e){if(e.startsWith("fly"))return"fly";if(e.startsWith("im"))return"im";return e.slice(0,2)}
 function specialtyTag(e,prefix=""){let stroke=EVENTS.includes(e)?strokeForEvent(e):"fr";return `<span class="tag specialty specialty-${stroke}">${esc(prefix)}${EVENT_LABEL[e]||"—"}</span>`}
 const MEDLEY_STROKES=["fly","ba","br","fr"];
-// Game pacing shares: the opening butterfly includes the dive, and freestyle includes accumulated fatigue.
-// These shares calibrate balanced swimmers to the existing IM benchmarks; they are not official split records.
-const MEDLEY_LEG_SHARES={200:[.22,.25,.28,.25],400:[.23,.25,.28,.24]};
+// Balanced IM pacing follows the 2025 men's LCM Intercollege champion's official cumulative splits.
+// Individual stroke speeds redistribute these shares without changing the IM-based total.
+const MEDLEY_LEG_SHARES={200:[25.31,30.50,33.95,26.82].map(t=>t/116.58),400:[54.67,63.45,71.61,57.48].map(t=>t/247.21)};
 const MEDLEY_SPEED_WEIGHTS={200:.60,400:.35};
+function medleyStatValue(p,component){
+  const mean=MEDLEY_STROKES.reduce((sum,s)=>sum+clamp(+p.stats?.[`${s}_${component}`]||0,0,200),0)/4;
+  // A stable aptitude difference of at most two points. No new random draws or independent training gains.
+  const bias=p.id?((profileHash(p.id+":im:"+component)%401)-200)/100:0;
+  const edge=clamp(Math.min(mean,200-mean)/25,0,1);
+  return round2(clamp(mean+bias*edge,0,200));
+}
+function attachMedleyStats(p){
+  if(!p?.stats)return p;
+  for(const component of ["speed","stamina"])Object.defineProperty(p.stats,`im_${component}`,{
+    enumerable:true,configurable:true,get:()=>medleyStatValue(p,component)
+  });
+  return p;
+}
+function displayStatValue(p,key){return DERIVED_STATS.includes(key)?medleyStatValue(p,key.slice(3)):(+p.stats?.[key]||0)}
 function strokeAtDistance(event,d,total){let b=strokeForEvent(event);if(b!=="im")return b;let q=total/4;return MEDLEY_STROKES[Math.min(3,Math.floor(clamp(d,0,total-1e-7)/q))]}
 function statTriplet(p,stroke){return [p.stats[`${stroke}_speed`],p.stats[`${stroke}_stamina`],p.stats[`${stroke}_turn`]]}
 function eventProfile(p,e,legacyIm=false){
   let d=distanceOf(e),s=strokeForEvent(e);
   if(s!=="im"){let [sp,st,tr]=statTriplet(p,s);return [sp,st,tr,d]}
   let ss=["fr","ba","br","fly"];let avg=k=>ss.reduce((a,x)=>a+p.stats[`${x}_${k}`],0)/4;
-  // A weak stroke limits medley performance even when the other three are strong.
-  let balanced=k=>ss.some(x=>p.stats[`${x}_${k}`]<=0)?0:4/ss.reduce((a,x)=>a+1/p.stats[`${x}_${k}`],0);
-  return [legacyIm?avg("speed"):balanced("speed"),legacyIm?avg("stamina"):balanced("stamina"),avg("turn"),d];
+  return [legacyIm?avg("speed"):medleyStatValue(p,"speed"),legacyIm?avg("stamina"):medleyStatValue(p,"stamina"),avg("turn"),d];
 }
 function abilityValue(p,e,legacyIm=false){
   let [sp,st,tr,d]=eventProfile(p,e,legacyIm);
   if(strokeForEvent(e)==="im"&&!legacyIm){
-    // Summary for ranks, CPU profiles and race-day variation; the IM clock is calculated per stroke below.
+    // The IM clock uses the derived IM speed/endurance; stroke differences set playback shares below.
     let speedWeight=MEDLEY_SPEED_WEIGHTS[d],surface=sp*speedWeight+st*(1-speedWeight);
     let technique=tr*.65+p.stats.start*.35;
     return clamp((surface+clamp((technique-surface)*.02,-2,2))/200,0,1);
@@ -2000,38 +2025,35 @@ const INTERCOLLEGE_A_FINAL_REFERENCE={
   im200:118.84,
   im400:255.98
 };
+const MEDLEY_RECORD_REFERENCES={
+  year:2025,champion:{im200:116.58,im400:247.21},
+  sources:{im200:"https://swim.seiko.co.jp/2025/S70401/ranking/03R062.pdf",im400:"https://swim.seiko.co.jp/2025/S70401/ranking/01R012.pdf"},
+  latestSources:{im200:"https://swim.seiko.co.jp/2026/S70401/ranking/03R062.pdf",im400:"https://swim.seiko.co.jp/2026/S70401/ranking/01R012.pdf"}
+};
 function abilityBenchmarkTime(e,ability,legacyModel=false){
   let jr=JAPAN_RECORD[e];
   let finalTime=INTERCOLLEGE_A_FINAL_REFERENCE[e];
   // Regional final / national final / national champion / Japanese record.
   // Champion and regional-final anchors are game benchmarks, not new official results.
-  let champion=Math.max(jr*1.01,finalTime*.985);
+  let champion=!legacyModel&&strokeForEvent(e)==="im"?MEDLEY_RECORD_REFERENCES.champion[e]:Math.max(jr*1.01,finalTime*.985);
   // Spread late A across its full ability range instead of reaching near-S at 167.
   let upperA=Math.min(champion*.9975,Math.max(jr*1.004,dispatchStandard(e)*1.005));
   let anchors=[[0,jr*1.50],[113,KANSAI_COLLEGE_WIN_TARGET[e]*1.02],
     [138,finalTime],[163,champion],[legacyModel?167:175,upperA],
     [188,jr],[200,Math.min(jr*ELITE_JR_FACTOR,WORLD_REFERENCE.individual[e])]];
-  // Slightly faster medley pacing with the same four-stroke abilities.
-  // Fade the bonus from late A to S so the Japanese/world-record anchors stay intact.
-  let medleyFactor=!legacyModel&&strokeForEvent(e)==="im"?1-.01*clamp((188-ability)/13,0,1):1;
   for(let i=1;i<anchors.length;i++){
     let [hi,time]=anchors[i],[lo,prev]=anchors[i-1];
-    if(ability<=hi)return (prev+(time-prev)*(ability-lo)/(hi-lo))*medleyFactor;
+    if(ability<=hi)return prev+(time-prev)*(ability-lo)/(hi-lo);
   }
-  return anchors[anchors.length-1][1]*medleyFactor;
+  return anchors[anchors.length-1][1];
 }
 function medleySectionTimes(p,e){
-  const d=distanceOf(e),speedWeight=MEDLEY_SPEED_WEIGHTS[d];
-  return MEDLEY_STROKES.map((stroke,i)=>{
-    const [speed,stamina,turn]=statTriplet(p,stroke),surface=speed*speedWeight+stamina*(1-speedWeight);
-    // Each leg uses only its own swimming/turn abilities; only the first leg uses the start.
-    const technique=stroke==="fly"?turn*.65+p.stats.start*.35:turn;
-    const ability=clamp(surface+clamp((technique-surface)*.02,-2,2),0,200);
-    return {stroke,distance:d/4,time:abilityBenchmarkTime(e,ability)*MEDLEY_LEG_SHARES[d][i]};
-  });
+  const d=distanceOf(e),mean=MEDLEY_STROKES.reduce((sum,s)=>sum+p.stats[`${s}_speed`],0)/4,total=expectedTime(p,e);
+  const shares=MEDLEY_STROKES.map((s,i)=>MEDLEY_LEG_SHARES[d][i]/(1+clamp((p.stats[`${s}_speed`]-mean)*.002,-.20,.20)));
+  const sum=shares.reduce((a,b)=>a+b,0);
+  return MEDLEY_STROKES.map((stroke,i)=>({stroke,distance:d/4,time:total*shares[i]/sum}));
 }
 function expectedTime(p,e,legacyModel=false){
-  if(strokeForEvent(e)==="im"&&!legacyModel)return medleySectionTimes(p,e).reduce((sum,section)=>sum+section.time,0);
   return abilityBenchmarkTime(e,abilityValue(p,e,legacyModel)*200,legacyModel);
 }
 function raceTarget(p,e,champ=true){
@@ -2099,7 +2121,14 @@ function simulateCore(p,event,target,scale,record=false,relayTakeover=false,dt=.
     }
     t+=dt;if(record&&t+1e-9>=nextSample){traj.push(snap());nextSample+=.033333}
   }
-  let total=splits.length?splits[splits.length-1]:t;if(record&&(!traj.length||traj[traj.length-1].t<total-.001)){t=total;d=totalDist;phase="finish";traj.push(snap())}
+  let total=splits.length?splits[splits.length-1]:t;
+  if(record&&d>=totalDist-1e-9){
+    t=total;d=totalDist;phase="finish";
+    const finish=snap();finish.t=total;
+    // A sample just before the touch can be within 1 ms of the finish.
+    // Always retain the exact touch instead of stopping that replay early.
+    if(traj.at(-1)?.phase==="finish")traj[traj.length-1]=finish;else traj.push(finish);
+  }
   let parts=[],last=0;for(let x of splits){parts.push(round2(x-last));last=x}
   return{total,splits:parts,cumulative:splits.map(round2),trajectory:traj,reaction,paceBias}
 }
@@ -2181,7 +2210,7 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65){
   diversifyCpuIndividual(a);
   applyCpuCompetitionProfile(a);
   refreshCpuPBs(a);
-  return a;
+  return attachMedleyStats(a);
 }
 function updatePersonalBest(a,event,time){
   if(!EVENTS.includes(event)||!Number.isFinite(time)||time<=0)return false;
@@ -2596,10 +2625,10 @@ function makeInitialPlayer(year,used){
   p.specialty=bestSpecialtyByAbility(p);
   diversifyStrokeStats(p);
   rollProdigy(p,year);ensurePlayerGrowthType(p);
-  return p;
+  return attachMedleyStats(p);
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.63",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.64",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3072,7 +3101,7 @@ function ensureInternationalWorld(year){
         stats:Object.fromEntries(STATS.map(k=>[k,round2(rand(128,162))])),bestTimes:{},raceHistory:[],accolades:[],retired:false};
       a.stats.mental=round2(rand(154,191));
       calibrateWorldAthlete(a,event,WORLD_REFERENCE.individual[event]*(1+quality+rand(-.002,.010)));
-      roster.push(a);athletes.push(a);return a;
+      attachMedleyStats(a);roster.push(a);athletes.push(a);return a;
     };
     for(let e of EVENTS){
       const count=athletes.filter(a=>a.nationality===country&&a.individualEligible&&(a.individualEvent||a.specialty)===e).length;
@@ -3419,7 +3448,7 @@ function ensureTrainingFocus(p){
 function trainCommand(){
   let d=slotDate(state.slot),camp=campAt(d.month,d.week)?1.35:1,growth=[];
   for(let p of state.players){
-    let before=Object.fromEntries(STATS.map(k=>[k,p.stats[k]]));
+    let before=Object.fromEntries(TRAINING_DISPLAY_STATS.map(k=>[k,displayStatValue(p,k)]));
     let focus=ensureTrainingFocus(p);
     let rawWeights=Object.fromEntries(STATS.map(k=>[k,focus.includes(k)?1:0]));
     let sum=STATS.reduce((a,k)=>a+rawWeights[k],0)||1,primary={};
@@ -3442,8 +3471,8 @@ function trainCommand(){
       p.stats[sk]=round2(Math.min(200,p.stats[sk]+sec));
     }
     let changes=[];
-    for(let k of STATS){
-      let oldI=Math.round(before[k]),newI=Math.round(p.stats[k]);
+    for(let k of TRAINING_DISPLAY_STATS){
+      let oldI=Math.round(before[k]),newI=Math.round(displayStatValue(p,k));
       if(newI>oldI)changes.push({stat:k,before:oldI,after:newI,up:newI-oldI});
     }
     if(changes.length)growth.push({id:p.id,name:p.name,year:p.year,changes});
@@ -3496,14 +3525,14 @@ function graduateToAdult(p){
   return rng()<clamp(.10+abilityChance+resultChance+repChance,.10,.72);
 }
 function alumniAdultFromPlayer(p,organization){
-  return {
+  return attachMedleyStats({
     id:p.id,name:p.name,gender:"M",category:"adult",age:p.age,grade:null,organization,
     stats:deepClone(p.stats),potential:Object.fromEntries(STATS.map(k=>[k,200])),
     condition:65,fatigue:0,bestTimes:deepClone(p.bestTimes||{}),retired:false,scouted:false,discovered:false,
     potentialType:p.potentialType,growthProfile:deepClone(p.growthProfile),accolades:deepClone(p.accolades||[]),
     raceHistory:deepClone(p.raceHistory||[]),specialty:p.specialty,
     alumni:true,almaMater:state.playerUniversity,graduationSeason:state.season
-  };
+  });
 }
 
 function addMiddleSchoolCohort(){
@@ -3613,7 +3642,7 @@ function newSeason(){
 function worldToPlayer(a){
   let p={id:a.id,name:a.name,year:1,gender:"M",potential:Object.fromEntries(STATS.map(k=>[k,200])),stats:deepClone(a.stats),condition:65,fatigue:0,injury_weeks:0,bestTimes:deepClone(a.bestTimes||{}),potentialType:a.potentialType,growthProfile:deepClone(a.growthProfile),age:19,organization:state.playerUniversity,raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades),specialty:a.specialty,prodigy:!!a.prodigy,strokeProfileVersion:a.strokeProfileVersion};
   ensurePlayerSpecialty(p);ensurePlayerGrowthType(p);
-  return p;
+  return attachMedleyStats(p);
 }
 function advanceSlot(){state.slot++;if(state.slot>96)newSeason()}
 function scoutSpecialty(a){return SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestScoutEvent(a).event}
@@ -4605,8 +4634,9 @@ function renderTrainingPlan(){
   document.getElementById("trainingSpecialty").innerHTML=`${specialtyTag(specialty,"専門 ")} <span class="training-specialty-pb"><span class="pb-caption">PB</span> <b id="trainingSpecialtyPB">${pb}</b></span> <button id="trainingSpecialtyBtn">専門変更</button>`;
   document.getElementById("trainingSpecialtyBtn").onclick=()=>showSpecialtyPicker(p.id);
   box.setAttribute("role","radiogroup");box.setAttribute("aria-label","練習する能力を1つ選択");
-  box.innerHTML=STATS.map(k=>{
-    let v=Math.round(p.stats[k]||0);
+  box.innerHTML=TRAINING_DISPLAY_STATS.map(k=>{
+    let v=Math.round(displayStatValue(p,k));
+    if(DERIVED_STATS.includes(k))return`<div class="focus-btn focus-derived ${STAT_CLASS[k]} ${statRankClass(v)}" data-derived-stat="${k}"><div><b>${STAT_LABEL[k]}</b></div><div class="focus-rank-line"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div><small class="derived-stat-note">4泳法の練習で向上</small></div>`;
     return`<button type="button" role="radio" aria-checked="${focus.includes(k)}" class="focus-btn ${STAT_CLASS[k]} ${statRankClass(v)} ${focus.includes(k)?"selected":""}" data-focus="${k}" aria-pressed="${focus.includes(k)}">
       <div><b>${STAT_LABEL[k]}</b></div>
       <div class="focus-rank-line"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></div>
@@ -4638,10 +4668,10 @@ function renderRoster(){
       return`<tr>
         <td><span class="athlete-name">${esc(p.name)}</span></td>
         <td>${gradeBadge(p.year)}</td>
-        <td><div class="player-overall"><span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span><span class="player-overall-meta"><b>${Math.round(overall)}</b><small class="muted">14能力平均</small></span></div></td>
+        <td><div class="player-overall"><span class="overall-rank ${statRankClass(overall)}">${statRank(overall)}</span><span class="player-overall-meta"><b>${Math.round(overall)}</b><small class="muted">基礎能力平均</small></span></div></td>
         <td>${specialtyTag(displayEvent||p.specialty)}</td>
         <td><b>${fmt(displayEvent?p.bestTimes[displayEvent]:p.bestTimes[p.specialty])}</b></td>
-        <td><div class="top-stat-list">${top.map(k=>`<span class="top-stat-chip"><span class="stat-rank-badge ${statRankClass(p.stats[k])}">${statRank(p.stats[k])}</span>${STAT_LABEL[k]} ${Math.round(p.stats[k])}</span>`).join("")}</div></td>
+        <td><div class="top-stat-list">${top.map(k=>`<span class="top-stat-chip"><span class="stat-rank-badge ${statRankClass(displayStatValue(p,k))}">${statRank(displayStatValue(p,k))}</span>${STAT_LABEL[k]} ${Math.round(displayStatValue(p,k))}</span>`).join("")}</div></td>
         <td><div class="action-group"><button data-detail="${p.id}">詳細</button><button data-specialty="${p.id}">専門変更</button><button data-rename="${p.id}">改名</button></div></td>
       </tr>`;
     }).join("")}</tbody></table>`;
@@ -4789,10 +4819,11 @@ function showPlayerDetail(id){
         <p class="small muted">ステータスを押して重点練習を1項目選択</p>
         <div id="detailTrainingNote" class="small" style="margin-bottom:6px"></div>
         <div class="detail-stat-grid" role="radiogroup" aria-label="練習する能力を1つ選択">${DETAIL_STATS.map(k=>{
-          let v=Math.round(p.stats[k]||0);
+          let v=Math.round(displayStatValue(p,k));
+          if(DERIVED_STATS.includes(k))return`<div class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" title="4泳法の平均にIM適性を反映。4泳法の練習で向上します。"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></div>`;
           return`<button type="button" role="radio" class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" data-detail-focus="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></button>`;
         }).join("")}</div>
-        <p class="small muted">メンタルが高いほど、不調になりにくくなります。</p>
+        <p class="small muted">IM能力は4泳法の練習で向上します。メンタルが高いほど、不調になりにくくなります。</p>
       </div>
       <div class="detail-pb-section">
         <h3>PB</h3>
@@ -4890,12 +4921,12 @@ function showTrainingGrowth(gains,onClose){
   let body=rows.length
     ? `<p class="growth-table-note">緑：上昇量（下段は練習前→後） ／ 金枠：ランクアップ ／ —：整数表示での変化なし。表は上下・左右にスクロールできます。</p>
       <div class="training-growth-wrap" tabindex="0" aria-label="選手とステータスごとの練習結果"><table class="training-growth-table">
-      <colgroup><col class="growth-name-column">${STATS.map(()=>'<col>').join("")}</colgroup>
-      <thead><tr><th rowspan="2" scope="col" class="growth-name">選手・学年</th><th rowspan="2" scope="col">スタート</th><th rowspan="2" scope="col">メンタル</th>${["fr","ba","br","fly"].map(s=>`<th colspan="3" scope="colgroup" class="focus-${s}">${s==="fly"?"Fly":s==="fr"?"Fr":s==="ba"?"Ba":"Br"}</th>`).join("")}</tr>
-      <tr>${["fr","ba","br","fly"].map(s=>["スピード","スタミナ","ターン"].map(label=>`<th scope="col" class="focus-${s}">${label}</th>`).join("")).join("")}</tr></thead>
+      <colgroup><col class="growth-name-column">${TRAINING_DISPLAY_STATS.map(()=>'<col>').join("")}</colgroup>
+      <thead><tr><th rowspan="2" scope="col" class="growth-name">選手・学年</th><th rowspan="2" scope="col">スタート</th><th rowspan="2" scope="col">メンタル</th>${["fr","ba","br","fly"].map(s=>`<th colspan="3" scope="colgroup" class="focus-${s}">${s==="fly"?"Fly":s==="fr"?"Fr":s==="ba"?"Ba":"Br"}</th>`).join("")}<th colspan="2" scope="colgroup" class="focus-im">IM</th></tr>
+      <tr>${["fr","ba","br","fly"].map(s=>["スピード","スタミナ","ターン"].map(label=>`<th scope="col" class="focus-${s}">${label}</th>`).join("")).join("")}<th scope="col" class="focus-im">スピード</th><th scope="col" class="focus-im">スタミナ</th></tr></thead>
       <tbody>${rows.map((g,i)=>{
         let changes=Object.fromEntries(g.changes.map(c=>[c.stat,c]));
-        return `<tr data-athlete-id="${esc(g.id)}" data-year="${g.year||""}" class="${i>0&&g.year!==rows[i-1].year?"growth-grade-start":""}"><th scope="row" class="growth-name">${esc(g.name)}${gradeBadge(g.year,g.year?g.year+"年":"学年不明","growth-grade")}</th>${STATS.map(k=>{
+        return `<tr data-athlete-id="${esc(g.id)}" data-year="${g.year||""}" class="${i>0&&g.year!==rows[i-1].year?"growth-grade-start":""}"><th scope="row" class="growth-name">${esc(g.name)}${gradeBadge(g.year,g.year?g.year+"年":"学年不明","growth-grade")}</th>${TRAINING_DISPLAY_STATS.map(k=>{
           let c=changes[k],promotion=c?trainingRankUp(c):"";
           return c?`<td class="growth-changed${promotion?" growth-rank-promoted":""}" data-stat="${k}"><span class="growth-up">+${c.up}</span><span class="growth-values">${c.before}→${c.after}</span>${promotion}</td>`:`<td class="growth-unchanged" data-stat="${k}">—</td>`;
         }).join("")}</tr>`;
