@@ -180,7 +180,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.64');
+  assert.equal(result.version,'pwa-v1.65');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -437,7 +437,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.64');
+  assert.equal(result.version, 'pwa-v1.65');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -491,6 +491,11 @@ test('upper A can break each dispatch standard on a good day in actual player an
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([165,173].flatMap(value=>EVENTS.map(e=>{
     let p={id:'upper-a',stats:Object.fromEntries(STATS.map(k=>[k,value]))},passes=0,bestSeed=0,worstSeed=0,min=Infinity,max=0;
+    // Exercise actual IM upper-A abilities rather than a swimmer whose fixed aptitude shifts them into S.
+    if(strokeForEvent(e)==='im')for(const component of ['speed','stamina']){
+      const bias=medleyStatValue(p,component)-value;
+      for(const stroke of MEDLEY_STROKES)p.stats[stroke+'_'+component]=value-bias;
+    }
     for(let i=0;i<5000;i++){
       let seed=state.rngSeed,t=raceTarget(p,e);
       if(t<=dispatchStandard(e))passes++;
@@ -510,10 +515,10 @@ test('upper A can break each dispatch standard on a good day in actual player an
   }
 });
 
-test('generated swimmers have distinct stroke strengths without changing existing earned stats', () => {
+test('generated players and single-stroke CPU swimmers have distinct stroke strengths without changing earned stats', () => {
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
-    let players=state.players.filter(p=>!p.prodigy),cpu=state.world.filter(a=>a.category==='university');
+    let players=state.players.filter(p=>!p.prodigy),cpu=state.world.filter(a=>a.category==='university'&&strokeForEvent(a.specialty)!=='im');
     const spread=a=>{let values=['fr','ba','br','fly'].map(s=>['speed','stamina','turn'].reduce((sum,k)=>sum+a.stats[s+'_'+k],0)/3);return Math.max(...values)-Math.min(...values)};
     let p=state.players[0];p.stats.fr_speed=183.25;let before=JSON.stringify(p.stats);migrateState();
     return {playerMean:players.reduce((s,a)=>s+spread(a),0)/players.length,cpuMean:cpu.reduce((s,a)=>s+spread(a),0)/cpu.length,preserved:before===JSON.stringify(p.stats)};
@@ -616,9 +621,10 @@ test('CPU universities and swimmers have wider differences and legacy diversity 
 });
 
 test('school swimmers have lower overall levels and category leaders vary between close races and standouts',()=>{
-  const samples=[];
+  const samples=[];let reference;
   for(const seed of [12345,54321,5914,8675309]){
     const run=game(seed);
+    if(!reference)reference=JSON.parse(run('JSON.stringify(JAPAN_RECORD)'));
     samples.push(JSON.parse(run(`JSON.stringify(['middle','high','university','adult'].map(category=>{
       const athletes=state.world.filter(a=>a.category===category),values=athletes.map(overallStatValue).sort((a,b)=>a-b);
       return {category,mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
@@ -628,10 +634,10 @@ test('school swimmers have lower overall levels and category leaders vary betwee
   for(const rows of samples){
     assert.ok(rows[0].mean<78&&rows[0].p90<110,JSON.stringify(rows[0]));
     assert.ok(rows[1].mean<96&&rows[1].p90<130,JSON.stringify(rows[1]));
-    for(let i=0;i<12;i++){
-      assert.ok(rows[0].events[i].mean>rows[1].events[i].mean,JSON.stringify(rows));
-      assert.ok(rows[1].events[i].mean>rows[2].events[i].mean,JSON.stringify(rows));
-    }
+    // Compare overall swimming levels; empirical fields may contain one stronger
+    // high-school stroke rather than forcing every event into the same category order.
+    const levels=rows.map(row=>row.events.reduce((sum,e)=>sum+e.mean/reference[e.e],0)/row.events.length);
+    assert.ok(levels[0]>levels[1]&&levels[1]>levels[2],JSON.stringify(levels));
   }
   for(let i=0;i<4;i++){
     const fields=samples.flatMap(rows=>rows[i].events);

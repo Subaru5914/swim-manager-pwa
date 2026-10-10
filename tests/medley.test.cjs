@@ -75,7 +75,7 @@ test('the same derived IM abilities produce the same total while stroke specialt
   }
 });
 
-test('derived IM abilities stay within two points of the mean, follow growth, survive JSON and use no random draws',()=>{
+test('derived IM abilities stay within twenty points of the mean, follow growth, survive JSON and use no random draws',()=>{
   const run=game(),rows=run(`Array.from({length:30},(_,i)=>{
     const p=attachMedleyStats({id:'aptitude-'+i,stats:Object.fromEntries(STATS.map(k=>[k,113])),bestTimes:{im200:120}});
     const seed=state.rngSeed,before={speed:p.stats.im_speed,stamina:p.stats.im_stamina};
@@ -88,8 +88,9 @@ test('derived IM abilities stay within two points of the mean, follow growth, su
     return {before,after,unchanged,zero,cap,pb:restored.bestTimes.im200,seed:state.rngSeed===seed};
   })`);
   assert.ok(new Set(rows.map(r=>r.before.speed)).size>10);
+  assert.ok(rows.some(row=>Math.abs(row.before.speed-113)>15));
   for(const row of rows){
-    assert.ok(Math.abs(row.before.speed-113)<=2&&Math.abs(row.before.stamina-113)<=2);
+    assert.ok(Math.abs(row.before.speed-113)<=20&&Math.abs(row.before.stamina-113)<=20);
     assert.ok(Math.abs(row.after-row.before.speed-2.5)<1e-8);
     assert.equal(row.unchanged.speed,row.after);assert.equal(row.unchanged.stamina,row.before.stamina);
     assert.deepEqual(row.zero,[0,0]);assert.deepEqual(row.cap,[200,200]);assert.equal(row.pb,120);assert.equal(row.seed,true);
