@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.59</title>
+<title>大学競泳監督シミュレーション PWA版 v1.60</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1142,6 +1142,11 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .modal-race-live{width:min(1240px,calc(var(--game-vw) * 96));max-width:1240px;display:flex;flex-direction:column;height:min(800px,calc(var(--game-vh) * 96));overflow:hidden}
 .modal-race-live>.row{flex-shrink:0}
 .modal-race-live .race-entrants{flex-shrink:0;max-height:calc(var(--game-vh) * 28);overflow:auto}
+.race-event-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-top:3px;color:#31465d}
+.race-event-stat{display:grid;grid-template-columns:auto auto;justify-content:center;align-items:center;gap:2px 3px;line-height:1.1;padding:2px 1px;background:#fff;border:1px solid #c7d7e8;border-radius:5px;min-width:0}
+.race-event-stat-label{grid-column:1/-1;font-size:11px;text-align:center;white-space:nowrap}
+.race-event-stat .stat-rank-badge{width:15px;min-width:15px;height:15px;border:1px solid currentColor;border-radius:3px;font-size:10px}
+.race-event-stat-value{font-size:12px;font-variant-numeric:tabular-nums}
 .modal-race-live .race-stage{flex:1;min-height:0}
 .modal-race-live .race-stage canvas{height:calc(100% - 16px)!important}
 .modal-race-live>.row:last-child{background:#fff;padding-top:4px}
@@ -1164,6 +1169,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   .race-entrants{font-size:11px;grid-template-columns:repeat(4,minmax(0,1fr))}
   .race-entrant strong{font-size:14px}
   .race-entrant:has(.entrant-team + div){line-height:1.25}
+  .race-event-stats{gap:2px}
+  .race-event-stat{gap:1px 2px;padding:1px 0}
+  .race-event-stat-label{font-size:10.5px}
   .modal-meet-program{width:calc(var(--game-vw) * 90)!important;padding:6px!important}
   .modal-meet-program h2{font-size:16px;margin-bottom:4px}
   .program-table-wrap{margin-top:6px}
@@ -1255,7 +1263,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.59</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.60</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1673,7 +1681,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.59";
+  state.version="pwa-v1.60";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2551,7 +2559,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.59",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.60",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4059,7 +4067,7 @@ function playMeetSequence(result,selections,onComplete,preparedQueue=null){
       let q=races[gi],label=`${block.showOverview?block.day+"日目 ":""}${q.label}　${++raceNumber}/${queue.length}`;
       const showGroup=()=>showRaceGroupResult(q,()=>runGroup(gi+1));
       setTimeout(()=>playRaceCanvas(q.event,q.rows,{
-        stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup
+        meet:result.meet,stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup
       }),0);
     };
     const beginBlock=()=>{
@@ -4321,10 +4329,17 @@ function relayMemberLabel(p){
   let grade=p.year?`${p.year}年`:p.category==="university"&&p.grade?`${p.grade}年`:p.category==="high"&&p.grade?`高${p.grade}`:p.category==="middle"&&p.grade?`中${p.grade}`:"";
   return `<span class="relay-member">${esc(surname)}${grade?`（${gradeBadge(p.year||p.grade,grade)}）`:""}</span>`;
 }
-function raceEntrantCard(row,lane,event){
+function raceEventStatsHtml(athlete,event){
+  let [speed,stamina,turn]=eventProfile(athlete,event);
+  return `<div class="race-event-stats" aria-label="${esc(EVENT_LABEL[event])}のステータス"${strokeForEvent(event)==="im"?' title="4泳法を反映した総合値"':""}>${[["スピード",speed,"speed"],["スタミナ",stamina,"stamina"],["ターン",turn,"turn"]].map(([label,value,key])=>{
+    let n=Math.round(value);
+    return `<div class="race-event-stat" data-race-stat="${key}"><span class="race-event-stat-label">${label}</span><span class="stat-rank-badge ${statRankClass(n)}">${statRank(n)}</span><b class="race-event-stat-value">${n}</b></div>`;
+  }).join("")}</div>`;
+}
+function raceEntrantCard(row,lane,event,showStats=false){
   let course=row.heatLane||lane+1,own=row.source==="PLAYER"?"own":"";
   if(row.members)return `<div class="race-entrant relay-entrant ${own}"><strong>${course} ${esc(row.nationality||row.athlete.organization||row.athlete.name)}</strong><div class="relay-members">${row.members.map(relayMemberLabel).join(" / ")}</div></div>`;
-  return `<div class="race-entrant ${own}"><strong>${own?"★ ":""}${course} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div><div>${athleteGradeHtml(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div></div>`;
+  return `<div class="race-entrant ${own}"><strong>${own?"★ ":""}${course} ${esc(row.athlete.name)}</strong><div class="entrant-team">${esc(row.nationality||row.athlete.organization||"")}</div><div>${athleteGradeHtml(row.athlete)}　PB ${fmt(raceEntryPB(row,event,row.athlete))}</div>${showStats?raceEventStatsHtml(row.athlete,event):""}</div>`;
 }
 
 function playRaceCanvas(event,rows,options={}){
@@ -4332,10 +4347,10 @@ function playRaceCanvas(event,rows,options={}){
   if(raceAnim?.cancel)raceAnim.cancel();
   rows=rows.map(x=>x.race.trajectory?.length?x:{...x,race:replayRaceToOfficialTime(x.athlete,event,x.race.total)});
   rows=[...rows].sort((a,b)=>(a.heatLane||1)-(b.heatLane||1));
-  let stage=options.stageLabel||"",nextLabel=options.nextLabel||"閉じる";
+  let stage=options.stageLabel||"",nextLabel=options.nextLabel||"閉じる",showStats=options.meet==="team_trial"&&!RELAYS.includes(event);
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">LIVE ${EVENT_LABEL[event]||RELAY_LABEL[event]||event} ${stage}</h2><div id="clock" class="clock">0.00</div>
       <button id="pause">一時停止</button><button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button></div>
-    <div class="race-entrants">${rows.map((row,lane)=>raceEntrantCard(row,lane,event)).join("")}</div>
+    <div class="race-entrants">${rows.map((row,lane)=>raceEntrantCard(row,lane,event,showStats)).join("")}</div>
     <div class="race-stage"><canvas id="raceCanvas" width="1240" height="634"></canvas><div class="race-progress"><span id="raceProg"></span></div></div>
     <div class="row" style="margin-top:10px">
       <span id="finishNote" class="muted">レース終了まで結果画面には進めません。</span>
@@ -4343,6 +4358,7 @@ function playRaceCanvas(event,rows,options={}){
       <button id="nextRace" class="primary" disabled>${nextLabel}</button>
     </div>`);
   m.classList.add("modal-race-live");
+  if(showStats)m.classList.add("modal-team-trial-live");
 
   let back=m.parentElement;
   back.addEventListener("click",e=>{if(e.target===back){e.stopImmediatePropagation();e.preventDefault()}},true);
@@ -4444,7 +4460,7 @@ function playRaceCanvas(event,rows,options={}){
 
   function frame(now){
     if(!paused&&!finished)elapsed+=((now-last)/1000)*speed;last=now;elapsed=Math.min(elapsed,maxT);
-    clock.textContent=elapsed.toFixed(2);prog.style.width=`${Math.min(100,elapsed/maxT*100)}%`;
+    clock.textContent=fmt(elapsed);prog.style.width=`${Math.min(100,elapsed/maxT*100)}%`;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     let left=18,right=canvas.width-42,laneH=68,top=50,w=right-left;drawPool(left,right,top,laneH);
     for(let lane=1;lane<=8;lane++){ctx.fillStyle="#10243f";ctx.font=`900 ${Math.max(20,Math.min(48,canvas.height/Math.max(1,canvas.clientHeight)*12))}px system-ui`;ctx.fillText(String(lane),right+10,top+(lane-1)*laneH+26,30)}
