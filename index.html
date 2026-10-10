@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.62</title>
+<title>大学競泳監督シミュレーション PWA版 v1.63</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1263,7 +1263,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.62</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.63</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1681,7 +1681,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.62";
+  state.version="pwa-v1.63";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -1947,6 +1947,7 @@ const MEDLEY_STROKES=["fly","ba","br","fr"];
 // Game pacing shares: the opening butterfly includes the dive, and freestyle includes accumulated fatigue.
 // These shares calibrate balanced swimmers to the existing IM benchmarks; they are not official split records.
 const MEDLEY_LEG_SHARES={200:[.22,.25,.28,.25],400:[.23,.25,.28,.24]};
+const MEDLEY_SPEED_WEIGHTS={200:.60,400:.35};
 function strokeAtDistance(event,d,total){let b=strokeForEvent(event);if(b!=="im")return b;let q=total/4;return MEDLEY_STROKES[Math.min(3,Math.floor(clamp(d,0,total-1e-7)/q))]}
 function statTriplet(p,stroke){return [p.stats[`${stroke}_speed`],p.stats[`${stroke}_stamina`],p.stats[`${stroke}_turn`]]}
 function eventProfile(p,e,legacyIm=false){
@@ -1961,12 +1962,14 @@ function abilityValue(p,e,legacyIm=false){
   let [sp,st,tr,d]=eventProfile(p,e,legacyIm);
   if(strokeForEvent(e)==="im"&&!legacyIm){
     // Summary for ranks, CPU profiles and race-day variation; the IM clock is calculated per stroke below.
-    let speedWeight=d===200?.60:.45,surface=sp*speedWeight+st*(1-speedWeight);
+    let speedWeight=MEDLEY_SPEED_WEIGHTS[d],surface=sp*speedWeight+st*(1-speedWeight);
     let technique=tr*.65+p.stats.start*.35;
     return clamp((surface+clamp((technique-surface)*.02,-2,2))/200,0,1);
   }
   let sw={50:.05,100:.15,200:.28,400:.40}[d],vw=.72-sw*.35;
   let raw=vw*sp+sw*st+.11*tr+.07*p.stats.start,mx=vw*200+sw*200+.11*200+.07*200;
+  // Shift the swimming contribution toward endurance without moving balanced benchmarks or technique weights.
+  if(!legacyIm&&d>=200)raw+=((vw+sw)*(d===200?.55:.65)-sw)*(st-sp);
   return clamp(raw/mx,0,1);
 }
 function entryEventStats(p,e){
@@ -2018,7 +2021,7 @@ function abilityBenchmarkTime(e,ability,legacyModel=false){
   return anchors[anchors.length-1][1]*medleyFactor;
 }
 function medleySectionTimes(p,e){
-  const d=distanceOf(e),speedWeight=d===200?.60:.45;
+  const d=distanceOf(e),speedWeight=MEDLEY_SPEED_WEIGHTS[d];
   return MEDLEY_STROKES.map((stroke,i)=>{
     const [speed,stamina,turn]=statTriplet(p,stroke),surface=speed*speedWeight+stamina*(1-speedWeight);
     // Each leg uses only its own swimming/turn abilities; only the first leg uses the start.
@@ -2067,6 +2070,7 @@ function reactionTime(p,event,relayTakeover=false){
 
 function simulateCore(p,event,target,scale,record=false,relayTakeover=false,dt=.025){
   let totalDist=distanceOf(event),[speedAvg,stamAvg]=eventProfile(p,event),first=strokeAtDistance(event,0,totalDist),[fs,fst,ft]=statTriplet(p,first);
+  const enduranceRace=totalDist>=200&&event!=="im200";
   let start=p.stats.start,reaction=reactionTime(p,event,relayTakeover);
   let paceBias=clamp((speedAvg-stamAvg)/200,-.7,.7),avg=totalDist/Math.max(1,target-reaction),nominal=avg*(1.06+clamp(speedAvg/200,0,1)*.04);
   let t=0,d=0,v=0,fat=0,nextWall=50,turnRemain=0,underRemain=0,phase="reaction",splits=[],traj=[],nextSample=0,strokeClock=0,active=first,maxTime=target*1.8+25,just=false,prevD=0,prevT=0;
@@ -2084,8 +2088,11 @@ function simulateCore(p,event,target,scale,record=false,relayTakeover=false,dt=.
       let tactical=1+paceBias*(.060-.125*progress),intensity=.82+.38*sn;
       fat+=Math.max(0,v)*dt*((.24+.83*(1-stn))*intensity*pr.fatigue/Math.max(25,totalDist));
       let late=clamp((progress-.18)/.82,0,1),fatLoss=late*(.016+.100*(1-stn))*clamp(fat,0,1.8),cyc=(strokeClock/Math.max(.25,pr.cycle))%1;
-      let eff={fr:1.015,ba:.995,br:.955,fly:.985}[st],desired=nominal*scale*tactical*(1-fatLoss)*pulse(st,cyc,pr.pulse)*eff;
-      if(underRemain>0){let ub=st==="br"?2+tr/200*.62:2.25+tr/200*.82;desired=Math.max(desired,ub);underRemain=Math.max(0,underRemain-Math.max(0,v)*dt)}
+      // Long races expose low endurance increasingly after the opening 30%.
+      // A speed/endurance imbalance makes the fade steeper; 200m IM keeps its existing pacing.
+      const staminaLoss=enduranceRace?(totalDist===400?.30:.18)*clamp(.7*Math.pow(1-stn,1.5)+.45*Math.max(0,sn-stn),0,1)*Math.pow(clamp((progress-.30)/.70,0,1),1.35):0;
+      let eff={fr:1.015,ba:.995,br:.955,fly:.985}[st],desired=nominal*scale*tactical*(1-fatLoss)*(1-staminaLoss)*pulse(st,cyc,pr.pulse)*eff;
+      if(underRemain>0){let ub=(st==="br"?2+tr/200*.62:2.25+tr/200*.82)*(1-staminaLoss*.5);desired=Math.max(desired,ub);underRemain=Math.max(0,underRemain-Math.max(0,v)*dt)}
       let response=(1.58+1.20*sn)*({fr:1.04,ba:1,br:.90,fly:.96}[st]),prop=response*(desired-v),drag=.045*v*Math.abs(v);
       v=Math.max(0,v+(prop-drag)*dt);d+=v*dt;strokeClock+=dt;
       if(d>=nextWall-1e-9){let crossed=Math.min(nextWall,totalDist),den=Math.max(1e-9,d-prevD),frac=clamp((crossed-prevD)/den,0,1),ct=prevT+frac*dt;if(!splits.length||crossed>splits.length*50)splits.push(ct);d=crossed;if(crossed<totalDist-1e-9){let old=strokeAtDistance(event,Math.max(0,crossed-.001),totalDist),neu=strokeAtDistance(event,Math.min(totalDist-.001,crossed+.001),totalDist),[, ,otr]=statTriplet(p,old);turnRemain=turnDelay(old,otr,neu!==old);phase="turn";nextWall+=50}else phase="finish"}
@@ -2592,7 +2599,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.62",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.63",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];

@@ -1,6 +1,13 @@
-# 大学競泳監督シミュレーション PWA v1.62
+# 大学競泳監督シミュレーション PWA v1.63
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v1.63 の変更
+
+- 200mFr・Ba・Br・Flyと400mFrでは、スピードとスタミナの配分を200mは45％・55％、400mは35％・65％に調整しました。この割合は泳能力の部分で、スタート・ターンの影響は従来と同じです。400mIMも各泳法のスピード35％・スタミナ65％で計算します。
+- 上記の種目では距離の30％を過ぎると、スタミナが低いほど、またスピードに対してスタミナが不足するほど、後半の速度が落ちやすくなります。400mは200mより失速の影響が強く、映像・50mラップへ反映します。4×200mフリーリレーにも各選手のスタミナを反映します。
+- 200mIMは例外としてv1.62の能力配分・区間タイム・レース展開を維持します。50m・100mも従来の計算を使います。自チームとCPUは同じ計算です。
+- スピードとスタミナが均等な場合の基準タイムは維持します。保存済みの能力・PB・大会結果は保持し、今後のレースから調整を適用します。
 
 ## v1.62 の変更
 
@@ -450,7 +457,7 @@ v1.28では必ず1項目だけを指定して練習します。成長型・学�
 
 既存セーブを引き続き読めます。自チームの獲得済み能力・PB・大会履歴・卒業生の能力は維持します。旧バージョンで生成済みの一般CPU選手の能力・初期PBは、最初の読込時に一度だけ新しい基準へ調整します。CPUの肩書に残る実大会記録は保持します。
 
-更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.62のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
+更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.63のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
 
 ## 開発と検証
 
@@ -463,7 +470,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs
+node --test tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。

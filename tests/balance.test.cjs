@@ -181,7 +181,7 @@ test('medley pacing improves at unchanged ability while saved stats, PBs and rec
     assert.ok(row.previous-row.current>.8&&row.previous-row.current<3,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.62');
+  assert.equal(result.version,'pwa-v1.63');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -438,7 +438,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.62');
+  assert.equal(result.version, 'pwa-v1.63');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
