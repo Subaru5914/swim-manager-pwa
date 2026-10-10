@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.58</title>
+<title>大学競泳監督シミュレーション PWA版 v1.59</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1255,7 +1255,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.58</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.59</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1673,7 +1673,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.58";
+  state.version="pwa-v1.59";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2551,7 +2551,7 @@ function makeInitialPlayer(year,used){
   return p;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.58",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.59",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3709,9 +3709,10 @@ function openWorldAdditionalEntry(competitionSlot,competitionSeason){
     <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">エントリー確認へ</button></div>`);
   m.classList.add("modal-world-additional");
   const render=()=>{
+    const candidates=sortedEntryRoster(athletes);
     m.querySelector("tbody").innerHTML=events.map(e=>`<tr data-world-event="${e}"><td><b>${EVENT_LABEL[e]}</b><br><span class="small muted">空き ${vacancies[e]}枠</span></td>
       <td class="small">${(original[e]||[]).map(id=>esc(japanTeamAthlete(id)?.name||"不明")).join(" / ")||"なし"}</td>
-      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${athletes.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])}</option>`).join("")}</select></label>`).join("")}</td></tr>`).join("");
+      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${candidates.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])}</option>`).join("")}</select></label>`).join("")}</td></tr>`).join("");
     m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
       selections[select.dataset.worldEvent][Number(select.dataset.worldSlot)]=select.value;
       render();
@@ -3771,7 +3772,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   function render(){
     m.querySelector("#entryMatrix").classList.toggle("entry-abilities",entryDisplayMode==="stats");
     m.querySelector("#entryStatGuide").classList.toggle("hidden",entryDisplayMode!=="stats");
-    tbody.innerHTML=state.players.map(p=>`<tr>
+    tbody.innerHTML=sortedEntryRoster().map(p=>`<tr>
       <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div>${entryDisplayMode==="stats"?`<div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}${entryStatHtml("メンタル",p.stats.mental,"mental")}</div>`:""}</td>
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
       ${meetEvents.map(e=>{
@@ -4111,7 +4112,7 @@ function setRelayFinalEntry(result,kind,ids){
 }
 function openRelayEditor(relaySel,done,options={}){
   const root=document.getElementById("modalRoot");
-  const kinds=options.kinds||RELAYS,roster=options.roster||state.players,draft=deepClone(relaySel);
+  const kinds=options.kinds||RELAYS,roster=sortedEntryRoster(options.roster||state.players),draft=deepClone(relaySel);
   const layer=document.createElement("div");
   layer.className="modal-back";
   layer.style.zIndex="80";
@@ -4504,6 +4505,9 @@ function renderHome(){
 }
 function comparePlayerSpecialty(a,b){
   return SPECIALTY_EVENTS.indexOf(a.specialty)-SPECIALTY_EVENTS.indexOf(b.specialty)||(Number.isFinite(a.bestTimes[a.specialty])?a.bestTimes[a.specialty]:Infinity)-(Number.isFinite(b.bestTimes[b.specialty])?b.bestTimes[b.specialty]:Infinity)||a.year-b.year||a.name.localeCompare(b.name,"ja");
+}
+function sortedEntryRoster(roster=state.players){
+  return [...roster].sort((a,b)=>(a.year??a.grade??99)-(b.year??b.grade??99)||comparePlayerSpecialty(a,b));
 }
 function renderTrainingPlayers(){
   let el=document.getElementById("trainingPlayers");
