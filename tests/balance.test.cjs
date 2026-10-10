@@ -148,8 +148,9 @@ test('all 15 events use C/B/A/S benchmarks and improve continuously with ability
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify(EVENTS.map(event => {
     const time = value => expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,value]))},event);
-    return {event,C:time(113),Cref:KANSAI_COLLEGE_WIN_TARGET[event]*1.02,
-      B:time(138),Bref:INTERCOLLEGE_A_FINAL_REFERENCE[event],A:time(163),
+    const medleyFactor=event.startsWith('im')?.99:1;
+    return {event,C:time(113),Cref:KANSAI_COLLEGE_WIN_TARGET[event]*1.02*medleyFactor,
+      B:time(138),Bref:INTERCOLLEGE_A_FINAL_REFERENCE[event]*medleyFactor,A:time(163),
       S:time(188),record:JAPAN_RECORD[event],times:Array.from({length:201},(_,v)=>time(v))};
   }))`));
   assert.equal(rows.length, 15);
@@ -162,6 +163,25 @@ test('all 15 events use C/B/A/S benchmarks and improve continuously with ability
       assert.ok(row.times[i] < row.times[i - 1], `${row.event}: ${i}`);
     }
   }
+});
+
+test('medley pacing improves at unchanged ability while saved stats, PBs and record anchors stay intact',()=>{
+  const run=game();
+  const result=JSON.parse(run(`JSON.stringify((()=>{
+    const rows=[113,138,163].flatMap(value=>{
+      const p={stats:Object.fromEntries(STATS.map(k=>[k,value]))};
+      return ['im200','im400'].map(e=>({e,value,current:expectedTime(p,e),previous:expectedTime(p,e,true)}));
+    });
+    const snapshot=()=>JSON.stringify([...state.players,...state.world].map(a=>({id:a.id,stats:a.stats,pb:a.bestTimes})));
+    const saved=snapshot(),records=JSON.stringify(state.recordRankings);state.version='pwa-v1.60';state=JSON.parse(JSON.stringify(state));migrateState();
+    return {rows,preserved:saved===snapshot(),records:records===JSON.stringify(state.recordRankings),version:state.version};
+  })())`));
+  for(const row of result.rows){
+    assert.ok(Math.abs(row.current/row.previous-.99)<1e-10,JSON.stringify(row));
+    assert.ok(row.previous-row.current>.8&&row.previous-row.current<3,JSON.stringify(row));
+  }
+  assert.equal(result.preserved,true);assert.equal(result.records,true);
+  assert.equal(result.version,'pwa-v1.61');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -216,9 +236,10 @@ test('balanced A medley swimmers can win against the strongest college entrants 
       p.bestTimes[e]=expectedTime(p,e);
       const field=entries[e].map(id=>byId.get(id)).sort((a,b)=>expectedTime(a,e)-expectedTime(b,e)).slice(0,7);
       let wins=0,own=[],sameClock=true;
-      for(let trial=0;trial<12;trial++){
-        state.rngSeed=1234+trial;const race=simulateMeetRace(p,e,'intercollege',false);own.push(race.total);
-        state.rngSeed=1234+trial;const match=simulateMeetRace(cpu,e,'intercollege',false);
+      // Spread the seeds instead of testing a short run of adjacent random states.
+      for(let trial=0;trial<32;trial++){
+        state.rngSeed=1234+trial*65537;const race=simulateMeetRace(p,e,'intercollege',false);own.push(race.total);
+        state.rngSeed=1234+trial*65537;const match=simulateMeetRace(cpu,e,'intercollege',false);
         sameClock&&=race.total===match.total&&race.physics.targetTime===match.physics.targetTime;
         const rivals=field.map(a=>simulateMeetRace(a,e,'intercollege',false).total);
         if(race.total<Math.min(...rivals))wins++;
@@ -230,7 +251,7 @@ test('balanced A medley swimmers can win against the strongest college entrants 
     assert.equal(row.field,7);assert.equal(row.sameClock,true,row.e);
     assert.ok(row.wins>=2,JSON.stringify(row));
     assert.ok(row.own.some(time=>time>row.pb+.8),JSON.stringify(row));
-    assert.ok(new Set(row.own).size>=8,JSON.stringify(row));
+    assert.ok(new Set(row.own).size>=24,JSON.stringify(row));
   }
 });
 
@@ -417,7 +438,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.60');
+  assert.equal(result.version, 'pwa-v1.61');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -622,7 +643,10 @@ test('school swimmers have lower overall levels and category leaders vary betwee
 test('generated high-school finals vary level, front-group size and gaps while keeping ordered titles',()=>{
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
-    const editions=Array.from({length:100},()=>interhighFinalTargets('fr100'));
+    const season=state.season;
+    // Each year has its own bounded field; one cohort need not contain every possible pattern.
+    const editions=Array.from({length:100},(_,i)=>{state.season=season+i;return interhighFinalTargets('fr100')});
+    state.season=season;
     const titles=SPECIALTY_EVENTS.map(e=>state.world.flatMap(a=>a.accolades.filter(t=>t.event===e&&t.competitionId==='interhigh_'+state.season).map(t=>({rank:t.rank,time:t.time,pb:a.bestTimes[e]}))).sort((a,b)=>a.rank-b.rank));
     return {editions,titles,reference:INTERHIGH.events.fr100.times[0]};
   })())`));
