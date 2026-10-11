@@ -186,17 +186,19 @@ class SwimCloudSync {
     const save = await SwimCloudSync.decode(remote.value);
     if (epoch !== this.epoch) return;
     if (this.options.getSave() !== before || !this.options.canApply()) return this.setConflict(remote);
-    await this.options.applySave(save);
+    const applied = await this.options.applySave(save);
     if (epoch !== this.epoch) return;
     const text = this.options.getSave(), fingerprint = await SwimCloudSync.fingerprint(text);
     if (epoch !== this.epoch) return;
-    this.cleanText = text;
-    this.meta = { revision: remote.value.revision, fingerprint, dirty: false, syncedAt: Date.now() };
+    this.cleanText = applied?.compacted ? null : text;
+    this.meta = { revision: remote.value.revision, fingerprint: applied?.compacted ? remote.value.fingerprint : fingerprint, dirty: !!applied?.compacted, syncedAt: Date.now() };
     this.conflict = null;
     this.persistMeta();
-    this.notify('synced', 'クラウド：同期済み');
+    this.notify(applied?.compacted ? 'pending' : 'synced', applied?.compacted ? 'クラウド：整理済みデータを同期待ち' : 'クラウド：同期済み');
   }
   async upload(remote, epoch) {
+    await this.options.prepareUpload?.();
+    if (epoch !== this.epoch) return;
     const text = this.options.getSave(), save = JSON.parse(text), fingerprint = await SwimCloudSync.fingerprint(text);
     if (!SwimCloudSync.validSave(save)) throw new Error('端末のゲームデータを保存できません。');
     const packed = await SwimCloudSync.encode(text);
@@ -285,7 +287,12 @@ class SwimCloudSync {
       }
       if (choice === 'local') await this.upload(remote, epoch);
       else if (choice === 'remote' && remote.value) await this.applyRemote(remote, epoch, this.options.getSave());
-    } finally { this.busy = false; }
+    } finally {
+      this.busy = false;
+      if(epoch===this.epoch&&this.meta.dirty&&!this.conflict&&this.status.kind==='pending'){
+        clearTimeout(this.timer);this.timer=setTimeout(()=>this.sync(),500);
+      }
+    }
   }
   stop() { clearInterval(this.interval); clearTimeout(this.timer); ++this.epoch; }
 }

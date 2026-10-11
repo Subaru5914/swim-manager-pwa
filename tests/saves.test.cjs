@@ -6,7 +6,7 @@ const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(){
   let saved,alerts=[];
-  const context=vm.createContext({SwimLocalSaveStore:require('../local-save.js'),crypto:{getRandomValues:a=>{a[0]=12345;return a}},console:{warn(){},error(){}},
+  const context=vm.createContext({SwimSaveHistory:require('../save-history.js'),SwimLocalSaveStore:require('../local-save.js'),crypto:{getRandomValues:a=>{a[0]=12345;return a}},console:{warn(){},error(){}},
     alert:message=>alerts.push(message),localStorage:{getItem:key=>key==='swimManagerSave'?saved:null},
     FileReader:class{readAsText(text){this.result=text;this.onload()}}});
   vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);

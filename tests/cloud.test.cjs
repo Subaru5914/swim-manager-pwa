@@ -9,6 +9,27 @@ async function device(server,points=0,store=storage()){
   await client.start(config);
   return{client,store,get current(){return current},set current(value){current=value},set online(value){online=value},set idle(value){idle=value}};
 }
+test('uploads await durable cleanup and fingerprint the cleaned save; failed preparation keeps cloud intact',async t=>{
+  const server=backend(),pc=await device(server,25);t.after(()=>pc.client.stop());
+  await pc.client.login('cleanup@example.test','test-password',true);
+  let prepared=false;pc.current.oldDetails=['obsolete'];pc.current.points=30;
+  pc.client.options.prepareUpload=async()=>{await Promise.resolve();delete pc.current.oldDetails;prepared=true};
+  await pc.client.sync();const remote=server.saves.get(pc.client.session.uid);
+  assert.ok(prepared);assert.equal((await Cloud.decode(remote)).oldDetails,undefined);assert.equal(remote.fingerprint,await Cloud.fingerprint(JSON.stringify(pc.current)));
+  pc.current.points=31;pc.client.options.prepareUpload=()=>{throw new Error('Local commit failed')};
+  const old=clone(remote);await pc.client.sync();assert.equal(pc.client.status.kind,'error');assert.equal(pc.current.points,31);assert.deepEqual(server.saves.get(pc.client.session.uid),old);
+});
+test('cleaning a downloaded save remains pending and uploads a new compacted revision with conflict protection',async t=>{
+  const server=backend(),pc=await device(server,80),phone=await device(server,0);t.after(()=>{pc.client.stop();phone.client.stop()});
+  pc.current.oldDetails=['old'];await pc.client.login('compact@example.test','test-password',true);
+  await phone.client.login('compact@example.test','test-password');
+  phone.client.options.applySave=async next=>{delete next.oldDetails;phone.current=next;return{compacted:true}};
+  const revision=server.saves.get(pc.client.session.uid).revision;
+  await phone.client.resolve('remote');assert.equal(phone.client.status.kind,'pending');assert.equal(phone.client.meta.dirty,true);assert.equal(phone.current.points,80);
+  await phone.client.sync();assert.equal(phone.client.status.kind,'synced');assert.notEqual(server.saves.get(pc.client.session.uid).revision,revision);
+  assert.equal((await Cloud.decode(server.saves.get(pc.client.session.uid))).oldDetails,undefined);
+  await pc.client.sync();assert.equal(pc.current.oldDetails,undefined);assert.equal(pc.current.points,80);
+});
 test('one account transfers complete saves between PC and iPhone and checks unchanged revisions without downloading saves',async t=>{
   const server=backend(),pc=await device(server,100),phone=await device(server,0);
   t.after(()=>{pc.client.stop();phone.client.stop()});
