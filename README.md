@@ -1,6 +1,11 @@
-# 大学競泳監督シミュレーション PWA v1.70
+# 大学競泳監督シミュレーション PWA v1.71
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v1.71 の変更
+
+- 練習結果などのポップアップ表示中にEnterを押すと、背後の練習ボタンが反応して余分にターンが進む不具合を修正しました。ポップアップ内へフォーカスを移し、背後の画面と重なった下側のポップアップを操作対象から外します。閉じると画面の操作とフォーカスを復帰します。大会準備画面・リレー編成・参加標準の表示にも対応します。
+- 施設画面に残っていた固定の「1Lvごと＋0.6%」を、現在の成長計算と一致する「次Lvの成長補正」に変更しました。Lv.100では最大レベルと表示します。
 
 ## v1.70 の変更
 
@@ -524,7 +529,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs
+node --test tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。
