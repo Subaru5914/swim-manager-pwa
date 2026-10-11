@@ -49,6 +49,25 @@ test('diverging devices preserve both saves until the user chooses a version',as
   await phone.client.resolve('local');assert.equal(phone.client.status.kind,'synced');
   await pc.client.sync();assert.equal(pc.current.points,30);
 });
+test('an unreadable local save cannot overwrite its cloud revision with a fresh game',async t=>{
+  const server=backend(),pc=await device(server,987),phone=await device(server,987);t.after(()=>{pc.client.stop();phone.client.stop()});
+  await pc.client.login('owner@example.test','test-password');await phone.client.login('owner@example.test','test-password');
+  const remote=clone(server.saves.get(pc.client.session.uid));
+  let needsRecovery=true;phone.client.options.needsLocalRecovery=()=>needsRecovery;
+  await phone.client.sync();assert.equal(phone.client.status.kind,'conflict');assert.deepEqual(server.saves.get(pc.client.session.uid),remote);
+  const apply=phone.client.options.applySave;phone.client.options.applySave=next=>{apply(next);needsRecovery=false};
+  await phone.client.resolve('remote');assert.equal(phone.current.points,987);assert.equal(phone.client.status.kind,'synced');
+  phone.current=save(0);needsRecovery=true;await phone.client.sync();assert.equal(phone.client.status.kind,'conflict');
+  assert.deepEqual(server.saves.get(pc.client.session.uid),remote);
+  await phone.client.resolve('remote');assert.equal(phone.current.points,987);assert.equal(phone.client.status.kind,'synced');
+  assert.deepEqual(server.saves.get(pc.client.session.uid),remote);
+});
+test('a failed local load with no cloud save cannot upload a fresh game automatically',async t=>{
+  const server=backend(),phone=await device(server);t.after(()=>phone.client.stop());
+  phone.client.options.needsLocalRecovery=()=>true;
+  await phone.client.login('owner@example.test','test-password');
+  assert.equal(phone.client.status.kind,'error');assert.match(phone.client.status.text,/クラウドにもセーブがありません/);assert.equal(server.saves.size,0);
+});
 test('conditional writes reject a concurrent update between reading and uploading',async t=>{
   const server=backend(),pc=await device(server,10);t.after(()=>pc.client.stop());
   await pc.client.login('owner@example.test','test-password');const id=pc.client.session.uid;

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.65</title>
+<title>大学競泳監督シミュレーション PWA版 v1.66</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1268,7 +1268,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.65</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.66</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1467,7 +1467,8 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./cloud-sync.js"></script>
+<script src="./local-save.js?version=v1.66"></script>
+<script src="./cloud-sync.js?version=v1.66"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: Intercollege official LCM + distance offset","fr50":24.2,"fr100":52.43,"fr200":115.38,"fr400":244.78,"ba100":58.81,"ba200":128.11,"br100":63.9,"br200":138.28,"fly100":56.02,"fly200":124.61,"im200":128.11,"im400":273.89},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1694,7 +1695,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.65";
+  state.version="pwa-v1.66";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2804,7 +2805,7 @@ function makeInitialPlayer(year,used){
   return attachMedleyStats(p);
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.65",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
+  let s={version:"pwa-v1.66",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5140,6 +5141,19 @@ let autoSaveTimer=null;
 let lastAutoSaveAt=null;
 let autoSaveEnabled=true;
 let cloudSync=null;
+let localSaveStore=null;
+let localSaveBusy=false;
+let localSaveLoadFailed=false;
+function getLocalSaveStore(){return localSaveStore||(localSaveStore=new SwimLocalSaveStore({storage:localStorage}))}
+function lockSaveLoading(){
+  localSaveBusy=true;clearTimeout(autoSaveTimer);autoSaveTimer=null;
+  let elements=[...document.body.children].filter(el=>el.tagName!=="SCRIPT"),previous=elements.map(el=>el.inert);
+  elements.forEach(el=>el.inert=true);
+  let cover=document.createElement("div");cover.id="saveLoading";cover.setAttribute("role","status");cover.textContent="セーブを読み込んでいます…";
+  cover.style.cssText="position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:rgba(8,18,38,.94);color:white;font-size:18px";
+  document.body.appendChild(cover);
+  return()=>{cover.remove();elements.forEach((el,i)=>el.inert=previous[i]);localSaveBusy=false};
+}
 
 function formatAutoSaveTime(ts){
   if(!ts)return"未保存";
@@ -5157,16 +5171,15 @@ function updateAutoSaveStatus(){
     :"オートセーブ OFF";
 }
 function writeSaveSilently(reason="auto"){
-  if(!autoSaveEnabled&&reason==="auto")return false;
-  try{
-    let payload=JSON.stringify(state);
-    localStorage.setItem("swimManagerSave",payload);
+  if((!autoSaveEnabled||localSaveBusy)&&reason==="auto")return false;
+  const saved=()=>{
     lastAutoSaveAt=Date.now();
     try{localStorage.setItem("swimManagerLastAutoSave",String(lastAutoSaveAt))}catch(e){}
     updateAutoSaveStatus();
     if(reason!=="cloud")cloudSync?.changed();
     return true;
-  }catch(e){
+  };
+  const failed=e=>{
     console.warn("Autosave failed:",e);
     if(reason==="auto"){
       autoSaveEnabled=false;
@@ -5174,10 +5187,14 @@ function writeSaveSilently(reason="auto"){
       showToast("オートセーブに失敗しました。手動の「セーブ書出」でバックアップしてください。","bad");
     }
     return false;
-  }
+  };
+  try{
+    let result=getLocalSaveStore().write(JSON.stringify(state));
+    return result?.then?result.then(saved,failed):saved();
+  }catch(e){return failed(e)}
 }
 function scheduleAutoSave(delay=700){
-  if(!autoSaveEnabled)return;
+  if(!autoSaveEnabled||localSaveBusy)return;
   clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(()=>{
     autoSaveTimer=null;
@@ -5190,20 +5207,10 @@ function autoSaveNow(){
   return writeSaveSilently("auto");
 }
 
-function saveLocal(){
-  try{
-    let payload=JSON.stringify(state),bytes=serializedStateBytes(payload);
-    localStorage.setItem("swimManagerSave",payload);
-    lastAutoSaveAt=Date.now();
-    try{localStorage.setItem("swimManagerLastAutoSave",String(lastAutoSaveAt))}catch(e){}
-    updateAutoSaveStatus();
-    cloudSync?.changed();
-    showToast(`セーブしました（約 ${(bytes/1024/1024).toFixed(2)} MB）`,"good");
-    if(bytes>4.2*1024*1024)alert("セーブデータが大きくなっています。安全のため「セーブ書出」でバックアップを作成してください。");
-  }catch(e){
-    console.warn("Browser storage unavailable:",e);
-    alert("ブラウザ保存を使用できません。セーブ書出を使用してください。");
-  }
+async function saveLocal(){
+  let bytes=serializedStateBytes();
+  if(await writeSaveSilently("manual"))showToast(`セーブしました（約 ${(bytes/1024/1024).toFixed(2)} MB）`,"good");
+  else alert("端末に保存できません。空き容量を確認し、「セーブ書出」でバックアップしてください。");
 }
 function applyLoadedSave(next,render=false){
   const object=value=>value&&typeof value==="object"&&!Array.isArray(value);
@@ -5222,17 +5229,25 @@ function applyLoadedSave(next,render=false){
   }
 }
 function loadLocal(showMessage=false){
-  try{
-    let s=localStorage.getItem("swimManagerSave")||localStorage.getItem("swimManagerHtmlV13");
+  const loaded=s=>{
     if(!s){if(showMessage)showToast("セーブデータがありません","warn");return false}
     applyLoadedSave(JSON.parse(s),showMessage);try{lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){};
+    if(localSaveLoadFailed){autoSaveEnabled=true;updateAutoSaveStatus()}
+    localSaveLoadFailed=false;
     if(showMessage)showToast("ロードしました","good");
     return true;
-  }catch(e){
+  };
+  const failed=e=>{
     console.warn("Save load failed:",e);
+    if(!showMessage){localSaveLoadFailed=true;autoSaveEnabled=false;updateAutoSaveStatus()}
     if(showMessage)alert("セーブデータを読み込めませんでした");
     return false;
-  }
+  };
+  try{
+    let result=getLocalSaveStore().read();
+    if(result?.then){let unlock=lockSaveLoading();return result.then(loaded).catch(failed).finally(unlock)}
+    return loaded(result);
+  }catch(e){return failed(e)}
 }
 function resetGame(){
   if(!confirm("大学名・学校名・チーム名を引き継いでゲームを初期化します。現在の進行データは失われます。よろしいですか？"))return;
@@ -5240,10 +5255,10 @@ function resetGame(){
     universityNames:Object.fromEntries(state.universities.map(u=>[u.id,u.name])),
     organizationNames:deepClone(organizationNames())};
   try{
-    localStorage.removeItem("swimManagerSave");
     localStorage.removeItem("swimManagerHtmlV13");
   }catch(e){}
   state=createState(nameSettings);migrateState();selectedTrainingId=null;
+  localSaveLoadFailed=false;autoSaveEnabled=true;
   initSelectors();renderAll();autoSaveNow();
   alert("大学名・学校名・チーム名を引き継いで初期化しました");
 }
@@ -5254,6 +5269,7 @@ function importJson(file){
   r.onload=()=>{
     try{
       applyLoadedSave(JSON.parse(r.result),true);
+      localSaveLoadFailed=false;autoSaveEnabled=true;updateAutoSaveStatus();scheduleAutoSave();
       showToast("セーブデータを読み込みました","good");
     }catch(e){
       console.error(e);alert("JSONを読み込めませんでした");
@@ -5272,13 +5288,13 @@ function cloudStatusChanged(status){
 function renderCloudConflict(){
   let el=document.getElementById("cloudConflict");if(!el||!cloudSync?.conflict)return;
   let remote=cloudSync.conflict.value;
-  el.innerHTML=`<div class="notice"><b>使用するセーブを選んでください</b><p>初めてのログイン、または両端末で別々に進めた場合は、使用するデータを選びます。</p><p>この端末：${state.season}年度 ${dateText(state.slot)}<br>クラウド：${remote?`${esc(remote.season)}年度 ${dateText(remote.slot)}`:"保存なし"}${Number.isFinite(remote?.updatedAt)?`（${new Date(remote.updatedAt).toLocaleString("ja-JP")}）`:""}</p><div class="row"><button id="cloudUseRemote" class="primary" ${remote?"":"disabled"}>クラウドを使う</button><button id="cloudUseLocal">この端末を使う</button><button id="cloudBackup">この端末を書出</button></div></div>`;
+  el.innerHTML=`<div class="notice"><b>使用するセーブを選んでください</b><p>${localSaveLoadFailed?"端末のセーブを読み込めませんでした。クラウドの保存済みデータを選んで復元してください。":"初めてのログイン、または両端末で別々に進めた場合は、使用するデータを選びます。"}</p><p>この端末：${localSaveLoadFailed?"読込できませんでした":`${state.season}年度 ${dateText(state.slot)}`}<br>クラウド：${remote?`${esc(remote.season)}年度 ${dateText(remote.slot)}`:"保存なし"}${Number.isFinite(remote?.updatedAt)?`（${new Date(remote.updatedAt).toLocaleString("ja-JP")}）`:""}</p><div class="row"><button id="cloudUseRemote" class="primary" ${remote?"":"disabled"}>クラウドを使う</button><button id="cloudUseLocal" ${localSaveLoadFailed?"disabled":""}>この端末を使う</button><button id="cloudBackup">この端末を書出</button></div></div>`;
   el.querySelector("#cloudBackup").onclick=exportJson;
   for(let [id,choice] of [["cloudUseRemote","remote"],["cloudUseLocal","local"]])el.querySelector("#"+id).onclick=async()=>{
     let buttons=[...el.querySelectorAll("button")];buttons.forEach(b=>b.disabled=true);
     try{await cloudSync.resolve(choice);if(!cloudSync.conflict)showCloudSync()}
     catch(error){document.getElementById("cloudMessage").textContent=error.message}
-    finally{buttons.forEach(b=>b.disabled=false)}
+    finally{buttons.forEach(b=>b.disabled=b.id==="cloudUseLocal"&&localSaveLoadFailed)}
   };
 }
 function showCloudSync(){
@@ -5316,14 +5332,18 @@ function showCloudSync(){
 async function initializeCloudSync(){
   if(typeof SwimCloudSync==="undefined")return;
   cloudSync=new SwimCloudSync({getSave:()=>JSON.stringify(state),online:()=>navigator.onLine!==false,
-    canApply:()=>!document.querySelector("#modalRoot .modal:not(.modal-cloud)"),
-    applySave:next=>{
+    canApply:()=>!localSaveBusy&&!document.querySelector("#modalRoot .modal:not(.modal-cloud)"),
+    needsLocalRecovery:()=>localSaveLoadFailed,
+    applySave:async next=>{
       let previous=state,previousTrainingId=selectedTrainingId;
+      let unlock=lockSaveLoading();
       try{
         applyLoadedSave(next);
         initSelectors();renderAll();
-        if(!writeSaveSilently("cloud"))throw new Error("セーブを端末へ保存できません。セーブ書出で容量を確認してください。");
+        if(!await writeSaveSilently("cloud"))throw new Error("端末に保存できません。空き容量とSafariの設定を確認してください。");
+        localSaveLoadFailed=false;autoSaveEnabled=true;updateAutoSaveStatus();
       }catch(error){state=previous;selectedTrainingId=previousTrainingId;renderAll();throw error}
+      finally{unlock()}
     },onStatus:cloudStatusChanged});
   let defaults=null;
   try{let response=await fetch("./cloud-config.json",{cache:"no-store"});if(response.ok)defaults=await response.json()}catch(error){}
@@ -5438,10 +5458,6 @@ document.addEventListener("visibilitychange",()=>{
 });
 window.addEventListener("pagehide",()=>autoSaveNow());
 
-initSelectors();
-if(!loadLocal()){state=createState();migrateState()}
-try{if(!lastAutoSaveAt)lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){}
-
 function renderPwaStatus(){
   let el=document.getElementById("pwaStatus");if(!el)return;
   let standalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
@@ -5488,14 +5504,22 @@ setupLandscapeViewport();
 window.addEventListener("resize",setupLandscapeViewport);
 window.visualViewport?.addEventListener("resize",setupLandscapeViewport);
 
-renderAll();
-initializeCloudSync();
-const showStartupCelebrations=()=>{
-  if(state.japanTeam&&state.pendingJapanCelebrationYear===state.japanTeam.year&&!state.japanTeam.announced)setTimeout(()=>showJapanTeamCelebration(),0);
-  else if(state.slot===1&&state.pendingFreshmenWelcome?.length)setTimeout(()=>showFreshmenWelcome(),0);
-};
-if(state.pendingSeasonNotices.length)setTimeout(()=>showPendingSeasonNotices(()=>{renderAll();showStartupCelebrations()}),0);
-else showStartupCelebrations();
+function finishGameStartup(loaded){
+  if(!loaded){state=createState();migrateState()}
+  try{if(!lastAutoSaveAt)lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){}
+  renderAll();initializeCloudSync();
+  const showStartupCelebrations=()=>{
+    if(state.japanTeam&&state.pendingJapanCelebrationYear===state.japanTeam.year&&!state.japanTeam.announced)setTimeout(()=>showJapanTeamCelebration(),0);
+    else if(state.slot===1&&state.pendingFreshmenWelcome?.length)setTimeout(()=>showFreshmenWelcome(),0);
+  };
+  if(state.pendingSeasonNotices.length)setTimeout(()=>showPendingSeasonNotices(()=>{renderAll();showStartupCelebrations()}),0);
+  else showStartupCelebrations();
+  if(localSaveLoadFailed)showToast("端末セーブを読み込めませんでした。クラウド同期から保存済みデータを選んでください。","bad");
+}
+initSelectors();
+let startupSave=loadLocal();
+if(startupSave?.then)startupSave.then(finishGameStartup);
+else finishGameStartup(startupSave);
 </script>
 </body>
 </html>

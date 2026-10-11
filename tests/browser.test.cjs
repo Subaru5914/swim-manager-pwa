@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const {config:cloudConfig,backend:cloudBackend}=require('./cloud-fixture.cjs');
 
 const repo = path.join(__dirname, '..');
-const assets = ['index.html', 'sw.js', 'manifest.webmanifest', 'cloud-sync.js', 'cloud-config.json', 'CLOUD_SYNC_SETUP.md', 'firebase.database.rules.json', 'icons/apple-touch-icon.png',
+const assets = ['index.html', 'sw.js', 'manifest.webmanifest', 'local-save.js', 'cloud-sync.js', 'cloud-config.json', 'CLOUD_SYNC_SETUP.md', 'firebase.database.rules.json', 'icons/apple-touch-icon.png',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'];
 let browser;
 before(async () => {
@@ -30,7 +30,7 @@ async function fixture(legacy = false, cloudDefaults = {apiKey:'',databaseURL:''
     let data = fs.readFileSync(path.join(repo, name));
     if(name==='cloud-config.json')data=Buffer.from(JSON.stringify(cloudDefaults));
     if (oldVersion && /\.(html|js|webmanifest)$/.test(name)) {
-      data = Buffer.from(data.toString().replaceAll('v1.65', 'v1.64'));
+      data = Buffer.from(data.toString().replaceAll('v1.66', 'v1.65'));
     }
     response.writeHead(200, {
       'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -116,11 +116,11 @@ test('a cloud save that fails to render cannot replace the local backup or leave
   const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
   try{
     const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>cloudSync);
-    const result=await page.evaluate(()=>{
+    const result=await page.evaluate(async()=>{
       state.points=543;renderAll();autoSaveNow();
       const original=JSON.stringify(state),stored=localStorage.getItem('swimManagerSave');
       let damaged=deepClone(state);damaged.points=999;damaged.recordRankings.japan.fr100=[{kind:'relay',event:'fr100',time:45}];
-      let rejected=false;try{cloudSync.options.applySave(damaged)}catch(error){rejected=true}
+      let rejected=false;try{await cloudSync.options.applySave(damaged)}catch(error){rejected=true}
       return{rejected,progressKept:JSON.stringify(state)===original,backupKept:localStorage.getItem('swimManagerSave')===stored,
         points:JSON.parse(localStorage.getItem('swimManagerSave')).points,status:document.getElementById('status').textContent};
     });
@@ -142,6 +142,132 @@ test('unconfigured cloud setup keeps local play working and exposes configuratio
     await page.locator('#cloudClose').click();await page.locator('#saveBtn').click();
     await page.reload();assert.ok(await page.evaluate(()=>state.players.length===32));
     assert.deepEqual(errors,[]);
+  }finally{await context.close();await app.close()}
+});
+
+test('iPhone loads a cloud save beyond Web Storage quota and keeps progress after offline restarts and reset',async()=>{
+  const app=await fixture(false,cloudConfig),server=cloudBackend(),pcContext=await cloudContext(server),phoneContext=await cloudContext(server,{viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  await phoneContext.addInitScript(()=>{
+    const original=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      let bytes=0;
+      for(let i=0;i<this.length;i++){const name=this.key(i);if(name!==key)bytes+=2*(name.length+this.getItem(name).length);}
+      bytes+=2*(String(key).length+String(value).length);
+      if(bytes>5*1024*1024)throw new DOMException('The quota has been exceeded.','QuotaExceededError');
+      return original.call(this,key,value);
+    };
+  });
+  try{
+    const pc=await pcContext.newPage(),phone=await phoneContext.newPage(),errors=[runtimeErrors(pc),runtimeErrors(phone)];
+    await pc.goto(app.url);await pc.waitForFunction(()=>cloudSync?.config);
+    const expected=await pc.evaluate(async()=>{
+      state.points=987;state.slot=5;state.playerUniversity='同期確認大学';state.saveStorageTestPadding='容量検証'.repeat(700000);
+      const a=state.players[0];state.trainingFocus[a.id]={key:'fr_speed'};
+      await saveLocal();await cloudSync.login('large-save@example.test','test-password',true);
+      return{bytes:JSON.stringify(state).length*2,id:a.id,players:JSON.stringify(state.players),records:JSON.stringify(state.recordRankings)};
+    });
+    assert.ok(expected.bytes>5*1024*1024);
+    await phone.goto(app.url);await phone.waitForFunction(()=>cloudSync?.config);
+    await phone.evaluate(async()=>{state.points=111;await saveLocal()});
+    assert.equal(await phone.evaluate(()=>JSON.parse(localStorage.getItem('swimManagerSave')).points),111);
+    await phone.locator('#cloudSyncChip').click();await phone.locator('#cloudEmail').fill('large-save@example.test');await phone.locator('#cloudPassword').fill('test-password');
+    await phone.locator('#cloudLogin').click();await phone.locator('#cloudUseRemote').waitFor();await phone.locator('#cloudUseRemote').click();
+    await phone.waitForFunction(()=>cloudSync.status.kind==='synced');
+    assert.equal(await phone.evaluate(()=>state.points),987);
+    assert.equal(await phone.evaluate(()=>JSON.stringify(state.players)),expected.players);
+    assert.equal(await phone.evaluate(()=>JSON.stringify(state.recordRankings)),expected.records);
+    assert.equal(await phone.evaluate(()=>localStorage.getItem('swimManagerSave')),'swim-manager-indexeddb-v1');
+    assert.equal(await phone.evaluate(async()=>JSON.parse(await getLocalSaveStore().read()).points),987);
+    assert.equal(await phone.locator('#saveLoading').count(),0);
+    await phone.locator('#cloudClose').click();await phone.evaluate(()=>navigator.serviceWorker.ready);
+    await phone.waitForFunction(()=>!!navigator.serviceWorker.controller);await phoneContext.setOffline(true);await phone.reload();
+    await phone.waitForFunction(()=>cloudSync?.session&&state.points===987);
+    assert.equal(await phone.evaluate(()=>JSON.stringify(state.players)),expected.players);
+    await phone.evaluate(async()=>{state.points=992;state.players[0].stats.fr_speed+=1;await saveLocal()});
+    await phone.reload();await phone.waitForFunction(()=>cloudSync?.session&&state.points===992);
+    const downloadPromise=phone.waitForEvent('download');await phone.evaluate(()=>exportJson());const download=await downloadPromise;
+    assert.equal(JSON.parse(fs.readFileSync(await download.path(),'utf8')).points,992);
+    await phoneContext.setOffline(false);await phone.evaluate(()=>cloudSync.sync());await phone.waitForFunction(()=>cloudSync.status.kind==='synced');
+    assert.equal((await require('../cloud-sync.js').decode(server.saves.values().next().value)).points,992);
+    await phoneContext.setOffline(true);
+    await phone.evaluate(async()=>{cloudSync.logout();window.confirm=()=>true;resetGame();await getLocalSaveStore().tail});
+    await phone.reload();await phone.waitForFunction(()=>cloudSync&&state?.points===0);
+    assert.equal(await phone.evaluate(()=>state.playerUniversity),'同期確認大学');
+    assert.equal(await phone.evaluate(()=>state.players.length),32);
+    assert.equal((await require('../cloud-sync.js').decode(server.saves.values().next().value)).points,992);
+    assert.deepEqual(errors[0],[]);
+    assert.deepEqual(errors[1],['大学名・学校名・チーム名を引き継いで初期化しました']);
+  }finally{await pcContext.close();await phoneContext.close();await app.close()}
+});
+
+test('a failed IndexedDB cloud commit preserves the old local save and restores the game and controls',async()=>{
+  const app=await fixture(),context=await testContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>cloudSync);
+    const result=await page.evaluate(async()=>{
+      state.points=543;renderAll();await saveLocal();
+      const original=JSON.stringify(state),stored=localStorage.getItem('swimManagerSave'),training=selectedTrainingId;
+      let damaged=deepClone(state);damaged.points=999;damaged.saveStorageTestPadding='容量検証'.repeat(700000);
+      const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=()=>{throw new DOMException('No space remaining.','QuotaExceededError')};
+      let rejected=false;try{await cloudSync.options.applySave(damaged)}catch(error){rejected=true}finally{IDBObjectStore.prototype.put=put}
+      return{rejected,progressKept:JSON.stringify(state)===original,backupKept:localStorage.getItem('swimManagerSave')===stored,
+        trainingKept:selectedTrainingId===training,points:JSON.parse(localStorage.getItem('swimManagerSave')).points,
+        status:document.getElementById('status').textContent,locked:localSaveBusy||!!document.getElementById('saveLoading')||[...document.body.children].some(el=>el.inert)};
+    });
+    assert.equal(result.rejected,true);assert.equal(result.progressKept,true);assert.equal(result.backupKept,true);assert.equal(result.trainingKept,true);
+    assert.equal(result.points,543);assert.match(result.status,/pt 543/);assert.equal(result.locked,false);
+    assert.equal(errors.filter(error=>/Autosave failed:/.test(error)).length,1);
+    assert.deepEqual(errors.filter(error=>!/Autosave failed:/.test(error)),[]);
+    await page.reload();assert.equal(await page.evaluate(()=>state.points),543);
+  }finally{await context.close();await app.close()}
+});
+
+test('an unreadable IndexedDB save at startup waits for cloud recovery and never uploads the fresh game',async()=>{
+  const app=await fixture(false,cloudConfig),server=cloudBackend(),context=await cloudContext(server,{viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>cloudSync?.config);
+    await page.evaluate(async()=>{
+      state.points=987;state.saveStorageTestPadding='容量検証'.repeat(700000);await saveLocal();await cloudSync.login('recovery@example.test','test-password',true);
+    });
+    const original=JSON.stringify(server.saves.values().next().value),uploads=server.calls.filter(call=>call.method==='PUT').length;
+    await context.addInitScript(()=>{
+      window.originalTestIDBOpen=IDBFactory.prototype.open;
+      IDBFactory.prototype.open=()=>{throw new DOMException('Storage temporarily unavailable.','InvalidStateError')};
+    });
+    await page.reload();await page.waitForFunction(()=>cloudSync?.status.kind==='conflict');
+    assert.equal(await page.evaluate(()=>localSaveLoadFailed&&!autoSaveEnabled&&!localSaveBusy),true);
+    assert.equal(JSON.stringify(server.saves.values().next().value),original);
+    assert.equal(server.calls.filter(call=>call.method==='PUT').length,uploads);
+    await page.locator('#cloudSyncChip').click();assert.equal(await page.locator('#cloudUseLocal').isDisabled(),true);
+    await page.evaluate(()=>{IDBFactory.prototype.open=window.originalTestIDBOpen});
+    await page.locator('#cloudUseRemote').click();await page.waitForFunction(()=>cloudSync.status.kind==='synced');
+    assert.equal(await page.evaluate(()=>state.points),987);assert.equal(await page.evaluate(()=>!localSaveLoadFailed&&autoSaveEnabled),true);
+    assert.equal(await page.evaluate(async()=>JSON.parse(await getLocalSaveStore().read()).points),987);
+    assert.equal(JSON.stringify(server.saves.values().next().value),original);
+    assert.equal(errors.filter(error=>/Save load failed:/.test(error)).length,1);
+    assert.deepEqual(errors.filter(error=>!/Save load failed:/.test(error)),[]);
+  }finally{await context.close();await app.close()}
+});
+
+test('IndexedDB autosaves keep write order, recover after a failed commit and read the last committed save',async()=>{
+  const app=await fixture(),context=await testContext();
+  try{
+    const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>cloudSync);
+    const result=await page.evaluate(async()=>{
+      const storage={getItem:key=>localStorage.getItem('ordered-'+key),setItem:(key,value)=>{
+        if(value.length>1024)throw new DOMException('Quota exceeded.','QuotaExceededError');localStorage.setItem('ordered-'+key,value);
+      }};
+      const store=new SwimLocalSaveStore({storage});await store.write('old'.repeat(1000));
+      const database=store.database.bind(store);let fail=true;
+      store.database=(mode,text)=>{if(mode==='readwrite'&&fail){fail=false;return Promise.reject(new Error('Transaction aborted'))}return database(mode,text)};
+      let failed=false;try{await store.write('failed')}catch{failed=true}
+      const preserved=await store.read();
+      await Promise.all([store.write('first'),store.write('second'),store.write('newest')]);
+      const restarted=new SwimLocalSaveStore({storage});
+      return{failed,preserved,newest:await restarted.read(),pending:store.pending,marker:storage.getItem('swimManagerSave')};
+    });
+    assert.equal(result.failed,true);assert.equal(result.preserved,'old'.repeat(1000));assert.equal(result.newest,'newest');assert.equal(result.pending,0);
+    assert.equal(result.marker,'swim-manager-indexeddb-v1');assert.deepEqual(errors,[]);
   }finally{await context.close();await app.close()}
 });
 
@@ -391,7 +517,7 @@ test('checkpoint popups, post-intercollege retirement and hidden growth types wo
         await page.locator('.modal-season-notice').waitFor();
         assert.match(await page.locator('.modal-season-notice').innerText(),/発展途上 → 中堅/);
         assert.match(await page.locator('.modal-season-notice').innerText(),/引退確認 選手/);
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-season-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-season-${mobile?'iphone':'pc'}.png`)});}
         await page.reload();await page.locator('.modal-season-notice').waitFor();
         assert.equal(await page.evaluate(()=>state.reputation),85);assert.equal(await page.evaluate(()=>state.reputationEvaluations.length),1);
         await page.locator('#seasonNoticeNext').click();await page.reload();
@@ -483,7 +609,7 @@ test('college awards and all three historic record categories work on PC and por
       assert.ok(await page.locator('#teamTop10Body').isVisible());
       assert.match(await page.locator('#teamTop10Body').innerText(),/記録確認選手/);
       assert.equal(await page.locator('#teamTop10Title').innerText(),'100mFr 歴代10傑');
-      if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-team-top10-${options.isMobile?'iphone':'pc'}.png`)});}
+      if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-team-top10-${options.isMobile?'iphone':'pc'}.png`)});}
       await page.locator('#nav [data-page="records"]').click();
       assert.equal(await page.locator('#page-team-top10').isVisible(),false);
       assert.equal(await page.locator('#page-records.active').count(),1);assert.deepEqual(errors,[]);
@@ -695,7 +821,7 @@ test('scouting shows every ranked senior, matches wishes to odds and preserves s
         if(process.env.SWIM_SCREENSHOT_DIR){
           fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});
           await row.scrollIntoViewIfNeeded();
-          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-scout-${mobile?'iphone':'pc'}.png`)});
+          await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-scout-${mobile?'iphone':'pc'}.png`)});
         }
         const improved=await page.evaluate(id=>{
           const a=state.world.find(a=>a.id===id);state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
@@ -811,7 +937,7 @@ test('training rank-ups highlight all fourteen abilities and secondary growth in
         const allPromotions=await page.evaluate(()=>state.lastTrainingGains.flatMap(g=>g.changes).filter(c=>statRank(c.before)!==statRank(c.after)).length);
         assert.equal(await page.locator('.training-growth-table .growth-rank-up').count(),allPromotions);
         assert.deepEqual(await page.locator('.training-growth-table tbody tr').evaluateAll(rows=>rows.map(r=>+r.dataset.year)),growth.map(g=>g.year).sort((a,b)=>a-b));
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-training-ranks-${options.isMobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-training-ranks-${options.isMobile?'iphone':'pc'}.png`)});}
         await page.locator('.modal-training-result #next').click();
         assert.equal(await page.locator('#trainingGrowthHome .growth-rank-up').count(),allPromotions);
         for(const target of targets){
@@ -886,7 +1012,7 @@ test('training requires one item, reset chooses specialty, and specialty popup s
         });
         assert.deepEqual(focusRows,[['start','mental'],['fr_speed','fr_stamina','fr_turn'],['ba_speed','ba_stamina','ba_turn'],['br_speed','br_stamina','br_turn'],['fly_speed','fly_stamina','fly_turn'],['im_speed','im_stamina']]);
         await page.evaluate(()=>{document.getElementById('gameScroll').scrollTop=0;document.getElementById('trainingPlayers').scrollTop=0});
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-training-size-${mobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-training-size-${mobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
         const gap = await page.evaluate(() => {
           const rotated=document.getElementById('gameViewport').classList.contains('landscape-rotated');
           const row = [...document.querySelectorAll('#trainingPlayers tbody tr')].sort((a,b)=>b.querySelector('.athlete-name').getBoundingClientRect()[rotated?'height':'width']-a.querySelector('.athlete-name').getBoundingClientRect()[rotated?'height':'width'])[0];
@@ -988,7 +1114,7 @@ test('winter cup names follow their dates through entry, race results, history a
           await page.locator('.modal-meet-results #x').click();await page.evaluate(id=>showPlayerDetail(id),own.id);
           assert.match(await page.locator('#historyTable').innerText(),new RegExp(name));
           assert.ok(await page.locator('#historyTable .history-rank').count()>0);
-          if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank').first().scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-cup-history-${slot}-${options.isMobile?'iphone':'pc'}.png`)})}
+          if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank').first().scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-cup-history-${slot}-${options.isMobile?'iphone':'pc'}.png`)})}
           await page.locator('.modal-player-detail #x').click();await page.locator('#showTeamTop10Btn').click();
           await page.locator('#teamTop10Event').selectOption('fr100');
           assert.match(await page.locator('#teamTop10Body').innerText(),/Higashikata CUP|ダイナミオープン/);
@@ -1040,7 +1166,7 @@ test('player relay history shows personal legs, total times and places for all r
           assert.equal(await prelim.locator('.history-rank').count(),0);assert.equal(await final.locator('.history-rank').count(),1);
           assert.equal(await prelim.locator('td').nth(4).innerText(),'2');
         }
-        if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable').scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-relay-history-${options.isMobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable').scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-relay-history-${options.isMobile?'iphone':'pc'}.png`)});}
         await page.locator('#historySort').selectOption('only_4x100fr');
         const legacy=page.locator('#historyTable tbody tr').filter({hasText:'関西カレッジ'});
         assert.equal(await legacy.count(),1);assert.equal(await legacy.locator('.history-time').innerText(),'3:39.00');
@@ -1089,7 +1215,7 @@ test('player history highlights final medals and fourth-to-eighth places while p
         assert.equal(await page.locator('#historyTable tbody tr').filter({hasText:'自チーム記録会'}).locator('.history-rank').count(),0);
         const colors=await page.locator('#historyTable .history-rank').evaluateAll(rows=>rows.slice(0,3).map(row=>getComputedStyle(row).backgroundColor));
         assert.equal(new Set(colors).size,3);
-        if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank-first').scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-history-awards-${options.isMobile?'iphone':'pc'}.png`)})}
+        if(process.env.SWIM_SCREENSHOT_DIR){await page.locator('#historyTable .history-rank-first').scrollIntoViewIfNeeded();fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-history-awards-${options.isMobile?'iphone':'pc'}.png`)})}
         await page.locator('#historySort').selectOption('only_ba50');assert.equal(await page.locator('#historyTable .history-rank').count(),0);
         await page.locator('#historySort').selectOption('event');assert.equal(await page.locator('#historyTable .history-rank').count(),8);
         await page.locator('.modal-player-detail #x').click();await page.reload();await page.evaluate(()=>showPlayerDetail(state.players[0].id));
@@ -1154,7 +1280,7 @@ test('entry athletes follow grade and specialty order in every meet; badges and 
     });
     assert.ok(available.table>=available.oneRow&&available.buttonVisible,JSON.stringify(available));
     assert.equal(await fr.evaluate(cell=>cell.classList.contains('entry-selected')),true);
-    if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-entry-stats-${options.isMobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
+    if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-entry-stats-${options.isMobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
     await page.locator('#std').click();
     assert.equal(await page.locator('.standards-table thead th').count(), 6);
     assert.equal(await page.locator('.standards-table thead th').last().innerText(), '世界大会');
@@ -1306,7 +1432,7 @@ test('world opening offers vacant slots to registered own swimmers, saves unlimi
         assert.equal(await first.inputValue(),target.own[0]);
         const box=await page.locator('.modal-world-additional').evaluate(m=>{const r=m.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight}});
         assert.ok(box.left>=-1&&box.right<=box.width+1&&box.top>=-1&&box.bottom<=box.height+1,JSON.stringify(box));
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-world-additional-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-world-additional-${mobile?'iphone':'pc'}.png`)});}
         await page.locator('#confirmWorldAdditional').click();
         assert.equal(await page.evaluate(()=>Object.values(state.japanTeam.additionalIndividual).flat().length),7);
         assert.equal(await page.evaluate(()=>JSON.stringify([state.japanTeam.individual,state.japanTeam.relays])),target.base);
@@ -1414,7 +1540,7 @@ test('new stroke sprints show standards, remain unavailable as specialties and c
         await page.locator('#std').click();
         for(const label of ['50mBa','50mBr','50mFly'])assert.match(await page.locator('.modal-standards').innerText(),new RegExp(label));
         assert.match(await page.locator('.modal-standards').innerText(),/世界水泳2025/);await page.locator('.modal-standards #x').click();
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-sprint-entry-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-sprint-entry-${mobile?'iphone':'pc'}.png`)});}
         // Hold normal form here to isolate the new program and representative-selection paths.
         await page.evaluate(()=>{rng=()=>.5;});
         await page.locator('#confirmEntry').click();await page.locator('#goRace').click();
@@ -1489,7 +1615,7 @@ test('legacy sprint rankings and every top ten agree on PC and iPhone, include o
           assert.equal(await page.locator('#teamTop10Body .active-athlete').innerText(),'現役 大2');
           await page.locator('#nav [data-page="records"]').click();
         }
-        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-sprint-records-${mobile?'iphone':'pc'}.png`)});}
+        if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-sprint-records-${mobile?'iphone':'pc'}.png`)});}
         const saved=await page.evaluate(()=>{saveLocal();return JSON.stringify([state.recordRankings,state.teamTop10]);});
         await page.reload();assert.equal(await page.evaluate(()=>JSON.stringify([state.recordRankings,state.teamTop10])),saved);assert.deepEqual(errors,[]);
       }finally{await context.close();}
@@ -1497,7 +1623,7 @@ test('legacy sprint rankings and every top ten agree on PC and iPhone, include o
   }finally{await app.close();}
 });
 
-test('PWA upgrades its v1.64 cache to v1.65 and retains saved progress offline', async () => {
+test('PWA upgrades its v1.65 cache to v1.66 and retains saved progress offline', async () => {
   const app = await fixture(true);
   const context = await testContext();
   try {
@@ -1506,7 +1632,7 @@ test('PWA upgrades its v1.64 cache to v1.65 and retains saved progress offline',
     await page.goto(app.url);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.64'));
+    assert.ok((await page.evaluate(() => caches.keys())).includes('swim-manager-pwa-v1.65'));
     const savedNames = await page.evaluate(() => {
       delete state.balanceModelVersion;
       state.slot = 15; state.points = 123; state.players[0].stats.fr_speed = 182;
@@ -1518,12 +1644,15 @@ test('PWA upgrades its v1.64 cache to v1.65 and retains saved progress offline',
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(async () => {
       const keys = await caches.keys();
-      return keys.includes('swim-manager-pwa-v1.65') && !keys.includes('swim-manager-pwa-v1.64');
+      return keys.includes('swim-manager-pwa-v1.66') && !keys.includes('swim-manager-pwa-v1.65');
     });
     // Load the newly published HTML before validating that its cached copy is usable.
     await page.reload();
-    assert.match(await page.title(), /v1\.65/);
-    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.65');
+    assert.match(await page.title(), /v1\.66/);
+    assert.equal(await page.evaluate(() => state.version), 'pwa-v1.66');
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('script[src]')].map(script=>new URL(script.src).searchParams.get('version'))),['v1.66','v1.66']);
+    assert.equal(await page.evaluate(async()=>!!await caches.match('./local-save.js?version=v1.66')),true);
+    assert.equal(await page.evaluate(async()=>!!await caches.match('./cloud-sync.js?version=v1.66')),true);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.equal(await page.evaluate(() => state.players[0].stats.fr_speed), 182);
@@ -1531,7 +1660,7 @@ test('PWA upgrades its v1.64 cache to v1.65 and retains saved progress offline',
     await context.setOffline(true);
     const response = await page.reload({ waitUntil: 'load' });
     assert.equal(response.fromServiceWorker(), true);
-    assert.match(await page.title(), /v1\.65/);
+    assert.match(await page.title(), /v1\.66/);
     assert.equal(await page.evaluate(() => state.slot), 15);
     assert.equal(await page.evaluate(() => state.points), 123);
     assert.deepEqual(await page.evaluate(() => [...state.players, ...state.world].map(a => [a.id, a.name])), savedNames);
@@ -1902,7 +2031,7 @@ test('race cards show event abilities only in team trials, follow seeded lanes a
       return{canvas:m.querySelector('canvas').offsetHeight,overflow:[...m.querySelectorAll('.race-event-stat')].map(e=>e.scrollWidth-e.clientWidth),buttonVisible:button.left>=box.left&&button.right<=box.right+1&&button.top>=box.top&&button.bottom<=box.bottom+1};
     });
     assert.ok(geometry.canvas>=120&&geometry.buttonVisible&&geometry.overflow.every(n=>n<=1),JSON.stringify(geometry));
-    if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.65-trial-stats-${options.isMobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
+    if(process.env.SWIM_SCREENSHOT_DIR){fs.mkdirSync(process.env.SWIM_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SWIM_SCREENSHOT_DIR,`v1.66-trial-stats-${options.isMobile?'iphone':'pc'}-${options.viewport.width}x${options.viewport.height}.png`)});}
     for(const meet of ['joint_record','kansai_college','intercollege','japan_open','japan_championship','world_championship']){
       await page.evaluate(meet=>playRaceCanvas('fr100',window.cardRows,{meet}),meet);
       assert.equal(await page.locator('.race-event-stats').count(),0,meet);

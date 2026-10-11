@@ -227,7 +227,7 @@ class SwimCloudSync {
       const before = this.options.getSave(), fingerprint = await SwimCloudSync.fingerprint(before);
       this.meta.dirty = fingerprint !== this.meta.fingerprint;
       if (!this.meta.dirty) this.cleanText = before;
-      if (!this.meta.dirty && this.meta.revision) {
+      if (!this.options.needsLocalRecovery?.() && !this.meta.dirty && this.meta.revision) {
         const response = await this.database('/revision');
         if (!response.ok) throw new Error('クラウドの更新を確認できません。');
         const revision = await response.json();
@@ -236,6 +236,10 @@ class SwimCloudSync {
       }
       const remote = await this.remote();
       if (epoch !== this.epoch) return;
+      if (this.options.needsLocalRecovery?.()) {
+        if (remote.value) return this.setConflict(remote);
+        throw new Error('端末セーブを読み込めませんでした。クラウドにもセーブがありません。');
+      }
       if (!remote.value) await this.upload(remote, epoch);
       else if (remote.value.revision === this.meta.revision) {
         if (this.meta.dirty) await this.upload(remote, epoch);
