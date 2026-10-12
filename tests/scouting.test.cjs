@@ -235,8 +235,8 @@ test('existing candidate identities supply exactly eight freshmen; every other s
       rows.push({year,count:freshmen.length,unique:freshIds.size,signed:signed.every(id=>freshIds.has(id)),candidates:freshmen.every(p=>before.has(p.id)),
         preserved:freshmen.every(p=>{const a=before.get(p.id);return a.name===p.name&&a.specialty===p.specialty&&JSON.stringify(a.stats)===JSON.stringify(p.stats)&&JSON.stringify(a.pb)===JSON.stringify(p.bestTimes)}),
         moved:seniors.every(id=>freshIds.has(id)||state.world.some(a=>a.id===id&&a.category==='university'&&a.grade===1)),
-        freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>(a.category==='middle'&&a.grade===1&&a.age===13)||(a.cpuFieldRoster&&(a.category==='adult'||a.category==='university'&&a.grade===1))),
-        newCount:state.world.filter(a=>!oldIds.has(a.id)&&!a.cpuFieldRoster).length,expected:organizationNames().middle.length*3,
+        freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>a.category==='middle'&&a.grade===1&&a.age===13),
+        newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:organizationNames().middle.length*cpuMiddleClassSize(),
         removed:freshmen.every(p=>!state.world.some(a=>a.id===p.id)),welcome:state.pendingFreshmenWelcome.length,queue:state.recruits.length});
       const serial=state.serial,rngSeed=state.rngSeed;maintainWorldPopulation();migrateState();
       rows.at(-1).reloadNoNew=state.serial===serial&&state.rngSeed===rngSeed;
@@ -257,9 +257,9 @@ test('CPU enrollment prefers strong and prestigious universities, observes avail
     state.universities=[35,80,160,280].map((rep,i)=>({id:'destination-'+i,name:'進路大学'+i,reputation:rep}));
     state.world=[];a.scoutPreferences={prestigeSchool:false};
     const counts=[0,0,0,0];for(let i=0;i<6000;i++)counts[+chooseCpuUniversityForRecruit(a).slice(-1)]++;
-    state.world=Array.from({length:5},(_,i)=>({...deepClone(a),id:'full-'+i,category:'university',grade:1,organization:'進路大学3'}));
+    state.world=Array.from({length:8},(_,i)=>({...deepClone(a),id:'full-'+i,category:'university',grade:1,organization:'進路大学3'}));
     const skipsFull=Array.from({length:200},()=>chooseCpuUniversityForRecruit(a)).every(name=>name!=='進路大学3');
-    for(const u of state.universities.slice(0,3))for(let i=0;i<5;i++)state.world.push({...deepClone(a),id:u.id+'-'+i,category:'university',grade:1,organization:u.name});
+    for(const u of state.universities.slice(0,3))for(let i=0;i<8;i++)state.world.push({...deepClone(a),id:u.id+'-'+i,category:'university',grade:1,organization:u.name});
     const overflow=chooseCpuUniversityForRecruit(a);
     return {counts,skipsFull,overflow};
   })())`));

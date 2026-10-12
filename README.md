@@ -1,6 +1,16 @@
-# 大学競泳監督シミュレーション PWA v1.78
+# 大学競泳監督シミュレーション PWA v1.79
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v1.79 の変更
+
+- CPU大学を追加前の39校（関西12校）へ戻し、新規ゲームは各大学8人×4学年の32人とします。評判に応じてエースの人数と選手層を変え、泳法・距離・選手ごとの得意不得意を保ちます。予選の人数を埋めるために大学生・社会人の標準突破選手を新しく生成する処理は廃止します。
+- 関西カレッジの選手層は[2025・2026年の公式結果](./KANSAI_RECORD_REFERENCES.md)を確認して調整します。実際の男子1部決勝・予選の幅を参考にし、突出した選手と決勝中位・予選の選手を区別します。自チームの能力値や参加標準を変更して大会レベルを下げる処理はありません。
+- 関西カレッジ・インカレのCPUは、各大学・各種目で参加標準を満たすPB上位3人をまず選出します。4種目以上に選ばれた選手はランダムに3種目を残し、空いた枠をその選手を除くPB順で補充します。補充選手にも1人3種目の上限を適用します。
+- ジャパンオープン・日本選手権は専門種目に関係なく、参加標準を満たす中学生・高校生・大学生・社会人のCPU全員が出場します。大学対抗戦の選出選手も含め、従来の組数上限で正当な出場選手を除外せず、参加人数に応じて予選の組数を決めます。参加標準を優先するため、8人未満の組もあります。
+- 初年度（2026年度）の関西カレッジ・インカレは、前年人数が未記録の場合に0人として評判を計算します。2年度目以降は実際の前年人数と比較します。旧セーブで初年度の計算済み加点が欠けている場合は、後の評判計算と上限を考慮して不足分を一度だけ反映します。計算時期はインカレ終了時・日本選手権終了時のままです。
+- 旧セーブは自チームの能力・PB・練習設定、スカウト済み選手、日本代表、過去の実記録を保持します。削除する追加大学の現役選手は既存大学へ移し、大学の選手層を一度だけ調整します。移籍者を保持するため、旧セーブでは大学の人数が一時的に32人を超える場合があります。CPUの進学は学年8人を目安に割り当て、進学者が多い場合は人数の少ない大学へ分散し、通常は32〜36人程度とします。学校の初期名簿を補った後、年度ごとに新しく生成するのは中学1年生だけで、同じ選手が進学・卒業します。
+- CPUのレースは自チームと共通の好調・不調・メンタル・予選補正の計算を使います。決勝上段の予選タイム、PBと10傑の整合、リレーのラップ・メンバー交代、出場種目のレース映像とスキップ進行も継続します。
 
 ## v1.78 の変更
 
@@ -559,7 +569,7 @@ v1.28では必ず1項目だけを指定して練習します。成長型・学�
 
 既存セーブを引き続き読めます。自チームの獲得済み能力・PB・大会履歴・卒業生の能力は維持します。旧バージョンで生成済みの一般CPU選手の能力・初期PBは、最初の読込時に一度だけ新しい基準へ調整します。CPUの肩書に残る実大会記録は保持します。
 
-更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.78のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
+更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.79のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
 
 ## 開発と検証
 
@@ -572,7 +582,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。

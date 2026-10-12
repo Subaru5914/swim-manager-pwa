@@ -21,7 +21,7 @@ test('competitive heats pack into eight lanes, preserve eligible entrants and se
       unique:new Set(flat.map(r=>r.athlete.id)).size,own:flat.filter(r=>r.source==='PLAYER').map(r=>r.athlete.id).sort(),unchanged:before===JSON.stringify(field)};
   })))`);
   for(const row of cases){
-    const expected=Math.min(row.size,row.max);
+    const expected=['kansai_college','intercollege','japan_open','japan_championship'].includes(row.meet)?row.size:Math.min(row.size,row.max);
     assert.equal(row.count,expected,JSON.stringify(row));assert.equal(row.unique,expected);assert.equal(row.unchanged,true);
     assert.deepEqual(row.own,Array.from({length:Math.min(3,row.size)},(_,i)=>'p'+i));
     for(const lanes of row.lanes)assert.deepEqual(lanes,[4,5,3,6,2,7,1,8].slice(0,lanes.length));
@@ -126,9 +126,15 @@ test('actual domestic and world races keep qualified rosters, college limits, re
     for(const meet of ['team_trial','kansai_college','intercollege','japan_open','japan_championship','joint_record']){
       const entries={fr100:[ids[0]],br100:[ids[1]],im200:[ids[2]],ba100:[ids[3]]};
       const relays=Object.fromEntries(RELAYS.map(kind=>[kind,[...ids]]));
+      const nationalQualified=Object.fromEntries(EVENTS.map(event=>[event,state.world.filter(a=>allowedCpu(a,meet)&&qualified(a,meet,event)).map(a=>a.id)]));
+      // Capture the exact college allocation used by executeMeet, because
+      // overloaded swimmers' retained three events are selected at random.
+      const originalBuilder=buildCpuCollegeEntries;let selectedCollege=null;
+      if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet))buildCpuCollegeEntries=target=>selectedCollege=originalBuilder(target);
       const result=executeMeet(meet,entries,relays),counts={},organizations={},errors=[];
+      buildCpuCollegeEntries=originalBuilder;
       for(const [event,field] of Object.entries(result.events)){
-        if(meet!=='team_trial'&&meetIndividualEvents(meet).includes(event)&&(field.heats.length!==preliminaryHeatCount(meet,event)||!field.heats.every(h=>h.length===8)))errors.push('incomplete '+event);
+        if(meet!=='team_trial'&&field.heats.length!==Math.ceil(field.prelim.length/8))errors.push('heat count '+event);
         if(meet!=='team_trial'&&field.prelim.length>8&&field.heats.some(h=>h.length<4))errors.push('tiny '+event);
         if(field.heats.some(h=>h.length>8))errors.push('overfull '+event);
         if(new Set(field.prelim.map(r=>r.athlete.id)).size!==field.prelim.length)errors.push('duplicate '+event);
@@ -139,12 +145,20 @@ test('actual domestic and world races keep qualified rosters, college limits, re
         }
         const wanted=entries[event]||[];
         if(wanted.some(id=>!field.prelim.some(r=>r.athlete.id===id)))errors.push('missing own '+event);
+        if(['japan_open','japan_championship'].includes(meet)){
+          const actual=field.prelim.filter(r=>r.source==='CPU').map(r=>r.athlete.id).sort();
+          if(JSON.stringify(actual)!==JSON.stringify([...nationalQualified[event]].sort()))errors.push('missing national qualifier '+event);
+        }
+        if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
+          const actual=field.prelim.filter(r=>r.source==='CPU').map(r=>r.athlete.id).sort();
+          if(JSON.stringify(actual)!==JSON.stringify([...(selectedCollege[event]||[])].sort()))errors.push('missing college selection '+event);
+        }
         if(field.final.length!==Math.min(8,field.prelim.length)&&meet!=='team_trial')errors.push('qualifiers '+event);
         for(const row of field.final)if(row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total)errors.push('final time '+event);
       }
       if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)&&(Object.values(counts).some(n=>n>3)||Object.values(organizations).some(n=>n>3)))errors.push('college limit');
       for(const [kind,finals,meta] of result.relays){
-        if(meta.heats.length!==preliminaryHeatCount(meet,kind)||!meta.heats.every(h=>h.length===8))errors.push('incomplete relay '+kind);
+        if(meta.heats.length!==Math.ceil(meta.prelim.length/8)||meta.heats.some(h=>h.length>8))errors.push('relay heat count '+kind);
         if(meta.prelim.length>8&&meta.heats.some(h=>h.length<4))errors.push('tiny relay '+kind);
         if(!meta.prelim.some(t=>t.organization===state.playerUniversity))errors.push('missing own relay');
         if(meta.prelim.some(team=>!(team.race.preliminaryDelay>0))||finals.some(team=>team.race.preliminaryDelay!==undefined||team.prelimTime!==meta.prelim.find(p=>p.organization===team.organization)?.race.total))errors.push('relay phase '+kind);

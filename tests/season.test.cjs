@@ -48,7 +48,7 @@ test('participation counts distinct swimmers across individual events, relay hea
   assert.equal(r.after[r.id],4);assert.equal(r.rep,35);
 });
 
-test('first-year baselines and equal attendance have no bonus or penalty, and April never changes reputation',()=>{
+test('first-year college meets start from zero, national baselines stay neutral, and equal attendance or April never changes reputation',()=>{
   const run=game();
   const r=json(run,`(()=>{
     const ids=state.players.slice(0,2).map(p=>p.id);
@@ -61,7 +61,7 @@ test('first-year baselines and equal attendance have no bonus or penalty, and Ap
     const before=state.universities.map(u=>u.reputation);newSeason();
     return {initial,equal,own:state.reputation,cpu:JSON.stringify(before)===JSON.stringify(state.universities.map(u=>u.reputation)),notices:state.pendingSeasonNotices.length};
   })()`);
-  assert.deepEqual(r.initial,[{delta:0,previous:[null,null]},{delta:0,previous:[null,null]}]);
+  assert.deepEqual(r.initial,[{delta:24,previous:[0,0]},{delta:0,previous:[null,null]}]);
   assert.deepEqual(r.equal,[0,0]);assert.equal(r.own,137.5);assert.ok(r.cpu);assert.equal(r.notices,0);
 });
 

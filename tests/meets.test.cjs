@@ -308,13 +308,13 @@ test('domestic heats use 6/5/4 groups, world heats use 4/3/2, each with at most 
   assert.equal(run(`seedRaceHeats(Array.from({length:17},(_,i)=>({athlete:{id:i,bestTimes:{fr100:100}}})),'fr100','team_trial').length`), 3);
 });
 
-test('CPU college entries follow specialties and three-per-event / three-per-athlete limits', () => {
+test('CPU college entries follow qualified PBs and three-per-event / three-per-athlete limits', () => {
   const run = game();
   const entries = json(run, `['kansai_college','intercollege'].map(meet=>{
     let entries=buildCpuCollegeEntries(meet),counts={},organizations={};
     for(let e of EVENTS)for(let id of entries[e]){
       let a=state.world.find(x=>x.id===id);
-      if(!cpuEntryEvents(a).includes(e)||!qualified(a,meet,e))throw Error('invalid CPU entry');
+      if(!meetIndividualEvents(meet).includes(e)||!allowedCpu(a,meet)||!qualified(a,meet,e))throw Error('invalid CPU entry');
       counts[id]=(counts[id]||0)+1;
       let k=a.organization+'|'+e;organizations[k]=(organizations[k]||0)+1;
     }
@@ -376,7 +376,7 @@ test('actual college prelims enforce three swimmers per university/event and thr
           counts[a.id]=(counts[a.id]||0)+1;organizations[org+'|'+event]=(organizations[org+'|'+event]||0)+1;
           sources[row.source]=(sources[row.source]||0)+1;
           if(!SPECIALTY_EVENTS.includes(event)||!qualified(a,meet,event))errors.push('ineligible event');
-          if(row.source==='CPU'&&(!allowedCpu(a,meet)||!cpuEntryEvents(a).includes(event)))errors.push('ineligible CPU');
+          if(row.source==='CPU'&&!allowedCpu(a,meet))errors.push('ineligible CPU');
         }
         rows.push({meet,counts:Object.values(counts),organizations:Object.values(organizations),sources,errors});
       }
