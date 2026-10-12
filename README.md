@@ -1,6 +1,13 @@
-# 大学競泳監督シミュレーション PWA v1.79
+# 大学競泳監督シミュレーション PWA v1.80
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v1.80 の変更
+
+- 全大会・記録会のエントリー画面で、選手名の下に「絶好調・好調・普通・不調・絶不調」の5段階の調子を表示します。PB表示・能力表示の両方、個人とリレーの確認、世界大会の追加エントリー、リレー決勝のメンバー変更に対応します。
+- 調子は同じ大会を通して共通で、画面の開き直し・セーブ読み込み・端末間のセーブ共有で再抽選しません。大会や年度が変わると別の調子になります。自チーム・CPU共通のレース計算に使い、リレーは各泳者に反映します。通常のタイムのぶれ・予選補正・不調時にPBより遅くなる仕組みも継続するため、好調でも必ずPB更新になるわけではありません。
+- 調子による通常タイムの補正は絶好調−0.35％、好調−0.18％、普通0％、不調＋0.25％、絶不調＋0.5％です。不調レースの確率にも調子を反映し、メンタルが高いほど不調や極端な調子になりにくくなります。能力・PB・過去の実記録は変更しません。
+- CPU大学は引き続き、名門・強豪ほど速いPBの選手が多くなりやすい選手層と進学先の抽選を使います。名門は強豪よりエース候補の枠が多く、世代・泳法・個人差も維持します。
 
 ## v1.79 の変更
 
@@ -569,7 +576,7 @@ v1.28では必ず1項目だけを指定して練習します。成長型・学�
 
 既存セーブを引き続き読めます。自チームの獲得済み能力・PB・大会履歴・卒業生の能力は維持します。旧バージョンで生成済みの一般CPU選手の能力・初期PBは、最初の読込時に一度だけ新しい基準へ調整します。CPUの肩書に残る実大会記録は保持します。
 
-更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.79のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
+更新済みの公開URLへオンラインでアクセスし、ゲームを閉じて開き直してください。v1.80のService Workerが準備できると旧キャッシュは削除され、更新版もオフラインで遊べます。PC・iPhoneの自動同期には[Firebaseの設定](./CLOUD_SYNC_SETUP.md)と同じアカウントでのログインを行ってください。
 
 ## 開発と検証
 
@@ -582,7 +589,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。

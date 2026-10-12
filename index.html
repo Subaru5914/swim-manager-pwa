@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.79</title>
+<title>大学競泳監督シミュレーション PWA版 v1.80</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1240,6 +1240,15 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .grade-pill.grade-3,.grade-3{background:#fff0da;color:#895019}
 .grade-pill.grade-4,.grade-4{background:#f0e7ff;color:#664096}
 .entry-athlete-name{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.meet-form{display:inline-block;padding:1px 5px;border:1px solid currentColor;border-radius:5px;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap}
+.form-excellent{background:#fff2ca;color:#805400}
+.form-good{background:#e3f5e9;color:#216741}
+.form-normal{background:#eef2f7;color:#465d75}
+.form-poor{background:#e5f0ff;color:#185ba3}
+.form-very-poor{background:#f0e7ff;color:#664096}
+.entry-summary-athlete{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:3px}
+.entry-form-roster{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0}
+.entry-athlete-form{margin-top:3px;font-size:11px}
 .entry-stat-view{display:grid;gap:3px;margin:4px auto;text-align:left;width:max-content}
 .entry-stat-row{display:grid;grid-template-columns:4.5em 22px 3.5ch;align-items:center;gap:4px;font-size:12px;line-height:1.35;white-space:nowrap}
 .entry-stat-label{color:#465d75;font-weight:700}
@@ -1283,7 +1292,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.79</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.80</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1494,9 +1503,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v1.79"></script>
-<script src="./save-history.js?version=v1.79"></script>
-<script src="./cloud-sync.js?version=v1.79"></script>
+<script src="./local-save.js?version=v1.80"></script>
+<script src="./save-history.js?version=v1.80"></script>
+<script src="./cloud-sync.js?version=v1.80"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1724,7 +1733,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.79";
+  state.version="pwa-v1.80";
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!state.japanTeam)state.japanTeam=null;
@@ -2114,6 +2123,38 @@ function medleySectionTimes(p,e){
 function expectedTime(p,e,legacyModel=false){
   return abilityBenchmarkTime(e,abilityValue(p,e,legacyModel)*200,legacyModel);
 }
+const MEET_FORMS=[
+  {level:-2,label:"絶不調",className:"form-very-poor",timeFactor:.005,poorMultiplier:2},
+  {level:-1,label:"不調",className:"form-poor",timeFactor:.0025,poorMultiplier:1.5},
+  {level:0,label:"普通",className:"form-normal",timeFactor:0,poorMultiplier:1},
+  {level:1,label:"好調",className:"form-good",timeFactor:-.0018,poorMultiplier:.8},
+  {level:2,label:"絶好調",className:"form-excellent",timeFactor:-.0035,poorMultiplier:.55}
+];
+let activeRaceMeetContext=null;
+function athleteMeetForm(p,meet,slot=activeCompetitionSlot(),season=activeCompetitionSeason()){
+  // The immutable game seed and competition date keep the preview stable across
+  // rerenders, relays, finals and saves without advancing the live race RNG.
+  const seed=state.cpuCompetitionSeed??profileHash(`${state.rngSeed}:competition-fields`);
+  const key=`${seed}:${season}:${slot}:${meet}:${p.id}:meet-form-v1`;
+  const uniform=suffix=>{
+    let h=profileHash(key+suffix);h=Math.imul(h^(h>>>16),0x7feb352d);h=Math.imul(h^(h>>>15),0x846ca68b);
+    return (((h^(h>>>16))>>>0)+.5)/4294967296;
+  };
+  const mental=clamp(Number.isFinite(p.stats?.mental)?p.stats.mental:100,0,200);
+  const spread=.30+.70*Math.pow(1-mental/200,1.25);
+  const value=Math.sqrt(-2*Math.log(uniform(":u")))*Math.cos(2*Math.PI*uniform(":v"))*spread;
+  const level=value<=-1.35?-2:value<=-.60?-1:value>=1.35?2:value>=.60?1:0;
+  return MEET_FORMS[level+2];
+}
+function meetFormHtml(p,meet,slot=activeCompetitionSlot(),season=activeCompetitionSeason()){
+  if(!p)return "";
+  const form=athleteMeetForm(p,meet,slot,season);
+  return `<span class="meet-form ${form.className}" data-form-athlete="${esc(p.id)}" data-form-level="${form.level}" title="大会を通した調子の傾向。各レースのぶれとメンタルも影響します。">${form.label}</span>`;
+}
+function withMeetRaceContext(meet,slot,season,run){
+  const previous=activeRaceMeetContext;activeRaceMeetContext={meet,slot,season};
+  try{return run()}finally{activeRaceMeetContext=previous}
+}
 function raceTarget(p,e,champ=true){
   let base=expectedTime(p,e),mental=clamp(Number.isFinite(p.stats.mental)?p.stats.mental:100,0,200),ability=abilityValue(p,e)*200;
   let effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;
@@ -2123,9 +2164,10 @@ function raceTarget(p,e,champ=true){
   let sigma=Math.max(.001+.0022*instability,(.003+.005*instability)*upperA),performance=gauss(0,sigma);
   // Rare exceptionally good upper-A races can clear dispatch while ordinary races stay stable.
   if(performance<0)performance*=1+(performance<-2*sigma?2:.5)*upperA;
-  let target=base*(1+effect+performance);
+  const form=activeRaceMeetContext?athleteMeetForm(p,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season):MEET_FORMS[2];
+  let target=base*(1+effect+performance+form.timeFactor);
   // A poor race can miss the lifetime PB even after the athlete has improved.
-  let poorChance=.20-.16*mentalRatio*mentalRatio;
+  let poorChance=clamp((.20-.16*mentalRatio*mentalRatio)*form.poorMultiplier,0,.7);
   if(rng()<poorChance){
     let range={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[distanceOf(e)];
     let pb=p.bestTimes?.[e],reference=validRaceTime(pb)?pb:base;
@@ -2232,6 +2274,7 @@ function simulateRace(p,event,champ=true,record=false,relayTakeover=false,prelim
   retimeRace(r,target,strokeForEvent(event)==="im"?medleySectionTimes(p,event):null);
   r.event=event;r.distance=distanceOf(event);r.record=r.total<JAPAN_RECORD[event];
   r.physics={engine:"swim_physics_js_v1",reactionTime:r.reaction,paceBias:r.paceBias,targetTime:target};
+  if(activeRaceMeetContext)r.physics.meetFormLevel=athleteMeetForm(p,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season).level;
   if(preliminary)r.physics.preliminaryDelay=preliminaryDelay;
   return r;
 }
@@ -3188,7 +3231,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.79",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1};
+  let s={version:"pwa-v1.80",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4610,7 +4653,8 @@ function openWorldAdditionalEntry(competitionSlot,competitionSeason){
   const original=state.japanTeam.individual,automatic=worldAutoEntries(year);
   const selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
   const m=showModal(`<div class="row"><h2 style="margin-right:auto">世界大会 追加エントリー</h2><button id="std">参加・派遣標準</button></div>
-    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。</div>
+    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。<br>調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</div>
+    <div class="entry-form-roster small">${sortedEntryRoster(athletes).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${athleteGradeHtml(a)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`).join("")}</div>
     <div class="table-wrap entry-table-wrap"><table id="worldAdditionalTable"><thead><tr><th>種目</th><th>選考済み代表</th><th>追加選手</th></tr></thead><tbody></tbody></table></div>
     <div id="worldAdditionalSummary" class="small muted"></div>
     <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">エントリー確認へ</button></div>`);
@@ -4618,8 +4662,8 @@ function openWorldAdditionalEntry(competitionSlot,competitionSeason){
   const render=()=>{
     const candidates=sortedEntryRoster(athletes);
     m.querySelector("tbody").innerHTML=events.map(e=>`<tr data-world-event="${e}"><td><b>${EVENT_LABEL[e]}</b><br><span class="small muted">空き ${vacancies[e]}枠</span></td>
-      <td class="small">${(original[e]||[]).map(id=>esc(japanTeamAthlete(id)?.name||"不明")).join(" / ")||"なし"}</td>
-      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${candidates.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])}</option>`).join("")}</select></label>`).join("")}</td></tr>`).join("");
+      <td class="small">${(original[e]||[]).map(id=>{const a=japanTeamAthlete(id);return a?`<span class="entry-summary-athlete">${esc(a.name)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`:"不明"}).join("")||"なし"}</td>
+      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${candidates.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])} / ${athleteMeetForm(a,"world_championship",competitionSlot,competitionSeason).label}</option>`).join("")}</select>${selections[e][i]?meetFormHtml(candidates.find(a=>a.id===selections[e][i]),"world_championship",competitionSlot,competitionSeason):""}</label>`).join("")}</td></tr>`).join("");
     m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
       selections[select.dataset.worldEvent][Number(select.dataset.worldSlot)]=select.value;
       render();
@@ -4653,7 +4697,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
       :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
 
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー</h2><button id="entryViewToggle">PB表示 → 能力表示</button>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
-    <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}</div>
+    <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}<br>調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</div>
     <div id="entryStatGuide" class="entry-stat-guide hidden">${statRankLegendHtml()}<div class="muted">IMは4泳法の総合値を表示。表は上下・左右にスクロールできます。</div></div>
     <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" class="${meetEvents.some(e=>SPRINT_EVENTS.includes(e))?"entry-with-sprints":""}" style="min-width:1320px">
       <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${meetEvents.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
@@ -4680,7 +4724,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     m.querySelector("#entryMatrix").classList.toggle("entry-abilities",entryDisplayMode==="stats");
     m.querySelector("#entryStatGuide").classList.toggle("hidden",entryDisplayMode!=="stats");
     tbody.innerHTML=sortedEntryRoster().map(p=>`<tr>
-      <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div>${entryDisplayMode==="stats"?`<div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}${entryStatHtml("メンタル",p.stats.mental,"mental")}</div>`:""}</td>
+      <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div><div class="entry-athlete-form">調子 ${meetFormHtml(p,meet,competitionSlot,competitionSeason)}</div>${entryDisplayMode==="stats"?`<div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}${entryStatHtml("メンタル",p.stats.mental,"mental")}</div>`:""}</td>
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
       ${meetEvents.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
@@ -4712,7 +4756,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     render();
   };
   m.querySelector("#clearAll").onclick=()=>{EVENTS.forEach(e=>selections[e]=[]);render()};
-  if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=()=>openRelayEditor(relaySel,render);
+  if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=()=>openRelayEditor(relaySel,render,{formContext:{meet,slot:competitionSlot,season:competitionSeason}});
   m.querySelector("#confirmEntry").onclick=()=>{
     if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
       for(let e of EVENTS)if(selections[e].length>3){alert(`${EVENT_LABEL[e]}が3人を超えています`);return}
@@ -4727,15 +4771,17 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
   const findAthlete=id=>meet==="world_championship"?japanTeamAthlete(id):state.players.find(p=>p.id===id);
   const worldOptions=meet==="world_championship"?worldAdditionalEntryOptions(calendarYear(competitionSeason,competitionSlot)):null;
   const canEditWorld=worldOptions?.athletes.length&&Object.values(worldOptions.vacancies).some(n=>n>0);
+  const entryNames=ids=>ids.map(id=>findAthlete(id)).filter(Boolean).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${meetFormHtml(a,meet,competitionSlot,competitionSeason)}</span>`).join("")||"エントリーなし";
   let cards=meetIndividualEvents(meet).map(e=>{
-    let ids=selections[e]||[],names=ids.map(id=>findAthlete(id)?.name).filter(Boolean);
-    return`<div class="entry-summary-card ${ids.length?"has":""}"><div>${EVENT_LABEL[e]}</div><b>${ids.length}名</b><div class="small muted">${names.map(esc).join(" / ")||"エントリーなし"}</div></div>`;
+    let ids=selections[e]||[];
+    return`<div class="entry-summary-card ${ids.length?"has":""}"><div>${EVENT_LABEL[e]}</div><b>${ids.length}名</b><div class="small muted">${entryNames(ids)}</div></div>`;
   }).join("");
   let relayCards=RELAY_MEETS.has(meet)?RELAYS.map(k=>{
-    let ids=relaySel[k]||[],names=ids.map(id=>findAthlete(id)?.name).filter(Boolean);
-    return`<div class="entry-summary-card ${ids.length===4?"has":""}"><div>${RELAY_LABEL[k]}</div><b>${ids.length===4?"1チーム":"0"}</b><div class="small muted">${names.map(esc).join(" → ")||"エントリーなし"}</div></div>`;
+    let ids=relaySel[k]||[];
+    return`<div class="entry-summary-card ${ids.length===4?"has":""}"><div>${RELAY_LABEL[k]}</div><b>${ids.length===4?"1チーム":"0"}</b><div class="small muted">${entryNames(ids)}</div></div>`;
   }).join(""):"";
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー確認</h2></div>
+    <p class="small muted">調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</p>
     ${meet==="world_championship"?`<div class="notice">3月の日本選手権で選出された代表と、空き枠に追加した選手を登録しています。自チーム選手が出場するレースは映像、それ以外は結果を表示します。${state.japanTeam?.year===calendarYear(competitionSeason,competitionSlot)?"":"<br>この年の代表選考データがありません。日本代表の出場はありません。"}</div>`:""}
     ${FOUR_DAY_MEETS.has(meet)?'<p class="small">4日間の日程で進めます。各日の全種目の予選後に決勝を行い、各種目の開始前にその日のエントリー一覧を表示します。</p>':""}
     <h3>個人種目</h3><div class="entry-summary-grid">${cards}</div>
@@ -4990,6 +5036,7 @@ function playMeetSequence(result,selections,onComplete,preparedQueue=null){
       };
       openRelayEditor(draft,()=>enterFinal(draft[block.event]),{
         kinds:[block.event],roster:relayFinalRoster(result),required:true,
+        formContext:{meet:result.meet,slot:result.slot??activeCompetitionSlot(),season:result.season??activeCompetitionSeason()},
         title:`${RELAY_LABEL[block.event]} 決勝エントリー`,confirmLabel:"このメンバーで決勝へ",
         cancelLabel:"予選の編成で決勝へ",onCancel:()=>enterFinal(initialIds),
         notice:result.meet==="world_championship"?"予選を通過しました。選出済みの日本代表から決勝の4名と泳順を選んでください。":"予選を通過しました。自チームから決勝の4名と泳順を選んでください。"
@@ -5007,7 +5054,7 @@ function setRelayFinalEntry(result,kind,ids){
   let roster=relayFinalRoster(result),members=ids.map(id=>roster.find(p=>p.id===id)).filter(Boolean);
   if(ids.length!==4||new Set(ids).size!==4||members.length!==4)throw new Error("決勝は出場可能な選手を重複なく4名選んでください。");
   let unchanged=team.members.every((p,i)=>p.id===ids[i]);
-  if(!unchanged){team.members=members;team.race=simulateRelay(members,kind,true)}
+  if(!unchanged){team.members=members;team.race=withMeetRaceContext(result.meet,result.slot??activeCompetitionSlot(),result.season??activeCompetitionSeason(),()=>simulateRelay(members,kind,true))}
   entry[1].sort((a,b)=>a.race.total-b.race.total).forEach((t,i)=>t.rank=i+1);
   entry[2].finalEntryPending=false;
   if(!result.relayFinalEntries)result.relayFinalEntries={};
@@ -5025,6 +5072,7 @@ function setRelayFinalEntry(result,kind,ids){
 function openRelayEditor(relaySel,done,options={}){
   const root=document.getElementById("modalRoot");
   const kinds=options.kinds||RELAYS,roster=sortedEntryRoster(options.roster||state.players),draft=deepClone(relaySel);
+  const formContext=options.formContext;
   const layer=document.createElement("div");
   layer.className="modal-back";
   layer.style.zIndex="80";
@@ -5053,8 +5101,8 @@ function openRelayEditor(relaySel,done,options={}){
         let e=legEvent(kind,i),current=draft[kind]?.[i]||"";
         return`<label>${legName(kind,i)}<br><select data-kind="${kind}" data-i="${i}" style="min-width:220px">
           <option value="">-- 選択 --</option>
-          ${sortedRelayRoster(roster,e).map(p=>`<option value="${p.id}" ${current===p.id?"selected":""}>${esc(p.name)}（${athleteGradeLabel(p)}） — ${EVENT_LABEL[e]} ${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未記録"}</option>`).join("")}
-        </select></label>`;
+          ${sortedRelayRoster(roster,e).map(p=>`<option value="${p.id}" ${current===p.id?"selected":""}>${esc(p.name)}（${athleteGradeLabel(p)}） — ${EVENT_LABEL[e]} ${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未記録"}${formContext?` / ${athleteMeetForm(p,formContext.meet,formContext.slot,formContext.season).label}`:""}</option>`).join("")}
+        </select>${formContext?`<div class="entry-athlete-form" data-relay-form-kind="${kind}" data-relay-form-leg="${i}"></div>`:""}</label>`;
       }).join("")}</div>
     </div>`).join("");
     kinds.forEach(kind=>refreshKind(kind));
@@ -5075,6 +5123,10 @@ function openRelayEditor(relaySel,done,options={}){
         opt.disabled=vals.some((v,j)=>j!==idx&&v===opt.value);
       });
       sel.value=current;
+      if(formContext){
+        const athlete=roster.find(p=>p.id===current),badge=body.querySelector(`[data-relay-form-kind="${kind}"][data-relay-form-leg="${idx}"]`);
+        badge.innerHTML=athlete?`調子 ${meetFormHtml(athlete,formContext.meet,formContext.slot,formContext.season)}`:"";
+      }
     });
   }
   m.querySelector("#relayClose").onclick=()=>{closeChild();options.onCancel?.()};
@@ -5092,6 +5144,9 @@ function openRelayEditor(relaySel,done,options={}){
   renderEditor();
 }
 function executeMeet(meet,selections,relaySel,options={}){
+  return withMeetRaceContext(meet,activeCompetitionSlot(),activeCompetitionSeason(),()=>executeMeetWithForm(meet,selections,relaySel,options));
+}
+function executeMeetWithForm(meet,selections,relaySel,options={}){
   if(meet==="world_championship")return executeWorldMeet(options);
   const meetEvents=meetIndividualEvents(meet);
   for(const e of EVENTS)selections[e]=meetEvents.includes(e)?[...(selections[e]||[])]:[];
@@ -5157,6 +5212,9 @@ function executeMeet(meet,selections,relaySel,options={}){
   return result;
 }
 function executeWorldMeet(options={}){
+  return withMeetRaceContext("world_championship",activeCompetitionSlot(),activeCompetitionSeason(),()=>executeWorldMeetWithForm(options));
+}
+function executeWorldMeetWithForm(options={}){
   let year=calendarYear(activeCompetitionSeason(),activeCompetitionSlot());
   if(!isWorldChampionshipYear(year))throw new Error("この年は世界大会の開催年ではありません。");
   let events=Object.fromEntries(EVENTS.map(e=>[e,runWorldEvent(e,year)])),relays=runWorldRelays(year,!!options.deferRelayFinalEntries),own=worldOwnEntries(year);
