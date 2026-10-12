@@ -222,7 +222,7 @@ test('new wishes each appear about ten percent and v2 wishes migrate once withou
   for(const key of ['stable','rng','signed','own','records','athletes'])assert.equal(result[key],true,key);
 });
 
-test('existing candidate identities supply exactly eight freshmen; every other senior advances and only middle-school first years are generated',()=>{
+test('existing candidate identities supply exactly eight freshmen; every other senior advances and added CPU entries leave own freshmen untouched',()=>{
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const rows=[];
@@ -235,8 +235,8 @@ test('existing candidate identities supply exactly eight freshmen; every other s
       rows.push({year,count:freshmen.length,unique:freshIds.size,signed:signed.every(id=>freshIds.has(id)),candidates:freshmen.every(p=>before.has(p.id)),
         preserved:freshmen.every(p=>{const a=before.get(p.id);return a.name===p.name&&a.specialty===p.specialty&&JSON.stringify(a.stats)===JSON.stringify(p.stats)&&JSON.stringify(a.pb)===JSON.stringify(p.bestTimes)}),
         moved:seniors.every(id=>freshIds.has(id)||state.world.some(a=>a.id===id&&a.category==='university'&&a.grade===1)),
-        freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>a.category==='middle'&&a.grade===1&&a.age===13),
-        newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:organizationNames().middle.length*3,
+        freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>(a.category==='middle'&&a.grade===1&&a.age===13)||(a.cpuFieldRoster&&(a.category==='adult'||a.category==='university'&&a.grade===1))),
+        newCount:state.world.filter(a=>!oldIds.has(a.id)&&!a.cpuFieldRoster).length,expected:organizationNames().middle.length*3,
         removed:freshmen.every(p=>!state.world.some(a=>a.id===p.id)),welcome:state.pendingFreshmenWelcome.length,queue:state.recruits.length});
       const serial=state.serial,rngSeed=state.rngSeed;maintainWorldPopulation();migrateState();
       rows.at(-1).reloadNoNew=state.serial===serial&&state.rngSeed===rngSeed;
