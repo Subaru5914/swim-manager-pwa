@@ -24,7 +24,7 @@ test('relay top tens keep the winning record and its four exact splits through s
       legs[0]=999;
     }
     state.players=[];state=JSON.parse(JSON.stringify(state));
-    return RELAYS.map(event=>({event,record:state.teamTop10[event][0],resolved:teamRelayRecordLegs(state.teamTop10[event][0])}));
+    return RELAYS.map(event=>({event,record:state.teamTop10[event][0],resolved:relayRecordLegs(state.teamTop10[event][0])}));
   })()`);
   for(const row of rows){
     const expected=row.event==='4x200fr'?[120.25,119.12,122.48,121.03]:[50.01,51.02,52.03,53.04];
@@ -48,9 +48,9 @@ test('legacy top-ten relay splits recover only from the matching race, lineup an
     for(const i of [1,2])members[i].raceHistory.push({...record,organization:state.playerUniversity,legIndex:i,lapTime:52.25+i});
     members[3].raceHistory.push({...record,organization:state.playerUniversity,legIndex:3,lapTime:null});
     const before=JSON.stringify(state),seed=state.rngSeed;
-    const partial=teamRelayRecordLegs(record),own=teamRelayRecordLegs({...record,legs:[50.5,null,null,null]});
+    const partial=relayRecordLegs(record),own=relayRecordLegs({...record,legs:[50.5,null,null,null]});
     members[3].raceHistory.push({...record,organization:state.playerUniversity,legIndex:3,lapTime:51});
-    const full=teamRelayRecordLegs(record);members[3].raceHistory.pop();
+    const full=relayRecordLegs(record);members[3].raceHistory.pop();
     return{partial,own,full,unchanged:before===JSON.stringify(state),rng:seed===state.rngSeed};
   })()`);
   assert.deepEqual(r.partial,[51.25,53.25,54.25,null]);assert.deepEqual(r.own,[50.5,53.25,54.25,null]);assert.deepEqual(r.full,[51.25,53.25,54.25,51]);
