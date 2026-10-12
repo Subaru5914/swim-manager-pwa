@@ -20,8 +20,8 @@ test('50m stroke standards match official men LCM tables and the ability model u
     r.times.forEach((time,i)=>{assert.ok(Number.isFinite(time)&&time>0);if(i)assert.ok(time<r.times[i-1]);});
     assert.ok(r.times[3]*.98<r.world,'strong A racers can clear the world standard with good form');
   }
-  const generated=run(`(()=>{const foreign=ensureInternationalWorld(2027).athletes;return{events:EVENTS.length,specialties:SPECIALTY_EVENTS.length,invalid:[...state.players,...state.world,...foreign].filter(a=>!SPECIALTY_EVENTS.includes(a.specialty)).map(a=>a.id),foreign:SPRINT_EVENTS.map(e=>foreign.filter(a=>a.individualEligible&&a.individualEvent===e).length),cpu:state.world.every(a=>SPRINT_EVENTS.every(e=>Number.isFinite(a.bestTimes[e])&&a.bestTimes[e]>0))}})()`);
-  assert.equal(generated.events,15);assert.equal(generated.specialties,12);assert.deepEqual(generated.invalid,[]);assert.deepEqual(generated.foreign,[48,48,48]);assert.equal(generated.cpu,true);
+  const generated=run(`(()=>{const foreign=ensureInternationalWorld(2027).athletes;return{events:EVENTS.length,specialties:SPECIALTY_EVENTS.length,invalid:[...state.players,...state.world,...foreign].filter(a=>!SPECIALTY_EVENTS.includes(a.specialty)).map(a=>a.id),countries:WORLD_COUNTRIES.length,foreign:SPRINT_EVENTS.map(e=>foreign.filter(a=>a.individualEligible&&a.individualEvent===e).length),cpu:state.world.every(a=>SPRINT_EVENTS.every(e=>Number.isFinite(a.bestTimes[e])&&a.bestTimes[e]>0))}})()`);
+  assert.equal(generated.events,15);assert.equal(generated.specialties,12);assert.deepEqual(generated.invalid,[]);assert.equal(generated.countries,32);assert.deepEqual(generated.foreign,Array(3).fill(generated.countries*2));assert.equal(generated.cpu,true);
 });
 
 test('legacy sprint migration repairs nonpositive CPU PBs while preserving valid PBs and the random sequence',()=>{
@@ -77,9 +77,9 @@ test('an existing foreign roster keeps all old athletes and relays when the miss
     const count=world.athletes.length,after=ensureInternationalWorld(2027);
     const old=JSON.stringify(after.athletes.slice(0,count).map(a=>({id:a.id,name:a.name,stats:a.stats,pb:Object.fromEntries(SPECIALTY_EVENTS.map(e=>[e,a.bestTimes[e]])),specialty:a.specialty})));
     const saved=JSON.stringify(state);ensureInternationalWorld(2027);
-    return{count,total:after.athletes.length,oldPreserved:before===old,relayPreserved:relays===JSON.stringify(after.relayTeams),rngUnchanged,stable:saved===JSON.stringify(state),specialties:after.athletes.every(a=>SPECIALTY_EVENTS.includes(a.specialty)),fields:SPRINT_EVENTS.map(e=>after.athletes.filter(a=>a.individualEligible&&a.individualEvent===e).length)};
+    return{countries:WORLD_COUNTRIES.length,count,total:after.athletes.length,oldPreserved:before===old,relayPreserved:relays===JSON.stringify(after.relayTeams),rngUnchanged,stable:saved===JSON.stringify(state),specialties:after.athletes.every(a=>SPECIALTY_EVENTS.includes(a.specialty)),fields:SPRINT_EVENTS.map(e=>after.athletes.filter(a=>a.individualEligible&&a.individualEvent===e).length)};
   })()`);
-  assert.equal(result.count,864);assert.equal(result.total,1008);assert.deepEqual(result.fields,[48,48,48]);assert.ok(result.oldPreserved&&result.relayPreserved&&result.rngUnchanged&&result.stable&&result.specialties);
+  assert.equal(result.countries,32);assert.equal(result.count,result.countries*(12*2+3*4));assert.equal(result.total,result.countries*(15*2+3*4));assert.deepEqual(result.fields,Array(3).fill(result.countries*2));assert.ok(result.oldPreserved&&result.relayPreserved&&result.rngUnchanged&&result.stable&&result.specialties);
 });
 
 test('new sprint races respect PB qualification, eight finalists, domestic records and final-only world selection',()=>{

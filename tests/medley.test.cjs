@@ -178,3 +178,18 @@ test('IM recording and CPU races share exact section clocks, and replay preserve
     assert.equal(row.end.distance,row.finish);
   }
 });
+
+test('live IM aptitude updates after identity changes and still follows training without consuming randomness',()=>{
+  const run=game();
+  const r=run(`(()=>{
+    const a=attachMedleyStats({id:'cached-im-athlete',stats:Object.fromEntries(STATS.map(k=>[k,120]))});
+    const initial=[a.stats.im_speed,a.stats.im_stamina],seed=state.rngSeed;
+    a.id='changed-im-athlete';const afterId=[a.stats.im_speed,a.stats.im_stamina];
+    const fresh=attachMedleyStats({...a,stats:deepClone(a.stats)});
+    const expected=[fresh.stats.im_speed,fresh.stats.im_stamina];
+    a.stats.fr_speed+=12;const afterGrowth=[a.stats.im_speed,a.stats.im_stamina];
+    return{initial,afterId,expected,afterGrowth,rng:state.rngSeed===seed};
+  })()`);
+  assert.notDeepEqual(r.initial,r.afterId);assert.deepEqual(r.afterId,r.expected);
+  assert.ok(Math.abs(r.afterGrowth[0]-r.afterId[0]-3)<1e-9);assert.equal(r.afterGrowth[1],r.afterId[1]);assert.equal(r.rng,true);
+});

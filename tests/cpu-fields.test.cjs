@@ -88,3 +88,39 @@ test('adding overseas countries preserves the existing edition and provides comp
   for(const k of ['same','retainedTeams','once','allIndividuals','noDigits'])assert.equal(r[k],true,JSON.stringify(r));
   assert.equal(r.countries,32);assert.deepEqual(r.counts,[[8,8,8,8],[8,8,8],[8,8,8,8]]);
 });
+
+test('warming current and legacy timing references preserves generated saves and RNG without growing caches per ability value',()=>{
+  const run=game(),r=run(`(()=>{
+    const original=JSON.stringify(state),seed=state.rngSeed;
+    for(const e of EVENTS){
+      for(let ability=0;ability<=200;ability+=.5)for(const legacy of [false,true])abilityBenchmarkTime(e,ability,legacy);
+      for(const category of ['middle','high','university','adult']){
+        cpuRaceReference(category,e);
+        for(const meet of ['kansai_college','intercollege','japan_open','japan_championship'])if(Number.isFinite(standardFor(meet,e)))for(const cap of [175,187])cpuFieldReference(e,category,standardFor(meet,e),cap);
+      }
+    }
+    const untouched=original===JSON.stringify(state)&&seed===state.rngSeed;
+    const sizes={benchmarks:abilityBenchmarkAnchorCache.size,races:cpuRaceReferenceCache.size,fields:cpuFieldReferenceCache.size};
+    state=createState();
+    return{untouched,identical:original===JSON.stringify(state),sizes};
+  })()`);
+  assert.equal(r.untouched,true);assert.equal(r.identical,true);
+  assert.equal(r.sizes.benchmarks,30);assert.equal(r.sizes.races,60);assert.ok(r.sizes.fields<=480);
+});
+
+test('incremental top-fifty checks handle cutoffs and ties with the same spans and density as actual sorted rankings',()=>{
+  const context=vm.createContext({});vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
+  const rows=JSON.parse(vm.runInContext(`JSON.stringify([0,1,48,49,50].flatMap(size=>['fr50','fr100','fr200','fr400'].flatMap(event=>{
+    const times=Array.from({length:size},(_,i)=>100+Math.floor(i/3)*.3),before=JSON.stringify(times),field=cpuTop50Context(times,event);
+    return [99,100,103.9,104,104.2,104.8,105,120].map(time=>({size,event,time,actual:cpuTop50Impact(field,time),sorted:times.concat(time).sort((a,b)=>a-b).slice(0,50),unchanged:before===JSON.stringify(times)}));
+  })))`,context));
+  for(const row of rows){
+    assert.equal(row.unchanged,true);
+    if(row.sorted.length<50){assert.equal(row.actual,null);continue;}
+    assert.equal(row.actual.span,row.sorted[49]-row.sorted[0]);
+    if(row.event==='fr200'){
+      const bins={};for(const t of row.sorted)bins[Math.floor(t)]=(bins[Math.floor(t)]||0)+1;
+      assert.equal(row.actual.peak,Math.max(...Object.values(bins)));
+    }
+  }
+});
