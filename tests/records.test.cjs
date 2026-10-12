@@ -57,6 +57,37 @@ test('legacy top-ten relay splits recover only from the matching race, lineup an
   assert.ok(r.unchanged&&r.rng);
 });
 
+test('missing record grades recover from dated cohorts and saved counterparts while undated PBs retain a separate collection-year grade',()=>{
+  const run=game(false),r=run(`(()=>{
+    state.season=2026;state.universities=[{name:'他大学'}];
+    const own={id:'grade-own',name:'現役自大学',year:3,age:21},cpu={id:'grade-cpu',name:'現役他大学',category:'university',grade:4,age:22,organization:'他大学'},high={id:'grade-high',name:'現役高校生',category:'high',grade:3,age:18,organization:'記録高校'};
+    const adult={id:'grade-adult',name:'現役社会人',category:'adult',age:25,organization:'実業団'};
+    state.players=[own];state.world=[cpu,high,adult];
+    const dated=(id,season,time,schoolCategory)=>({kind:'individual',event:'fr100',athleteId:id,name:id,organization:id===own.id?state.playerUniversity:'他大学',season,slot:43,meet:'intercollege',stage:'決勝',time,schoolCategory,gradeAtRecord:null});
+    const ownRace=dated(own.id,2025,49,'unknown'),cpuRace=dated(cpu.id,2024,50,'university');
+    const former={...dated('removed-athlete',2024,51,'high'),gradeAtRecord:3,organization:'以前の高校'};
+    const oldJapan={...deepClone(former),schoolCategory:'unknown',gradeAtRecord:null};
+    const pb={kind:'individual',event:'ba50',athleteId:high.id,name:high.name,organization:high.organization,time:26,season:2026,slot:null,meet:'PB集計',stage:'PB',schoolCategory:'high',gradeAtRecord:null};
+    const missing={...deepClone(pb),athleteId:'missing-identity',name:'情報が残っていない選手',time:27};
+    const relay={kind:'relay',event:'4x100fr',organization:'他大学',season:2025,slot:43,meet:'intercollege',stage:'決勝',time:205,legs:[50,51,52,52],members:[
+      {id:cpu.id,name:cpu.name,schoolCategory:'university',gradeAtRecord:null},{id:own.id,name:own.name,schoolCategory:'unknown',gradeAtRecord:null},
+      {id:'gone-leg',name:'過去の泳者',schoolCategory:'unknown',gradeAtRecord:null},{id:'unknown-leg',name:'情報なし',schoolCategory:'university',gradeAtRecord:null}]};
+    const relatedRelay=deepClone(relay);relatedRelay.members[2]={...relatedRelay.members[2],schoolCategory:'university',gradeAtRecord:4};
+    const adultPB={...deepClone(pb),athleteId:adult.id,name:adult.name,organization:adult.organization,schoolCategory:'unknown',time:29};
+    state.recordRankings={high:{fr100:[former],ba50:[pb,missing]},university:{fr100:[ownRace,cpuRace],'4x100fr':[relay]},japan:{fr100:[oldJapan],ba50:[adultPB],'4x100fr':[relatedRelay]}};
+    const before=JSON.stringify({people:[own,cpu,high],times:[ownRace.time,cpuRace.time,former.time,pb.time,relay.time],laps:relay.legs}),seed=state.rngSeed;
+    migrateRecordSchoolInfo();const first=JSON.stringify(state.recordRankings),result=deepClone(state.recordRankings);
+    state.season++;own.year++;own.age++;cpu.grade++;cpu.age++;high.category='university';high.grade=1;high.age++;
+    migrateRecordSchoolInfo();const stable=first===JSON.stringify(state.recordRankings);
+    return{records:result,stable,rng:seed===state.rngSeed,unchangedTimes:before===JSON.stringify({people:[{...own,year:3,age:21},{...cpu,grade:4,age:22},{...high,category:'high',grade:3,age:18}],times:[ownRace.time,cpuRace.time,former.time,pb.time,relay.time],laps:relay.legs}),labels:[recordSchoolLabel(pb),recordSchoolLabel(missing),recordSchoolLabel(adultPB)]};
+  })()`);
+  assert.deepEqual(r.records.university.fr100.map(row=>[row.schoolCategory,row.gradeAtRecord]),[['university',2],['university',2]]);
+  assert.equal(r.records.japan.fr100[0].gradeAtRecord,3);
+  assert.deepEqual(r.records.university['4x100fr'][0].members.map(m=>m.gradeAtRecord),[3,2,4,null]);
+  const pb=r.records.high.ba50[0];assert.equal(pb.gradeAtRecord,null);assert.equal(pb.gradeAtCollection,3);assert.equal(pb.collectionSchoolCategory,'high');
+  assert.deepEqual(r.labels,['集計時 高3','学年不明','集計時 社会人']);assert.ok(r.stable&&r.rng&&r.unchangedTimes);
+});
+
 test('legacy relay appearances recover saved totals once, keep real history authoritative and never invent splits or places',()=>{
   const run=game();
   const result=run(`(()=>{
