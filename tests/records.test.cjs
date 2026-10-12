@@ -4,13 +4,58 @@ const path=require('node:path');
 const vm=require('node:vm');
 const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
-function game(){
+function game(full=true){
   const context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=5914;return a}}});
   vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
   const run=code=>vm.runInContext(code,context);
-  run('state=createState();state.world=[];state.players=[];state.teamTop10={};state.recordRankings={};state.retiredArchive=[]');
+  run(full?'state=createState();state.world=[];state.players=[];state.teamTop10={};state.recordRankings={};state.retiredArchive=[]':'state={season:2026,slot:43,playerUniversity:"自大学",rngSeed:5914,players:[],world:[],retiredArchive:[],teamTop10:{},recordRankings:{}}');
   return code=>JSON.parse(run('JSON.stringify('+code+')'));
 }
+
+test('relay top tens keep the winning record and its four exact splits through slower races, graduation and reload',()=>{
+  const run=game(false),rows=run(`(()=>{
+    const members=Array.from({length:4},(_,i)=>({id:'top10-leg-'+i,name:'泳者'+i,year:i+1,age:19+i,organization:state.playerUniversity}));
+    state.players=members;
+    for(const event of RELAYS){
+      const legs=event==='4x200fr'?[120.25,119.12,122.48,121.03]:[50.01,51.02,52.03,53.04],total=round2(legs.reduce((a,b)=>a+b,0));
+      upsertRelayTop10(event,members,total+4,'intercollege','予選',legs.map(t=>t+1));
+      upsertRelayTop10(event,members,total,'intercollege','決勝',legs);
+      upsertRelayTop10(event,members,total+2,'intercollege','決勝',[60,60,60,60]);
+      legs[0]=999;
+    }
+    state.players=[];state=JSON.parse(JSON.stringify(state));
+    return RELAYS.map(event=>({event,record:state.teamTop10[event][0],resolved:teamRelayRecordLegs(state.teamTop10[event][0])}));
+  })()`);
+  for(const row of rows){
+    const expected=row.event==='4x200fr'?[120.25,119.12,122.48,121.03]:[50.01,51.02,52.03,53.04];
+    assert.deepEqual(row.record.legs,expected);assert.deepEqual(row.resolved,expected);
+    assert.equal(row.record.time,Math.round(expected.reduce((a,b)=>a+b,0)*100)/100);assert.equal(row.record.stage,'決勝');
+    assert.deepEqual(row.record.members.map(m=>m.id),['top10-leg-0','top10-leg-1','top10-leg-2','top10-leg-3']);
+  }
+});
+
+test('legacy top-ten relay splits recover only from the matching race, lineup and leg and never change saves or invent missing laps',()=>{
+  const run=game(false),r=run(`(()=>{
+    const members=Array.from({length:4},(_,i)=>({id:'old-leg-'+i,name:'旧泳者'+i,raceHistory:[]}));
+    state.players=members.slice(0,2);state.world=[members[2]];state.retiredArchive=[members[3]];
+    const record={kind:'relay',event:'4x100medley',members:members.map(a=>({id:a.id,name:a.name})),season:2026,slot:43,meet:'intercollege',stage:'決勝',time:210};
+    const wrong=[{...record,stage:'予選'},{...record,season:2025},{...record,slot:42},{...record,meet:'kansai_college'},{...record,time:209},{...record,event:'4x100fr'}];
+    const badLineup={...deepClone(record),members:[...record.members].reverse(),legs:[99,99,99,99]};
+    state.recordRankings={university:{'4x100medley':[...wrong.map(row=>({...row,organization:state.playerUniversity,legs:[99,99,99,99]})),badLineup,
+      {...deepClone(record),organization:state.playerUniversity,legs:[51.25,null,null,null]}]}};
+    members.forEach((a,i)=>{a.raceHistory=wrong.map(row=>({...row,organization:state.playerUniversity,legIndex:i,lapTime:99}))});
+    members[1].raceHistory.push({...record,organization:state.playerUniversity,legIndex:2,lapTime:99});
+    for(const i of [1,2])members[i].raceHistory.push({...record,organization:state.playerUniversity,legIndex:i,lapTime:52.25+i});
+    members[3].raceHistory.push({...record,organization:state.playerUniversity,legIndex:3,lapTime:null});
+    const before=JSON.stringify(state),seed=state.rngSeed;
+    const partial=teamRelayRecordLegs(record),own=teamRelayRecordLegs({...record,legs:[50.5,null,null,null]});
+    members[3].raceHistory.push({...record,organization:state.playerUniversity,legIndex:3,lapTime:51});
+    const full=teamRelayRecordLegs(record);members[3].raceHistory.pop();
+    return{partial,own,full,unchanged:before===JSON.stringify(state),rng:seed===state.rngSeed};
+  })()`);
+  assert.deepEqual(r.partial,[51.25,53.25,54.25,null]);assert.deepEqual(r.own,[50.5,53.25,54.25,null]);assert.deepEqual(r.full,[51.25,53.25,54.25,51]);
+  assert.ok(r.unchanged&&r.rng);
+});
 
 test('legacy relay appearances recover saved totals once, keep real history authoritative and never invent splits or places',()=>{
   const run=game();

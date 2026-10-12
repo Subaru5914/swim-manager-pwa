@@ -223,6 +223,8 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
         ranks:entry[1].map(t=>t.rank),scoresAgree:JSON.stringify(result.teamScores)===JSON.stringify(result.historyEntry.teamScores)&&JSON.stringify(result.teamScores)===JSON.stringify(result.teamScoreEntry.scores),
         pending:entry[2].finalEntryPending,abandonedSaved:state.teamTop10[kind].some(r=>r.memberKey===original.join('|')&&r.time===abandonedTime),
         replacementSaved:state.teamTop10[kind].some(r=>r.memberKey===replacements.join('|')&&r.time===own.race.total),
+        savedPrelimLegs:state.teamTop10[kind].find(r=>r.memberKey===original.join('|')).legs,
+        savedFinalLegs:state.teamTop10[kind].find(r=>r.memberKey===replacements.join('|')).legs,
         beforeRecord,prelimTime:round2(ownPrelim.race.total),nationalRecord:state.recordRankings.japan[kind].find(r=>r.organization===state.playerUniversity).time,
         expectedRecord:Math.min(round2(ownPrelim.race.total),round2(own.race.total)),
         prelimHistory:state.players.slice(0,4).map(p=>p.raceHistory.filter(h=>h.event===kind)),
@@ -241,6 +243,7 @@ test('all relay finals can change swimmers without altering prelims, lane seedin
     assert.equal(row.finalLane,row.lane);assert.equal(row.pending,false);assert.equal(row.rank,8);
     assert.deepEqual(row.ranks,[1,2,3,4,5,6,7,8]);
     assert.equal(row.abandonedSaved,false);assert.equal(row.replacementSaved,true);
+    assert.deepEqual(row.savedPrelimLegs,row.expectedPrelim);assert.deepEqual(row.savedFinalLegs,row.expectedFinal);
     assert.equal(row.beforeRecord,row.prelimTime);assert.equal(row.nationalRecord,row.expectedRecord);
     assert.ok(row.historySaved&&row.pbUnchanged);
     for(let i=0;i<4;i++){
