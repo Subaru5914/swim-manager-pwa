@@ -180,7 +180,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.77');
+  assert.equal(result.version,'pwa-v1.78');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -437,7 +437,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.77');
+  assert.equal(result.version, 'pwa-v1.78');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -580,7 +580,8 @@ test('higher mental abilities progressively reduce actual poor races, including 
     return {mental,rate:poor/8000};
   }))`));
   assert.ok(rows[0].rate>.18);
-  assert.ok(rows.at(-1).rate>.10&&rows.at(-1).rate<.14);
+  assert.ok(rows.at(-1).rate>.025&&rows.at(-1).rate<.055);
+  assert.ok(rows[3].rate>.09&&rows[3].rate<.13);
   for(let i=1;i<rows.length;i++)assert.ok(rows[i].rate<rows[i-1].rate,JSON.stringify(rows));
 });
 
@@ -598,10 +599,11 @@ test('poor races miss PB by distance-scaled margins even when abilities improve'
   }))`));
   for(const row of rows){
     const expected={50:.5,100:1,200:2.8,400:4.7}[row.distance];
-    assert.ok(row.count>150&&row.count<1100,JSON.stringify(row));
+    const expectedBad=2000*(.20-.16*Math.pow(173/200,2)),margin=5*Math.sqrt(expectedBad*(1-expectedBad/2000));
+    assert.ok(row.count>expectedBad-margin&&row.count<1100,JSON.stringify(row));
     assert.ok(row.max>expected,JSON.stringify(row));
     const [min,max]={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[row.distance];
-    assert.ok(row.badCount>150&&row.badCount<450,JSON.stringify(row));
+    assert.ok(Math.abs(row.badCount-expectedBad)<margin,JSON.stringify(row));
     assert.ok(row.badMin>=min-1e-8&&row.badMax<=max+1e-8,JSON.stringify(row));
   }
 });
