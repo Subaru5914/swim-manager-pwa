@@ -378,14 +378,16 @@ test('repairing a recorded standard never generates another first-clear badge on
   assert.deepEqual(r.earned,r.wanted);assert.deepEqual(r.race.newlyCleared,[]);assert.equal(r.race.pb,false);assert.equal(r.pb,49);
 });
 
-test('eight real year changes never worsen a surviving swimmer PB and keep active record holders consistent with scouting',()=>{
+test('eight real year changes retain owned and returning swimmers PBs and keep corrected admission records consistent with scouting',()=>{
   const run=game();
   const rows=run(`(()=>{
     state=createState();const rows=[];
     for(let year=0;year<8;year++){
-      const before=new Map(activeAthletes().map(a=>[a.id,deepClone(a.bestTimes)]));newSeason();
+      const before=new Map(activeAthletes().map(a=>[a.id,{pb:deepClone(a.bestTimes),category:a.category}]));newSeason();
       const byId=new Map(activeAthletes().map(a=>[a.id,a])),board=refreshScoutBoard();let bad=0,worsened=0;
-      for(const a of activeAthletes())for(const event of EVENTS){const old=before.get(a.id)?.[event];if(Number.isFinite(old)&&a.bestTimes[event]>old+.001)worsened++}
+      for(const a of activeAthletes())for(const event of EVENTS){const previous=before.get(a.id),old=previous?.pb[event];
+        const correctedAdmission=!state.players.includes(a)&&previous?.category==='high'&&a.category==='university'&&a.grade===1;
+        if(!correctedAdmission&&Number.isFinite(old)&&a.bestTimes[event]>old+.001)worsened++}
       for(const book of Object.values(state.recordRankings))for(const [event,records] of Object.entries(book))for(const r of records){
         const a=byId.get(r.athleteId);if(r.kind!=='relay'&&a&&(!Number.isFinite(a.bestTimes[event])||a.bestTimes[event]>r.time+.001))bad++;
       }
