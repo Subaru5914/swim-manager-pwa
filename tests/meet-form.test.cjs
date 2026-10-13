@@ -26,13 +26,14 @@ test('meet form is stable across rerenders, all events and JSON saves without dr
   assert.ok(result.original.filter((level,i)=>level!==result.anotherMeet[i]).length>150);
 });
 
-test('higher mental reduces poor meet form and extremes across a diverse roster',()=>{
+test('higher mental increases good and excellent meet form while reducing poor form across a diverse roster',()=>{
   const run=game(),rows=run(`[0,100,150,200].map(mental=>{
     const levels=Array.from({length:10000},(_,i)=>athleteMeetForm({id:'mental-'+i,stats:{mental}},'japan_championship',96,2026).level);
-    return{mental,poor:levels.filter(x=>x<0).length/levels.length,extreme:levels.filter(x=>Math.abs(x)===2).length/levels.length};
+    return{mental,poor:levels.filter(x=>x<0).length/levels.length,good:levels.filter(x=>x>0).length/levels.length,excellent:levels.filter(x=>x===2).length/levels.length};
   })`);
-  for(let i=1;i<rows.length;i++){assert.ok(rows[i].poor<rows[i-1].poor,JSON.stringify(rows));assert.ok(rows[i].extreme<rows[i-1].extreme,JSON.stringify(rows))}
+  for(let i=1;i<rows.length;i++){assert.ok(rows[i].poor<rows[i-1].poor,JSON.stringify(rows));assert.ok(rows[i].good>rows[i-1].good,JSON.stringify(rows));assert.ok(rows[i].excellent>rows[i-1].excellent,JSON.stringify(rows))}
   assert.ok(rows[3].poor<.04);assert.ok(rows[0].poor>.25);
+  assert.ok(rows[3].good>.65&&rows[3].good<.8);assert.ok(rows[3].excellent>.25&&rows[3].excellent<.35);
 });
 
 test('visible form affects individual and CPU times, poor-race rates and every relay leg with a single official clock',()=>{

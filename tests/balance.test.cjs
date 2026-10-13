@@ -20,7 +20,7 @@ function game(seed = 12345) {
   return run;
 }
 
-test('existing CPU cohorts advance through twelve full seasons without replacements or ability inflation',()=>{
+test('existing CPU cohorts preserve realistic PB pace and settle without ability inflation across twelve full seasons',()=>{
   const run=game();
   const samples=JSON.parse(run(`JSON.stringify((()=>{
     const samples=[],admissions=[],snapshot=()=>{
@@ -28,6 +28,7 @@ test('existing CPU cohorts advance through twelve full seasons without replaceme
       const sizes=state.universities.flatMap(u=>[1,2,3,4].map(grade=>cpu.filter(a=>a.organization===u.name&&a.grade===grade).length));
       return {season:state.season,count:cpu.length,expected:state.universities.length*32,sizes,
         mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
+        worst200:Math.max(...cpu.flatMap(a=>EVENTS.filter(e=>distanceOf(e)===200&&validRaceTime(a.bestTimes[e])).map(e=>expectedTime(a,e)-a.bestTimes[e]))),
         reputationBound:state.universities.every(u=>Math.abs(u.reputation-u.baseReputation)<=25.01)};
     };
     samples.push(snapshot());
@@ -43,11 +44,20 @@ test('existing CPU cohorts advance through twelve full seasons without replaceme
     }
     return samples;
   })())`));
+  if(process.env.SWIM_REPORT_COHORTS)console.log(JSON.stringify({cohortSamples:samples}));
   for(const sample of samples){
     assert.ok(sample.count>=sample.expected&&sample.count<=sample.expected*9/8,JSON.stringify(sample));
     assert.ok(sample.sizes.every(n=>n>=8&&n<=9));assert.equal(sample.reputationBound,true);
-    assert.ok(Math.abs(sample.mean-samples[0].mean)<4,JSON.stringify(sample));
-    assert.ok(Math.abs(sample.p90-samples[0].p90)<5,JSON.stringify(sample));
+    assert.ok(sample.worst200<4.5,JSON.stringify(sample));
+    // The first school cohort carries lifetime PBs absent from the initial
+    // college templates. Its actual pace must survive enrollment; after that
+    // complete cohort has graduated, strength must settle rather than climb.
+    assert.ok(Math.abs(sample.mean-samples[0].mean)<8,JSON.stringify(sample));
+    assert.ok(Math.abs(sample.p90-samples[0].p90)<8,JSON.stringify(sample));
+    if(sample.season>samples[1].season){
+      assert.ok(Math.abs(sample.mean-samples[1].mean)<2.5,JSON.stringify(sample));
+      assert.ok(Math.abs(sample.p90-samples[1].p90)<3.5,JSON.stringify(sample));
+    }
   }
 });
 
@@ -180,7 +190,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.87');
+  assert.equal(result.version,'pwa-v1.88');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -437,7 +447,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.87');
+  assert.equal(result.version, 'pwa-v1.88');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
