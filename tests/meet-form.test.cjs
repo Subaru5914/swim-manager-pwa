@@ -36,7 +36,7 @@ test('higher mental increases good and excellent meet form while reducing poor f
   assert.ok(rows[3].good>.65&&rows[3].good<.8);assert.ok(rows[3].excellent>.25&&rows[3].excellent<.35);
 });
 
-test('visible form affects individual and CPU times, poor-race rates and every relay leg with a single official clock',()=>{
+test('visible form affects individual and CPU times and every relay leg with a single official clock',()=>{
   const run=game(),result=run(`(()=>{
     const candidates=Array.from({length:500},(_,i)=>({id:'race-'+i,name:'泳者'+i,stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?80:138])),bestTimes:{}}));
     const roster=MEET_FORMS.map(form=>candidates.find(a=>athleteMeetForm(a,'intercollege',41,2026).level===form.level));
@@ -52,19 +52,14 @@ test('visible form affects individual and CPU times, poor-race rates and every r
       return{expected,legs:own.legs,total:own.total,cpu:cpu.total,last:own.cumulativeLegs.at(-1),finish:own.trajectory.at(-1)};
     }));
     gauss=originalGauss;rng=originalRng;
-    const rates=withMeetRaceContext('intercollege',41,2026,()=>roster.map(a=>{
-      a.bestTimes.fr100=expectedTime(a,'fr100')+30;state.rngSeed=12345;let poor=0;
-      for(let i=0;i<5000;i++)if(raceTarget(a,'fr100')>a.bestTimes.fr100)poor++;
-      return{level:athleteMeetForm(a,'intercollege',41,2026).level,poor:poor/5000};
-    }));
-    return{rows,relays,rates,cleared:activeRaceMeetContext===null};
+    return{rows,relays,cleared:activeRaceMeetContext===null};
   })()`);
   for(const row of result.rows){
     assert.ok(Math.abs(row.target-row.expected)<1e-9,JSON.stringify(row));assert.equal(row.tagged,row.level);
     assert.equal(row.time,row.cpu);assert.equal(row.last,row.time);assert.ok(Math.abs(row.finish.t-row.time)<1e-8);
     assert.ok(row.prelim>=row.time+.18-.01&&row.prelim<=row.time+.45+.01);
   }
-  for(let i=1;i<result.rows.length;i++){assert.ok(result.rows[i].time<result.rows[i-1].time);assert.ok(result.rates[i].poor<result.rates[i-1].poor)}
+  for(let i=1;i<result.rows.length;i++)assert.ok(result.rows[i].time<result.rows[i-1].time);
   for(const row of result.relays){assert.deepEqual(row.legs,row.expected);assert.equal(row.total,row.cpu);assert.equal(row.last,row.total);assert.ok(Math.abs(row.finish.t-row.total)<1e-8)}
   assert.ok(result.cleared);
 });

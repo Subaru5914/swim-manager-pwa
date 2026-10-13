@@ -47,7 +47,7 @@ test('every relay prelim applies the delay to four swimmers and keeps laps, tota
   }
 });
 
-test('mental alone changes neither random timing variance nor poor-race chances at the same form, including upper A',()=>{
+test('mental alone does not change random timing variance at the same form, including upper A, and no separate poor-race penalty remains',()=>{
   const run=game(),groups=run(`[138,173].map(value=>[0,100,150,200].map(mental=>{
     const p={stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:value])),bestTimes:{}},base=expectedTime(p,'fr100');p.bestTimes.fr100=base+30;
     state.rngSeed=7654321;const normal=[];let poor=0;
@@ -56,7 +56,7 @@ test('mental alone changes neither random timing variance nor poor-race chances 
     return{value,mental,rate:poor/10000,sd};
   }))`);
   for(const rows of groups){
-    rows.forEach(row=>assert.ok(Math.abs(row.rate-.16)<.015,JSON.stringify(row)));
+    rows.forEach(row=>assert.equal(row.rate,0,JSON.stringify(row)));
     for(let i=1;i<rows.length;i++){assert.equal(rows[i].rate,rows[0].rate);assert.equal(rows[i].sd,rows[0].sd)}
   }
 });

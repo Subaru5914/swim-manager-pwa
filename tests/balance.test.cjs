@@ -190,7 +190,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.89');
+  assert.equal(result.version,'pwa-v1.90');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -447,7 +447,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.89');
+  assert.equal(result.version, 'pwa-v1.90');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -517,10 +517,11 @@ test('upper A can break each dispatch standard on a good day in actual player an
     return {e,value,chance:passes/5000,player,cpu,slow,standard:dispatchStandard(e)};
   })))`));
   for(const row of rows){
-    // The real Intercollege 400m IM winning benchmark already beats dispatch;
-    // upper A should usually qualify but can still miss it on a poor day.
-    assert.ok(row.chance>.003&&row.chance<(row.e==='im400'?.999:.98),JSON.stringify(row));
-    assert.ok(row.player<row.standard&&row.cpu<row.standard&&row.slow>row.standard,JSON.stringify(row));
+    // Without a separate poor-race penalty, a benchmark already below dispatch
+    // can qualify consistently at normal form. Actual failed samples must still fail.
+    assert.ok(row.chance>.003&&row.chance<=1,JSON.stringify(row));
+    assert.ok(row.player<row.standard&&row.cpu<row.standard,JSON.stringify(row));
+    if(row.chance<1)assert.ok(row.slow>row.standard,JSON.stringify(row));
     assert.ok(Math.abs(row.player-row.cpu)<.001,JSON.stringify(row));
   }
 });
@@ -579,41 +580,29 @@ test('standard badges are first-ever per swimmer, event and meet, surviving hist
   assert.match(result.repeatHtml,/自己PB/);assert.doesNotMatch(result.repeatHtml,/突破/);
 });
 
-test('without a change of form, mental does not directly change the chance of a poor race',()=>{
+test('without a change of form, mental does not change the race clock or impose a PB-based penalty',()=>{
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([0,50,100,150,200].map(mental=>{
     let p={stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:173])),bestTimes:{}};
     p.bestTimes.fr100=expectedTime(p,'fr100')+8;
-    state.rngSeed=7654321;
-    let poor=0;
-    for(let i=0;i<8000;i++)if(raceTarget(p,'fr100')>p.bestTimes.fr100)poor++;
-    return {mental,rate:poor/8000};
+    state.rngSeed=7654321;const times=[];
+    for(let i=0;i<500;i++)times.push(raceTarget(p,'fr100'));
+    return {mental,pb:p.bestTimes.fr100,times};
   }))`));
-  assert.ok(rows[0].rate>.14&&rows[0].rate<.18);
-  for(let i=1;i<rows.length;i++)assert.equal(rows[i].rate,rows[0].rate,JSON.stringify(rows));
+  assert.ok(rows[0].times.every(t=>t<rows[0].pb));
+  for(let i=1;i<rows.length;i++)assert.deepEqual(rows[i].times,rows[0].times);
 });
 
-test('poor races miss PB by distance-scaled margins even when abilities improve', () => {
+test('every event uses its ability and form clock without a separate poor-race draw or a PB minimum',()=>{
   const run=game();
-  const rows=JSON.parse(run(`JSON.stringify(EVENTS.map(e=>{
-    let p={stats:Object.fromEntries(STATS.map(k=>[k,173])),bestTimes:{[e]:expectedTime({stats:Object.fromEntries(STATS.map(k=>[k,165]))},e)}};
-    let pb=p.bestTimes[e],poor=[];
-    for(let i=0;i<2000;i++){let t=raceTarget(p,e);if(t>pb)poor.push(t-pb)}
-    // Non-PBs also include ordinary race variance, not only poor-condition races.
-    const oldPB=pb+30,oldBest={...p,bestTimes:{[e]:oldPB}},badCondition=[];
-    for(let i=0;i<2000;i++){let t=raceTarget(oldBest,e);if(t>oldPB)badCondition.push(t-oldPB)}
-    return {e,distance:distanceOf(e),count:poor.length,max:Math.max(...poor),min:Math.min(...poor),
-      badCount:badCondition.length,badMin:Math.min(...badCondition),badMax:Math.max(...badCondition)};
-  }))`));
-  for(const row of rows){
-    const expected={50:.5,100:1,200:2.8,400:4.7}[row.distance];
-    const expectedBad=2000*.16,margin=5*Math.sqrt(expectedBad*(1-expectedBad/2000));
-    assert.ok(row.count>expectedBad-margin&&row.count<1100,JSON.stringify(row));
-    assert.ok(row.max>expected,JSON.stringify(row));
-    const [min,max]={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[row.distance];
-    assert.ok(Math.abs(row.badCount-expectedBad)<margin,JSON.stringify(row));
-    assert.ok(row.badMin>=min-1e-8&&row.badMax<=max+1e-8,JSON.stringify(row));
-  }
+  const rows=JSON.parse(run(`JSON.stringify((()=>{
+    let draws=0;gauss=()=>0;rng=()=>{draws++;return 0};
+    return EVENTS.map(e=>{
+      const p={id:'no-penalty',stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}},base=expectedTime(p,e);
+      return{e,base,clocks:[null,base-10,base,base+30].map(pb=>{p.bestTimes[e]=pb;return raceTarget(p,e)}),draws};
+    });
+  })())`));
+  for(const row of rows){assert.deepEqual(row.clocks,[row.base,row.base,row.base,row.base]);assert.equal(row.draws,0)}
 });
 
 test('CPU universities and swimmers have wider differences and legacy diversity migrates only once', () => {
