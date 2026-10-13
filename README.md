@@ -1,6 +1,16 @@
-# 大学競泳監督シミュレーション PWA v1.94
+# 大学競泳監督シミュレーション PWA v1.95
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v1.95 の変更
+
+- 中学生は全中2026、高校生はインターハイ2026、社会人は日本選手権2026・ジャパンオープン2025の国内選手の予選・決勝を参照し、能力から出るタイムの分布を調整します。全国大会の上位層の間隔を保ち、その他の層は実測の末尾から連続的に広げます。CPU人数に比例して遅い側が引き延ばされる補正を置き換え、同じ泳法の全距離をまとめて能力へ合わせます。
+- 能力を調整してから、その能力と共通の距離別タイム式でPBを作り直します。派生IM能力の固定適性は最大±20のままです。全国大会で開催されない50mBa・Br・Flyは、国内50mと各カテゴリの100mの実測比率から求めます。
+- 関西カレッジ・インカレも単年度の予選・決勝・リレーへ再照合し、関西の400m自由形・200mIMの層を微調整します。関西の2年度分を合わせた一覧の順位を、一つの大会の順位と混同せずに確認します。出場制限と大学ごとのリレー選手層を維持します。
+- 旧セーブも一度だけ調整し、該当CPUのPB・記録表・肩書の保存タイムを同時に更新します。現役PBを集計して全選手ランキング・高校／学生／日本の10傑へ反映します。生成PBの集計には「集計時」の学年を表示し、記録した学年を推測で作りません。CPUの一部の泳者だけが調整されたリレーも、全員が確認できる場合はラップと合計へ差分を反映します。
+- 年度が進んでも既存選手へ同じ補正を繰り返しません。中学→高校→大学→社会人の進級ではPBに対応する能力を保ちます。自チームへ入学する選手には固定IM適性も引き継ぎ、CPU時代と能力・PB・時計が変わる問題を防ぎます。
+
+参照資料：[公式結果と集計方法](./CPU_RECORD_REFERENCES.md)、[関西大会](./KANSAI_RECORD_REFERENCES.md)。検証：添付セーブの55,897件のPBと、全CPUの専門種目の予選・決勝7,438レースで能力・PB・計測の不整合は0件です。自チームの能力・PB・練習・歴代10傑、大学名・進行・ポイント・評判を保持し、再読み込みで補正が重複しないことを確認します。新規生成4パターンの全15種目・212,040件のPB、個人1,800・リレー96の映像付きレース、8年度の進行も検証します。
 
 ## v1.94 の変更
 
@@ -695,7 +705,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。
