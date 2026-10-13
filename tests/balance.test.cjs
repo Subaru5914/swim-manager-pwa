@@ -190,7 +190,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.88');
+  assert.equal(result.version,'pwa-v1.89');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -447,7 +447,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.88');
+  assert.equal(result.version, 'pwa-v1.89');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -579,7 +579,7 @@ test('standard badges are first-ever per swimmer, event and meet, surviving hist
   assert.match(result.repeatHtml,/自己PB/);assert.doesNotMatch(result.repeatHtml,/突破/);
 });
 
-test('higher mental abilities progressively reduce actual poor races, including a mental value of zero',()=>{
+test('without a change of form, mental does not directly change the chance of a poor race',()=>{
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([0,50,100,150,200].map(mental=>{
     let p={stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:173])),bestTimes:{}};
@@ -589,10 +589,8 @@ test('higher mental abilities progressively reduce actual poor races, including 
     for(let i=0;i<8000;i++)if(raceTarget(p,'fr100')>p.bestTimes.fr100)poor++;
     return {mental,rate:poor/8000};
   }))`));
-  assert.ok(rows[0].rate>.18);
-  assert.ok(rows.at(-1).rate>.025&&rows.at(-1).rate<.055);
-  assert.ok(rows[3].rate>.09&&rows[3].rate<.13);
-  for(let i=1;i<rows.length;i++)assert.ok(rows[i].rate<rows[i-1].rate,JSON.stringify(rows));
+  assert.ok(rows[0].rate>.14&&rows[0].rate<.18);
+  for(let i=1;i<rows.length;i++)assert.equal(rows[i].rate,rows[0].rate,JSON.stringify(rows));
 });
 
 test('poor races miss PB by distance-scaled margins even when abilities improve', () => {
@@ -609,7 +607,7 @@ test('poor races miss PB by distance-scaled margins even when abilities improve'
   }))`));
   for(const row of rows){
     const expected={50:.5,100:1,200:2.8,400:4.7}[row.distance];
-    const expectedBad=2000*(.20-.16*Math.pow(173/200,2)),margin=5*Math.sqrt(expectedBad*(1-expectedBad/2000));
+    const expectedBad=2000*.16,margin=5*Math.sqrt(expectedBad*(1-expectedBad/2000));
     assert.ok(row.count>expectedBad-margin&&row.count<1100,JSON.stringify(row));
     assert.ok(row.max>expected,JSON.stringify(row));
     const [min,max]={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[row.distance];

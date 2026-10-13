@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.88</title>
+<title>大学競泳監督シミュレーション PWA版 v1.89</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1249,7 +1249,12 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .form-very-poor{background:#f0e7ff;color:#664096}
 .entry-summary-athlete{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:3px}
 .entry-form-roster{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0}
-.entry-athlete-form{margin-top:2px;font-size:11px}
+.entry-athlete-form{display:flex;align-items:center;gap:3px;white-space:nowrap;margin-top:2px;font-size:11px}
+.form-boost-button{padding:1px 4px;min-height:20px;font-size:10px;line-height:1.5;white-space:nowrap}
+.entry-form-points{font-size:12px;font-weight:700;white-space:nowrap}
+.modal-form-boost{width:min(560px,94%);max-height:90%;display:flex;flex-direction:column;overflow:hidden}
+.modal-form-boost .table-wrap{min-height:0;overflow:auto}
+.modal-form-boost td{padding:6px;white-space:nowrap}
 .entry-stat-view{display:grid;gap:2px;margin:2px auto;text-align:left;width:max-content}
 .entry-event-view{display:grid;align-items:center;justify-items:center}
 #entryMatrix .entry-pb-view{display:inline-flex;align-items:center;vertical-align:middle;gap:3px;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1299,7 +1304,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.88</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.89</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1510,9 +1515,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v1.88"></script>
-<script src="./save-history.js?version=v1.88"></script>
-<script src="./cloud-sync.js?version=v1.88"></script>
+<script src="./local-save.js?version=v1.89"></script>
+<script src="./save-history.js?version=v1.89"></script>
+<script src="./cloud-sync.js?version=v1.89"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1740,7 +1745,8 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.88";
+  state.version="pwa-v1.89";
+  normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
   if(!Array.isArray(state.meetGrowthRewardKeys))state.meetGrowthRewardKeys=[];
@@ -2134,12 +2140,61 @@ function expectedTime(p,e,legacyModel=false){
   return abilityBenchmarkTime(e,abilityValue(p,e,legacyModel)*200,legacyModel);
 }
 const MEET_FORMS=[
-  {level:-2,label:"絶不調",className:"form-very-poor",timeFactor:.005,poorMultiplier:2},
-  {level:-1,label:"不調",className:"form-poor",timeFactor:.0025,poorMultiplier:1.5},
+  {level:-2,label:"絶不調",className:"form-very-poor",timeFactor:.012,poorMultiplier:2},
+  {level:-1,label:"不調",className:"form-poor",timeFactor:.006,poorMultiplier:1.5},
   {level:0,label:"普通",className:"form-normal",timeFactor:0,poorMultiplier:1},
-  {level:1,label:"好調",className:"form-good",timeFactor:-.0018,poorMultiplier:.8},
-  {level:2,label:"絶好調",className:"form-excellent",timeFactor:-.0035,poorMultiplier:.55}
+  {level:1,label:"好調",className:"form-good",timeFactor:-.004,poorMultiplier:.8},
+  {level:2,label:"絶好調",className:"form-excellent",timeFactor:-.008,poorMultiplier:.55}
 ];
+const MEET_FORM_BOOST_COST=1;
+function meetFormBoostKey(meet,slot,season){return `${season}:${slot}:${meet}`}
+function validMeetFormDate(meet,slot,season){
+  return Object.hasOwn(MEET_LABEL,meet)&&meet!=="initial_pb"&&Number.isInteger(slot)&&slot>=1&&slot<=96&&Number.isInteger(season)&&season>=2026;
+}
+function normalizeMeetFormBoosts(){
+  const saved=state.meetFormBoosts,clean={};
+  if(saved&&typeof saved==="object"&&!Array.isArray(saved))for(const [key,players] of Object.entries(saved)){
+    const [year,date,meet,...extra]=key.split(":"),season=Number(year),slot=Number(date);
+    if(extra.length||!validMeetFormDate(meet,slot,season)||season<state.season||!players||typeof players!=="object"||Array.isArray(players))continue;
+    const counts=Object.fromEntries(Object.entries(players).filter(([,count])=>Number.isInteger(count)&&count>0&&count<=4));
+    if(Object.keys(counts).length)clean[meetFormBoostKey(meet,slot,season)]=counts;
+  }
+  state.meetFormBoosts=clean;
+}
+function meetFormBoostCount(id,meet,slot,season){
+  const counts=state.meetFormBoosts?.[meetFormBoostKey(meet,slot,season)];
+  const count=counts&&Object.hasOwn(counts,id)?counts[id]:0;
+  return Number.isInteger(count)&&count>=0&&count<=4?count:0;
+}
+function meetFormBoostAthlete(id,meet,slot,season){
+  const own=(state.players||[]).find(a=>a.id===id);
+  if(meet!=="world_championship")return own;
+  const team=state.japanTeam;
+  if(team?.year!==calendarYear(season,slot))return null;
+  const registered=[...Object.values(team.individual||{}).flat(),...Object.values(team.relays||{}).flat()].includes(id);
+  if(!registered||(!own&&!team.athletes?.some(a=>a.id===id&&a.ownAtSelection)))return null;
+  return own||japanTeamAthlete(id);
+}
+function meetFormBoostStatus(id,meet,slot,season){
+  if(!validMeetFormDate(meet,slot,season))return{ok:false,reason:"大会の日程が不明です"};
+  const athlete=meetFormBoostAthlete(id,meet,slot,season);
+  if(!athlete)return{ok:false,reason:"自チームの選手のみ調整できます"};
+  const matches=h=>h?.meet===meet&&h.season===season&&h.slot===slot;
+  if((state.meetHistory||[]).some(matches)||matches(state.pendingMeetCompletion))return{ok:false,reason:"大会開始後は調整できません"};
+  const before=athleteMeetForm(athlete,meet,slot,season);
+  if(before.level===2)return{ok:false,reason:"すでに絶好調です"};
+  if(!Number.isFinite(state.points)||state.points<MEET_FORM_BOOST_COST)return{ok:false,reason:"ポイントが不足しています"};
+  return{ok:true,athlete,before};
+}
+function improveMeetForm(id,meet,slot=activeCompetitionSlot(),season=activeCompetitionSeason()){
+  const status=meetFormBoostStatus(id,meet,slot,season);if(!status.ok)return status;
+  const key=meetFormBoostKey(meet,slot,season),count=meetFormBoostCount(id,meet,slot,season);
+  if(!state.meetFormBoosts||typeof state.meetFormBoosts!=="object"||Array.isArray(state.meetFormBoosts))state.meetFormBoosts={};
+  const saved=state.meetFormBoosts[key];
+  const counts=saved&&typeof saved==="object"&&!Array.isArray(saved)?saved:{};
+  state.meetFormBoosts[key]={...counts,[id]:count+1};state.points-=MEET_FORM_BOOST_COST;
+  return{ok:true,before:status.before,after:athleteMeetForm(status.athlete,meet,slot,season),cost:MEET_FORM_BOOST_COST};
+}
 let activeRaceMeetContext=null;
 function athleteMeetForm(p,meet,slot=activeCompetitionSlot(),season=activeCompetitionSeason()){
   // The immutable game seed and competition date keep the preview stable across
@@ -2153,31 +2208,31 @@ function athleteMeetForm(p,meet,slot=activeCompetitionSlot(),season=activeCompet
   const mental=clamp(Number.isFinite(p.stats?.mental)?p.stats.mental:100,0,200);
   const ratio=mental/200,spread=.65+.35*Math.pow(1-ratio,1.25);
   const value=ratio+Math.sqrt(-2*Math.log(uniform(":u")))*Math.cos(2*Math.PI*uniform(":v"))*spread;
-  const level=value<=-1.35?-2:value<=-.60?-1:value>=1.35?2:value>=.60?1:0;
+  const natural=value<=-1.35?-2:value<=-.60?-1:value>=1.35?2:value>=.60?1:0;
+  const level=Math.min(2,natural+meetFormBoostCount(p.id,meet,slot,season));
   return MEET_FORMS[level+2];
 }
 function meetFormHtml(p,meet,slot=activeCompetitionSlot(),season=activeCompetitionSeason()){
   if(!p)return "";
   const form=athleteMeetForm(p,meet,slot,season);
-  return `<span class="meet-form ${form.className}" data-form-athlete="${esc(p.id)}" data-form-level="${form.level}" title="大会を通した調子の傾向。各レースのぶれとメンタルも影響します。">${form.label}</span>`;
+  return `<span class="meet-form ${form.className}" data-form-athlete="${esc(p.id)}" data-form-level="${form.level}" title="メンタルは調子の出現率に影響します。タイムは調子と各レースのぶれで変わります。">${form.label}</span>`;
 }
 function withMeetRaceContext(meet,slot,season,run){
   const previous=activeRaceMeetContext;activeRaceMeetContext={meet,slot,season};
   try{return run()}finally{activeRaceMeetContext=previous}
 }
 function raceTarget(p,e,champ=true){
-  let base=expectedTime(p,e),mental=clamp(Number.isFinite(p.stats.mental)?p.stats.mental:100,0,200),ability=abilityValue(p,e)*200;
-  let effect=champ?clamp((115-mental)*.000035,-.0012,.004):0;
+  let base=expectedTime(p,e),ability=abilityValue(p,e)*200;
   // Upper A can swim a dispatch-standard race on a good day; S remains stable.
   let upperA=clamp((ability-163)/2,0,1)*clamp((188-ability)/12,0,1);
-  const mentalRatio=mental/200,instability=Math.pow(1-mentalRatio,1.25);
-  let sigma=Math.max(.001+.0022*instability,(.003+.005*instability)*upperA),performance=gauss(0,sigma);
+  // Mental affects only the meet form above, never the clock or random spread directly.
+  let sigma=Math.max(.002,.005*upperA),performance=gauss(0,sigma);
   // Rare exceptionally good upper-A races can clear dispatch while ordinary races stay stable.
   if(performance<0)performance*=1+(performance<-2*sigma?2:.5)*upperA;
   const form=activeRaceMeetContext?athleteMeetForm(p,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season):MEET_FORMS[2];
-  let target=base*(1+effect+performance+form.timeFactor);
+  let target=base*(1+performance+form.timeFactor);
   // A poor race can miss the lifetime PB even after the athlete has improved.
-  let poorChance=clamp((.20-.16*mentalRatio*mentalRatio)*form.poorMultiplier,0,.7);
+  let poorChance=.16*form.poorMultiplier;
   if(rng()<poorChance){
     let range={50:[.3,.65],100:[.65,1.25],200:[1,3],400:[1,5]}[distanceOf(e)];
     let pb=p.bestTimes?.[e],reference=validRaceTime(pb)?pb:base;
@@ -3334,7 +3389,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.88",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:1};
+  let s={version:"pwa-v1.89",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:1};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4546,6 +4601,7 @@ function newSeason(){
   state.reputation=enrollmentRep;
 
   state.season++;state.slot=1;
+  normalizeMeetFormBoosts();
   addMiddleSchoolCohort();maintainWorldPopulation();assignInterhigh();prepareCpuMeetPopulation();
   refreshRecordBook();refreshScoutBoard();
 }
@@ -4759,15 +4815,56 @@ function renderJapanTeam(){
 }
 function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER")renamePlayerUniversity(n);else renameOrganization("university",state.universities.findIndex(x=>x.id===id),n);closeModal();showUniversities();renderAll()})}
 
+function entryFormPointsHtml(){return `<span class="entry-form-points" data-entry-form-points>所持 ${state.points}pt</span>`}
+function meetFormBoostButtonHtml(a,meet,slot,season){
+  const status=meetFormBoostStatus(a.id,meet,slot,season);
+  return `<button type="button" class="form-boost-button" data-form-boost="${esc(a.id)}" ${status.ok?"":"disabled"} aria-label="${esc(a.name)} 調子を1段階上げる（${MEET_FORM_BOOST_COST}pt）" title="${esc(status.ok?"この大会の調子を1段階向上（絶好調まで）":status.reason)}">＋1 ${MEET_FORM_BOOST_COST}pt</button>`;
+}
+function refreshEntryMeetForm(m,{meet,slot,season}){
+  m.querySelectorAll("[data-entry-form-points]").forEach(el=>el.textContent=`所持 ${state.points}pt`);
+  m.querySelectorAll(".meet-form[data-form-athlete]").forEach(el=>{
+    const a=(state.players||[]).find(a=>a.id===el.dataset.formAthlete)||japanTeamAthlete(el.dataset.formAthlete);if(!a)return;
+    const form=athleteMeetForm(a,meet,slot,season);el.className=`meet-form ${form.className}`;el.dataset.formLevel=form.level;el.textContent=form.label;
+  });
+  m.querySelectorAll("[data-form-boost]").forEach(button=>{
+    const status=meetFormBoostStatus(button.dataset.formBoost,meet,slot,season);
+    button.disabled=!status.ok;button.title=status.ok?"この大会の調子を1段階向上（絶好調まで）":status.reason;
+  });
+  m.querySelectorAll("option[data-form-option]").forEach(option=>{
+    const a=japanTeamAthlete(option.dataset.formOption);if(a)option.textContent=option.textContent.replace(/ \/ (絶不調|不調|普通|好調|絶好調)$/,` / ${athleteMeetForm(a,meet,slot,season).label}`);
+  });
+}
+function bindEntryMeetForm(m,context){
+  m.querySelectorAll("[data-form-boost]").forEach(button=>button.onclick=()=>{
+    const result=improveMeetForm(button.dataset.formBoost,context.meet,context.slot,context.season);
+    if(result.ok){renderAll();autoSaveNow()}
+    refreshEntryMeetForm(m,context);
+  });
+  refreshEntryMeetForm(m,context);
+}
+function showMeetFormBoostEditor(athletes,context){
+  const root=document.getElementById("modalRoot"),previous=[...root.childNodes];
+  const scrollPositions=[...root.querySelectorAll(".modal,.table-wrap")].map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
+  const {meet,slot,season}=context;
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,slot)} 調子調整</h2>${entryFormPointsHtml()}<button id="closeFormBoost">戻る</button></div>
+    <p class="small muted">1ptで1段階向上。この大会の個人種目・リレー全体に有効です（絶好調まで）。<br>基準タイムへの補正：絶不調＋1.2％ ／ 不調＋0.6％ ／ 普通0％ ／ 好調−0.4％ ／ 絶好調−0.8％。別途、各レースのぶれ・予選補正が影響します。メンタルは調子の出現率だけに影響します。</p>
+    <div class="table-wrap"><table><thead><tr><th>選手</th><th>調子</th><th>向上</th></tr></thead><tbody>${sortedEntryRoster(athletes).map(a=>`<tr><td>${esc(a.name)} ${athleteGradeHtml(a)}</td><td>${meetFormHtml(a,meet,slot,season)}</td><td>${meetFormBoostButtonHtml(a,meet,slot,season)}</td></tr>`).join("")}</tbody></table></div>`);
+  m.classList.add("modal-form-boost");bindEntryMeetForm(m,context);
+  m.querySelector("#closeFormBoost").onclick=()=>closeModal(()=>{
+    root.append(...previous);const parent=root.querySelector(".modal");if(parent)refreshEntryMeetForm(parent,context);
+    for(const {el,top,left} of scrollPositions){el.scrollTop=top;el.scrollLeft=left}
+  });
+}
 function openWorldAdditionalEntry(competitionSlot,competitionSeason){
   const year=calendarYear(competitionSeason,competitionSlot),{athletes,vacancies}=worldAdditionalEntryOptions(year);
   const events=EVENTS.filter(e=>vacancies[e]>0);
   if(!athletes.length||!events.length)return false;
   const original=state.japanTeam.individual,automatic=worldAutoEntries(year);
   const selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
-  const m=showModal(`<div class="row"><h2 style="margin-right:auto">世界大会 追加エントリー</h2><button id="std">参加・派遣標準</button></div>
-    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。<br>調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</div>
-    <div class="entry-form-roster small">${sortedEntryRoster(athletes).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${athleteGradeHtml(a)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`).join("")}</div>
+  const formContext={meet:"world_championship",slot:competitionSlot,season:competitionSeason};
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">世界大会 追加エントリー</h2>${entryFormPointsHtml()}<button id="std">参加・派遣標準</button></div>
+    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。<br>1ptで調子＋1段階（この大会中・絶好調まで）。</div>
+    <div class="entry-form-roster small">${sortedEntryRoster(athletes).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${athleteGradeHtml(a)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)} ${meetFormBoostButtonHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`).join("")}</div>
     <div class="table-wrap entry-table-wrap"><table id="worldAdditionalTable"><thead><tr><th>種目</th><th>選考済み代表</th><th>追加選手</th></tr></thead><tbody></tbody></table></div>
     <div id="worldAdditionalSummary" class="small muted"></div>
     <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">エントリー確認へ</button></div>`);
@@ -4776,13 +4873,14 @@ function openWorldAdditionalEntry(competitionSlot,competitionSeason){
     const candidates=sortedEntryRoster(athletes);
     m.querySelector("tbody").innerHTML=events.map(e=>`<tr data-world-event="${e}"><td><b>${EVENT_LABEL[e]}</b><br><span class="small muted">空き ${vacancies[e]}枠</span></td>
       <td class="small">${(original[e]||[]).map(id=>{const a=japanTeamAthlete(id);return a?`<span class="entry-summary-athlete">${esc(a.name)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`:"不明"}).join("")||"なし"}</td>
-      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${candidates.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])} / ${athleteMeetForm(a,"world_championship",competitionSlot,competitionSeason).label}</option>`).join("")}</select>${selections[e][i]?meetFormHtml(candidates.find(a=>a.id===selections[e][i]),"world_championship",competitionSlot,competitionSeason):""}</label>`).join("")}</td></tr>`).join("");
+      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${candidates.filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" data-form-option="${esc(a.id)}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])} / ${athleteMeetForm(a,"world_championship",competitionSlot,competitionSeason).label}</option>`).join("")}</select>${selections[e][i]?meetFormHtml(candidates.find(a=>a.id===selections[e][i]),"world_championship",competitionSlot,competitionSeason):""}</label>`).join("")}</td></tr>`).join("");
     m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
       selections[select.dataset.worldEvent][Number(select.dataset.worldSlot)]=select.value;
       render();
     });
     const total=EVENTS.reduce((n,e)=>n+selections[e].filter(Boolean).length,0);
     m.querySelector("#worldAdditionalSummary").textContent=`追加エントリー ${total}件`;
+    bindEntryMeetForm(m,formContext);
   };
   m.querySelector("#std").onclick=showStandards;
   m.querySelector("#clearWorldAdditional").onclick=()=>{for(const e of EVENTS)selections[e]=[];render()};
@@ -4808,8 +4906,9 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
       ?`${MEET_LABEL[meet]}：各大学1種目3人まで、1人3種目まで（リレーは別枠）。${RESTRICTED.has(meet)?"参加標準記録を満たす種目のみ選択できます。":"参加標準記録はありません。関西カレッジと同じ大学が参加し、大学対抗得点は集計しません。"}`
       :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
 
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー</h2>${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
-    <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}<br>調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</div>
+  const formContext={meet,slot:competitionSlot,season:competitionSeason};
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー</h2>${entryFormPointsHtml()}${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
+    <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}<br>1ptで調子＋1段階（この大会中・絶好調まで）。</div>
     <div id="entryStatGuide" class="entry-stat-guide">${statRankLegendHtml()}<div class="muted">IMは4泳法の総合値を表示。表は上下・左右にスクロールできます。</div></div>
     <div class="table-wrap entry-table-wrap" style="margin-top:10px"><table id="entryMatrix" class="${meetEvents.some(e=>SPRINT_EVENTS.includes(e))?"entry-with-sprints":""}" style="min-width:1320px">
       <thead><tr><th style="position:sticky;left:0;z-index:3">選手</th><th>選択数</th>${meetEvents.map(e=>`<th>${EVENT_LABEL[e]}</th>`).join("")}</tr></thead><tbody></tbody>
@@ -4834,7 +4933,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
 
   function render(){
     tbody.innerHTML=sortedEntryRoster().map(p=>`<tr>
-      <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div><div class="entry-athlete-form">調子 ${meetFormHtml(p,meet,competitionSlot,competitionSeason)}</div><div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}</div></td>
+      <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div><div class="entry-athlete-form">調子 ${meetFormHtml(p,meet,competitionSlot,competitionSeason)} ${meetFormBoostButtonHtml(p,meet,competitionSlot,competitionSeason)}</div><div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}</div></td>
       <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
       ${meetEvents.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
@@ -4855,6 +4954,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     });
     let total=EVENTS.reduce((n,e)=>n+selections[e].length,0),byEvent=EVENTS.filter(e=>selections[e].length).map(e=>`${EVENT_LABEL[e]} ${selections[e].length}名`).join(" / ");
     summary.innerHTML=`個人エントリー合計 <b>${total}</b>件${byEvent?" ／ "+byEvent:""}`;
+    bindEntryMeetForm(m,formContext);
   }
 
   if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
@@ -4874,6 +4974,8 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
   const findAthlete=id=>meet==="world_championship"?japanTeamAthlete(id):state.players.find(p=>p.id===id);
   const worldOptions=meet==="world_championship"?worldAdditionalEntryOptions(calendarYear(competitionSeason,competitionSlot)):null;
   const canEditWorld=worldOptions?.athletes.length&&Object.values(worldOptions.vacancies).some(n=>n>0);
+  const formContext={meet,slot:competitionSlot,season:competitionSeason};
+  const formAthletes=[...new Set([...Object.values(selections).flat(),...Object.values(relaySel).flat()])].map(id=>meetFormBoostAthlete(id,meet,competitionSlot,competitionSeason)).filter(Boolean);
   const entryNames=ids=>ids.map(id=>findAthlete(id)).filter(Boolean).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${meetFormHtml(a,meet,competitionSlot,competitionSeason)}</span>`).join("")||"エントリーなし";
   let cards=meetIndividualEvents(meet).map(e=>{
     let ids=selections[e]||[];
@@ -4883,8 +4985,8 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
     let ids=relaySel[k]||[];
     return`<div class="entry-summary-card ${ids.length===4?"has":""}"><div>${RELAY_LABEL[k]}</div><b>${ids.length===4?"1チーム":"0"}</b><div class="small muted">${entryNames(ids)}</div></div>`;
   }).join(""):"";
-  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー確認</h2></div>
-    <p class="small muted">調子は大会を通した傾向です。各レースのぶれやメンタルもタイムに影響します。</p>
+  let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー確認</h2>${entryFormPointsHtml()}${formAthletes.length?'<button id="editMeetForm">調子を調整</button>':""}</div>
+    <p class="small muted">メンタルが高いほど好調・絶好調になりやすくなります。タイムは現在の能力・調子・各レースのぶれで決まります。</p>
     ${meet==="world_championship"?`<div class="notice">3月の日本選手権で選出された代表と、空き枠に追加した選手を登録しています。自チーム選手が出場するレースは映像、それ以外は結果を表示します。${state.japanTeam?.year===calendarYear(competitionSeason,competitionSlot)?"":"<br>この年の代表選考データがありません。日本代表の出場はありません。"}</div>`:""}
     ${FOUR_DAY_MEETS.has(meet)?'<p class="small">4日間の日程で進めます。各日の全種目の予選後に決勝を行い、各種目の開始前にその日のエントリー一覧を表示します。</p>':""}
     <h3>個人種目</h3><div class="entry-summary-grid">${cards}</div>
@@ -4894,6 +4996,7 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
       <button id="goRace" class="primary">この内容でレースへ進む</button>
     </div>`);
   m.classList.add("modal-entry-confirm");
+  if(m.querySelector("#editMeetForm"))m.querySelector("#editMeetForm").onclick=()=>showMeetFormBoostEditor(formAthletes,formContext);
 
   if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
   if(m.querySelector("#backEntry"))m.querySelector("#backEntry").onclick=()=>{
@@ -5862,7 +5965,7 @@ function showPlayerDetail(id){
           if(DERIVED_STATS.includes(k))return`<div class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" title="4泳法の平均にIM適性を反映。4泳法の練習で向上します。"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></div>`;
           return`<button type="button" role="radio" class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" data-detail-focus="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></button>`;
         }).join("")}</div>
-        <p class="small muted">IM能力は4泳法の練習で向上します。メンタルが高いほど、不調になりにくくなります。</p>
+        <p class="small muted">IM能力は4泳法の練習で向上します。メンタルが高いほど、大会で好調・絶好調になりやすくなります。</p>
       </div>
       <div class="detail-pb-section">
         <h3>PB</h3>

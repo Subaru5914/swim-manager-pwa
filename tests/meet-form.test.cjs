@@ -42,7 +42,7 @@ test('visible form affects individual and CPU times, poor-race rates and every r
     const roster=MEET_FORMS.map(form=>candidates.find(a=>athleteMeetForm(a,'intercollege',41,2026).level===form.level));
     const originalGauss=gauss,originalRng=rng;gauss=()=>0;rng=()=>.99;
     const rows=withMeetRaceContext('intercollege',41,2026,()=>roster.map(a=>{
-      const normal=expectedTime(a,'fr100')*(1+(115-80)*.000035),form=athleteMeetForm(a,'intercollege',41,2026),own=simulateRace(a,'fr100',true,true),cpu=simulateMeetRace(a,'fr100','intercollege',true),prelim=simulateMeetRace(a,'fr100','intercollege',false,true);
+      const normal=expectedTime(a,'fr100'),form=athleteMeetForm(a,'intercollege',41,2026),own=simulateRace(a,'fr100',true,true),cpu=simulateMeetRace(a,'fr100','intercollege',true),prelim=simulateMeetRace(a,'fr100','intercollege',false,true);
       return{level:form.level,time:own.total,target:own.physics.targetTime,expected:normal+expectedTime(a,'fr100')*form.timeFactor,cpu:cpu.total,
         tagged:own.physics.meetFormLevel,last:own.cumulative.at(-1),finish:own.trajectory.at(-1),prelim:prelim.total,prelimDelay:prelim.physics.preliminaryDelay};
     }));

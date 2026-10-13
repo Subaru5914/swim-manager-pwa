@@ -47,7 +47,7 @@ test('every relay prelim applies the delay to four swimmers and keeps laps, tota
   }
 });
 
-test('higher mental stats reduce observed poor races and ordinary timing variance including upper-A swimmers',()=>{
+test('mental alone changes neither random timing variance nor poor-race chances at the same form, including upper A',()=>{
   const run=game(),groups=run(`[138,173].map(value=>[0,100,150,200].map(mental=>{
     const p={stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:value])),bestTimes:{}},base=expectedTime(p,'fr100');p.bestTimes.fr100=base+30;
     state.rngSeed=7654321;const normal=[];let poor=0;
@@ -56,9 +56,8 @@ test('higher mental stats reduce observed poor races and ordinary timing varianc
     return{value,mental,rate:poor/10000,sd};
   }))`);
   for(const rows of groups){
-    const expected=[.20,.16,.11,.04];rows.forEach((row,i)=>assert.ok(Math.abs(row.rate-expected[i])<.015,JSON.stringify(row)));
-    for(let i=1;i<rows.length;i++){assert.ok(rows[i].rate<rows[i-1].rate);assert.ok(rows[i].sd<rows[i-1].sd)}
-    assert.ok(rows[3].sd<rows[0].sd*.45,JSON.stringify(rows));
+    rows.forEach(row=>assert.ok(Math.abs(row.rate-.16)<.015,JSON.stringify(row)));
+    for(let i=1;i<rows.length;i++){assert.equal(rows[i].rate,rows[0].rate);assert.equal(rows[i].sd,rows[0].sd)}
   }
 });
 
