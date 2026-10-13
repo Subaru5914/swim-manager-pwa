@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v1.93</title>
+<title>大学競泳監督シミュレーション PWA版 v1.94</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1304,7 +1304,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v1.93</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v1.94</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1515,9 +1515,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v1.93"></script>
-<script src="./save-history.js?version=v1.93"></script>
-<script src="./cloud-sync.js?version=v1.93"></script>
+<script src="./local-save.js?version=v1.94"></script>
+<script src="./save-history.js?version=v1.94"></script>
+<script src="./cloud-sync.js?version=v1.94"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1745,7 +1745,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v1.93";
+  state.version="pwa-v1.94";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -3153,7 +3153,7 @@ function correctCpuRecordReferences(changes){
     if(live&&changes.has(live.id)&&!member.ownAtSelection){member.snapshot=attachMedleyStats(deepClone(live))}
   }
 }
-function migrateCpuDepthModel(){
+function migrateCpuDepthModel(fresh=false){
   if(state.cpuDepthModelVersion===1)return false;
   const allCpu=state.world.filter(a=>!a.alumni&&!a.retired&&["middle","high","university","adult"].includes(a.category));
   const roster=allCpu.filter(adjustableCpu),before=new Map(allCpu.map(a=>[a.id,{pb:{...a.bestTimes},stats:{...a.stats}}]));
@@ -3166,7 +3166,11 @@ function migrateCpuDepthModel(){
     const old=before.get(a.id),changedStrokes=MEDLEY_STROKES.filter(s=>["speed","stamina","turn"].some(k=>old.stats[s+"_"+k]!==a.stats[s+"_"+k])),deltas={};
     for(const event of EVENTS){
       const pb=old.pb[event],distance=distanceOf(event),base=expectedTime(a,event),ranges=MEET_FORM_TIME_RANGES[distance],radius=RACE_EXECUTION_RANGE[distance];
-      const fastest=Math.min(...ranges.map(r=>r[0]))-radius,slowest=Math.max(...ranges.map(r=>r[1]))+radius+PRELIMINARY_TIME_DELAY[distance][1];
+      // A fresh initial PB has no training or race history to explain a gap.
+      // Match normal-form pace after all generation/calibration passes; legacy
+      // lifetime PBs retain the wider historical race bounds.
+      const fastest=(fresh?ranges[2][0]:Math.min(...ranges.map(r=>r[0])))-radius;
+      const slowest=(fresh?ranges[2][1]:Math.max(...ranges.map(r=>r[1]))+PRELIMINARY_TIME_DELAY[distance][1])+radius;
       const changed=a.category==="university"||changedStrokes.includes(strokeForEvent(event))||(strokeForEvent(event)==="im"&&changedStrokes.length);
       if(changed||!validRaceTime(pb)||pb<base+fastest-.025||pb>base+slowest+.025)a.bestTimes[event]=coherentCpuPB(a,event);
       if(validRaceTime(pb))deltas[event]=round2(a.bestTimes[event]-pb);
@@ -3682,7 +3686,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v1.93",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v1.94",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -3720,7 +3724,7 @@ function createState(nameSettings=null){
     for(let g=1;g<=4;g++)for(let i=0;i<CPU_UNIVERSITY_CLASS_SIZE;i++)s.world.push(makeAthlete("university",u.name,used,18+g,g,strength,i));
   }
   for(let org of s.organizationNames.adult)for(let i=0;i<12;i++)s.world.push(makeAthlete("adult",org,used,null,null,82));
-  initializeCpuRaceDistributions();assignInterhigh();prepareCpuMeetPopulation();refreshRecordBook();seedTop10();initializeRecordRankings();migrateCpuDepthModel();refreshScoutBoard();return s;
+  initializeCpuRaceDistributions();assignInterhigh();prepareCpuMeetPopulation();refreshRecordBook();seedTop10();initializeRecordRankings();migrateCpuDepthModel(true);refreshScoutBoard();return s;
 }
 let state;
 let selectedTrainingId=null;
