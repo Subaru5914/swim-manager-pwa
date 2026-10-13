@@ -190,7 +190,7 @@ test('derived IM pacing uses real Intercollege references while save migration p
     else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.90');
+  assert.equal(result.version,'pwa-v1.91');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -447,7 +447,7 @@ test('legacy save migration preserves player progress and history and runs the C
     return {version:state.version,speed:state.players[0].stats.fr_speed,pb:state.players[0].bestTimes.fr100,
       history:state.meetHistory,alumni:state.world.find(a=>a.id==='alumni-test').stats.fr_speed,cpu,once:first===second};
   })())`));
-  assert.equal(result.version, 'pwa-v1.90');
+  assert.equal(result.version, 'pwa-v1.91');
   assert.equal(result.speed, 182);
   assert.equal(result.pb, 48.01);
   assert.equal(result.alumni, 182);
@@ -497,31 +497,32 @@ test('facility upgrades progressively improve eight-turn gains while level 100 s
   console.log('Facility growth:',rows.map(r=>`Lv.${r.level}: +${r.gain.toFixed(2)}`).join(', '));
 });
 
-test('upper A can break each dispatch standard on a good day in actual player and CPU races', () => {
+test('upper A can break each dispatch standard with excellent meet form in actual player and CPU races', () => {
   const run=game();
-  const rows=JSON.parse(run(`JSON.stringify([165,173].flatMap(value=>EVENTS.map(e=>{
-    let p={id:'upper-a',stats:Object.fromEntries(STATS.map(k=>[k,value]))},passes=0,bestSeed=0,worstSeed=0,min=Infinity,max=0;
-    // Exercise actual IM upper-A abilities rather than a swimmer whose fixed aptitude shifts them into S.
+  const rows=JSON.parse(run(`JSON.stringify([173,175].flatMap(value=>EVENTS.map(e=>{
+    let p=Array.from({length:100},(_,i)=>({id:'upper-a-'+i,stats:Object.fromEntries(STATS.map(k=>[k,value]))})).find(p=>athleteMeetForm(p,'japan_championship',94,2026).level===2);
+    let passes=0,bestSeed=0,worstSeed=0,min=Infinity,max=0;
     if(strokeForEvent(e)==='im')for(const component of ['speed','stamina']){
       const bias=medleyStatValue(p,component)-value;
       for(const stroke of MEDLEY_STROKES)p.stats[stroke+'_'+component]=value-bias;
     }
-    for(let i=0;i<5000;i++){
-      let seed=state.rngSeed,t=raceTarget(p,e);
-      if(t<=dispatchStandard(e))passes++;
-      if(t<min){min=t;bestSeed=seed}if(t>max){max=t;worstSeed=seed}
-    }
-    state.players=[p];state.rngSeed=bestSeed;let player=simulateRace(p,e,true,true).total;
-    state.rngSeed=bestSeed;let cpu=simulateMeetRace(p,e,'japan_championship',false).total;
-    state.rngSeed=worstSeed;let slow=simulateRace(p,e,true,true).total;
-    return {e,value,chance:passes/5000,player,cpu,slow,standard:dispatchStandard(e)};
+    return withMeetRaceContext('japan_championship',94,2026,()=>{
+      for(let i=0;i<5000;i++){
+        let seed=state.rngSeed,t=raceTarget(p,e);
+        if(t<=dispatchStandard(e))passes++;
+        if(t<min){min=t;bestSeed=seed}if(t>max){max=t;worstSeed=seed}
+      }
+      state.players=[p];state.rngSeed=bestSeed;const player=simulateRace(p,e,true,true).total;
+      state.rngSeed=bestSeed;const cpu=simulateMeetRace(p,e,'japan_championship',false).total;
+      state.rngSeed=worstSeed;const slow=simulateRace(p,e,true,true).total;
+      return {e,value,chance:passes/5000,player,cpu,slow,standard:dispatchStandard(e)};
+    });
   })))`));
   for(const row of rows){
-    // Without a separate poor-race penalty, a benchmark already below dispatch
-    // can qualify consistently at normal form. Actual failed samples must still fail.
-    assert.ok(row.chance>.003&&row.chance<=1,JSON.stringify(row));
-    assert.ok(row.player<row.standard&&row.cpu<row.standard,JSON.stringify(row));
-    if(row.chance<1)assert.ok(row.slow>row.standard,JSON.stringify(row));
+    // Two independent draws make the extreme edge rarer, but upper A must retain real qualifying races.
+    assert.ok(row.chance>0&&row.chance<=1,JSON.stringify(row));
+    assert.ok(row.player<=row.standard&&row.cpu<=row.standard,JSON.stringify(row));
+    if(row.chance<1)assert.ok(row.slow>=row.standard,JSON.stringify(row));
     assert.ok(Math.abs(row.player-row.cpu)<.001,JSON.stringify(row));
   }
 });
@@ -593,16 +594,16 @@ test('without a change of form, mental does not change the race clock or impose 
   for(let i=1;i<rows.length;i++)assert.deepEqual(rows[i].times,rows[0].times);
 });
 
-test('every event uses its ability and form clock without a separate poor-race draw or a PB minimum',()=>{
+test('every event draws independent form and execution corrections regardless of PB without another penalty',()=>{
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify((()=>{
-    let draws=0;gauss=()=>0;rng=()=>{draws++;return 0};
-    return EVENTS.map(e=>{
-      const p={id:'no-penalty',stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}},base=expectedTime(p,e);
-      return{e,base,clocks:[null,base-10,base,base+30].map(pb=>{p.bestTimes[e]=pb;return raceTarget(p,e)}),draws};
+    let draws=0;gauss=()=>{throw new Error('No extra Gaussian draw')};rng=()=>{draws++;return 0};
+    return EVENTS.map((e,i)=>{
+      const p={id:'pb-clock',stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}},base=expectedTime(p,e),min={50:-.1,100:-.2,200:-.5,400:-1}[distanceOf(e)];
+      return{e,base,min,radius:RACE_EXECUTION_RANGE[distanceOf(e)],clocks:[null,base-10,base,base+30].map(pb=>{p.bestTimes[e]=pb;return raceTarget(p,e)}),draws,expectedDraws:(i+1)*16};
     });
   })())`));
-  for(const row of rows){assert.deepEqual(row.clocks,[row.base,row.base,row.base,row.base]);assert.equal(row.draws,0)}
+  for(const row of rows){assert.ok(row.clocks.every(t=>Math.abs(t-(row.base+row.min-row.radius))<1e-10));assert.equal(row.draws,row.expectedDraws)}
 });
 
 test('CPU universities and swimmers have wider differences and legacy diversity migrates only once', () => {

@@ -43,7 +43,8 @@ test('visible form affects individual and CPU times and every relay leg with a s
     const originalGauss=gauss,originalRng=rng;gauss=()=>0;rng=()=>.99;
     const rows=withMeetRaceContext('intercollege',41,2026,()=>roster.map(a=>{
       const normal=expectedTime(a,'fr100'),form=athleteMeetForm(a,'intercollege',41,2026),own=simulateRace(a,'fr100',true,true),cpu=simulateMeetRace(a,'fr100','intercollege',true),prelim=simulateMeetRace(a,'fr100','intercollege',false,true);
-      return{level:form.level,time:own.total,target:own.physics.targetTime,expected:normal+expectedTime(a,'fr100')*form.timeFactor,cpu:cpu.total,
+      const [min,max]=MEET_FORM_TIME_RANGES[100][form.level+2];
+      return{level:form.level,time:own.total,target:own.physics.targetTime,expected:normal+min+(max-min)*.99-.8+1.6*.99,cpu:cpu.total,
         tagged:own.physics.meetFormLevel,last:own.cumulative.at(-1),finish:own.trajectory.at(-1),prelim:prelim.total,prelimDelay:prelim.physics.preliminaryDelay};
     }));
     const members=roster.slice(0,4),relays=withMeetRaceContext('intercollege',41,2026,()=>RELAYS.map(kind=>{
@@ -57,7 +58,7 @@ test('visible form affects individual and CPU times and every relay leg with a s
   for(const row of result.rows){
     assert.ok(Math.abs(row.target-row.expected)<1e-9,JSON.stringify(row));assert.equal(row.tagged,row.level);
     assert.equal(row.time,row.cpu);assert.equal(row.last,row.time);assert.ok(Math.abs(row.finish.t-row.time)<1e-8);
-    assert.ok(row.prelim>=row.time+.18-.01&&row.prelim<=row.time+.45+.01);
+    assert.equal(row.prelimDelay,0);assert.equal(row.prelim,row.time);
   }
   for(let i=1;i<result.rows.length;i++)assert.ok(result.rows[i].time<result.rows[i-1].time);
   for(const row of result.relays){assert.deepEqual(row.legs,row.expected);assert.equal(row.total,row.cpu);assert.equal(row.last,row.total);assert.ok(Math.abs(row.finish.t-row.total)<1e-8)}

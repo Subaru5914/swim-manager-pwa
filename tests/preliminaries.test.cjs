@@ -4,18 +4,21 @@ const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(){
   const context=vm.createContext({});vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
-  vm.runInContext('state={rngSeed:12345,season:2026,players:[],world:[],playerUniversity:"自大学"}',context);
+  vm.runInContext(`state={rngSeed:12345,season:2026,players:[],world:[],playerUniversity:"自大学"};
+    function forcePreliminaryRng(gates=[0]){let i=0;const seq=gates.flatMap(gate=>[.5,.5,.5,.5,gate,...(gate===0?[.5,.5]:[])]);rng=()=>seq[i++%seq.length]}`,context);
   return code=>JSON.parse(vm.runInContext('JSON.stringify('+code+')',context));
 }
 const ranges={50:[.08,.22],100:[.18,.45],200:[.9,2.2],400:[2,4.5]};
 
-test('all individual prelims add a distance-dependent delay and retain exact splits and the recorded finish',()=>{
+test('all individual prelims can apply a distance-dependent delay while retaining exact splits and recorded finish',()=>{
   const run=game(),rows=run(`(()=>{
     rng=()=>.5;gauss=()=>0;
-    const p={stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}};
+    const p={id:'individual',stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}};
     const before=JSON.stringify(p);
     return EVENTS.map(event=>{
-      const final=simulateRace(p,event,true,true),prelim=simulateRace(p,event,true,true,false,true),cpu=simulateMeetRace(p,event,'intercollege',false,true);
+      rng=()=>.5;const final=simulateRace(p,event,true,true);
+      forcePreliminaryRng();const prelim=simulateRace(p,event,true,true,false,true);
+      forcePreliminaryRng();const cpu=simulateMeetRace(p,event,'intercollege',false,true);
       return{event,distance:distanceOf(event),base:final.physics.targetTime,delay:prelim.physics.preliminaryDelay,finalDelay:final.physics.preliminaryDelay??null,
         total:prelim.total,cpu:cpu.total,last:prelim.cumulative.at(-1),sum:round2(prelim.splits.reduce((a,b)=>a+b,0)),finish:prelim.trajectory.at(-1),unchanged:before===JSON.stringify(p)};
     });
@@ -29,22 +32,68 @@ test('all individual prelims add a distance-dependent delay and retain exact spl
   }
 });
 
-test('every relay prelim applies the delay to four swimmers and keeps laps, total and playback on the same clock',()=>{
+test('all own and CPU relay prelims omit the delay and keep laps, totals and playback on the same clock',()=>{
   const run=game(),rows=run(`(()=>{
     rng=()=>.5;gauss=()=>0;
     const members=Array.from({length:4},(_,i)=>({id:'relay-'+i,name:'泳者'+i,stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}})),before=JSON.stringify(members);
+    samplePreliminaryDelay=()=>{throw new Error('Relay must not draw a preliminary correction')};
     return RELAYS.map(event=>{
-      const final=simulateRelay(members,event,true),prelim=simulateRelay(members,event,true,true),cpu=simulateCpuRelay(members,event,'intercollege',true);
+      rng=()=>.5;const final=simulateRelay(members,event,true);
+      const prelim=simulateRelay(members,event,true,true),cpu=simulateCpuRelay(members,event,'intercollege',true);
       return{event,legDistance:event==='4x200fr'?200:100,base:final.total,total:prelim.total,cpu:cpu.total,legs:prelim.legs,last:prelim.cumulativeLegs.at(-1),
         delay:prelim.preliminaryDelay,finalDelay:final.preliminaryDelay??null,finish:prelim.trajectory.at(-1),distance:prelim.distance,unchanged:before===JSON.stringify(members)};
     });
   })()`);
   for(const row of rows){
-    const [min,max]=ranges[row.legDistance];assert.ok(Math.abs(row.delay-4*(min+max)/2)<1e-10);assert.equal(row.finalDelay,null);
-    assert.ok(row.total>=row.base+4*min-.02&&row.total<=row.base+4*max+.02);assert.equal(row.cpu,row.total);
+    assert.equal(row.delay,undefined);assert.equal(row.finalDelay,null);
+    assert.equal(row.total,row.base);assert.equal(row.cpu,row.total);
     assert.equal(Math.round(row.legs.reduce((a,b)=>a+b,0)*100)/100,row.total);assert.equal(row.last,row.total);
     assert.equal(row.finish.distance,row.distance);assert.ok(Math.abs(row.finish.t-row.total)<1e-8);assert.ok(row.unchanged);
   }
+});
+
+test('preliminary tendencies differ by swimmer, rise with distance and survive JSON and mental changes without consuming RNG',()=>{
+  const run=game(),r=run(`(()=>{
+    const swimmers=Array.from({length:200},(_,i)=>({id:'tendency-'+i,stats:{mental:i},bestTimes:{}}));state.players=swimmers;
+    const before=JSON.stringify(state),rates=swimmers.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d)));
+    const untouched=JSON.stringify(state)===before;state=JSON.parse(before);state.rngSeed=98765;
+    for(const p of state.players)p.stats.mental=200-p.stats.mental;
+    return{rates,reloaded:state.players.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d))),untouched};
+  })()`);
+  assert.ok(r.untouched);assert.deepEqual(r.rates,r.reloaded);assert.ok(new Set(r.rates.map(a=>a[0])).size>190);
+  for(const row of r.rates){[[.10,.40],[.20,.50],[.45,.75],[.60,.90]].forEach(([lo,hi],i)=>assert.ok(row[i]>lo&&row[i]<hi));for(let i=1;i<row.length;i++)assert.ok(row[i]>row[i-1])}
+});
+
+test('preliminary delay sampling retains both zero and positive outcomes at each personal probability and preserves the saved RNG stream',()=>{
+  const run=game(),r=run(`(()=>{
+    const p={id:'sampling',stats:{mental:138}};
+    const rows=[50,100,200,400].map(d=>{
+      state.rngSeed=12345;const e='fr'+d,probability=athletePreliminaryProbability(p,e);let applied=0,min=Infinity,max=0,sum=0;
+      const count=30000;for(let i=0;i<count;i++){const delay=samplePreliminaryDelay(p,e);if(delay>0){applied++;min=Math.min(min,delay);max=Math.max(max,delay)}sum+=delay}
+      return{d,probability,applied:applied/count,min,max,mean:sum/count};
+    });
+    const saved=JSON.stringify(state),first=Array.from({length:100},()=>samplePreliminaryDelay(p,'fr200'));state=JSON.parse(saved);
+    return{rows,reproducible:JSON.stringify(first)===JSON.stringify(Array.from({length:100},()=>samplePreliminaryDelay(p,'fr200')))};
+  })()`);
+  assert.ok(r.reproducible);
+  for(const row of r.rows){const [lo,hi]=ranges[row.d];assert.ok(Math.abs(row.applied-row.probability)<.015);assert.ok(row.min>=lo&&row.max<=hi);assert.ok(Math.abs(row.mean-row.probability*(lo+hi)/2)<(lo+hi)*.01)}
+});
+
+test('real individual preliminaries may have no delay while no relay swimmer draws one in either phase',()=>{
+  const run=game(),r=run(`(()=>{
+    const members=Array.from({length:4},(_,i)=>({id:'mixed-'+i,stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}})),before=JSON.stringify(members);
+    rng=()=>.99;const individuals=EVENTS.map(event=>{const final=simulateRace(members[0],event,true,true),prelim=simulateRace(members[0],event,true,true,false,true);return{event,final:final.total,prelim:prelim.total,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,finish:prelim.trajectory.at(-1).t}});
+    samplePreliminaryDelay=()=>{throw new Error('Unexpected relay preliminary draw')};
+    const relays=RELAYS.map(kind=>{
+      state.rngSeed=7654321;const final=simulateRelay(members,kind,true);
+      state.rngSeed=7654321;const prelim=simulateRelay(members,kind,true,true);
+      return{kind,final:final.total,prelim:prelim.total,delay:prelim.preliminaryDelay??null,legs:prelim.legs,finalLegs:final.legs,last:prelim.cumulativeLegs.at(-1),finish:prelim.trajectory.at(-1).t,finalDelay:final.preliminaryDelay??null};
+    });
+    return{individuals,relays,unchanged:before===JSON.stringify(members)};
+  })()`);
+  assert.ok(r.unchanged);
+  for(const row of r.individuals){assert.equal(row.delay,0);assert.equal(row.prelim,row.final);assert.equal(row.finish,row.prelim);assert.ok(row.probability>0&&row.probability<1)}
+  for(const row of r.relays){assert.equal(row.finalDelay,null);assert.equal(row.delay,null);assert.equal(row.prelim,row.final);assert.deepEqual(row.legs,row.finalLegs);assert.equal(row.last,row.prelim);assert.ok(Math.abs(row.finish-row.prelim)<1e-8)}
 });
 
 test('mental alone does not change random timing variance at the same form, including upper A, and no separate poor-race penalty remains',()=>{

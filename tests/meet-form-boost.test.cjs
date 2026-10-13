@@ -79,7 +79,7 @@ test('paid form is used in preliminary and final physics, every relay leg and ch
       relays:before.relays.map((race,i)=>({before:race.total,after:after.relays[i].total,otherBefore:race.legs.slice(1),otherAfter:after.relays[i].legs.slice(1),last:after.relays[i].cumulativeLegs.at(-1)})),
       changed:changed.race.total,expected:after.relays[0].total,qualifier:changed.prelimTime,points:state.points};
   })()`);
-  for(const row of r.individual){assert.ok(row.after<row.before);assert.equal(row.level,1);assert.ok(Math.abs((row.targetBefore-row.targetAfter)-r.base*.004)<1e-8);assert.ok(Math.abs(row.finish-row.after)<1e-8)}
+  for(const row of r.individual){assert.ok(row.after<row.before);assert.equal(row.level,1);assert.ok(Math.abs((row.targetBefore-row.targetAfter)-.795)<1e-8);assert.ok(Math.abs(row.finish-row.after)<1e-8)}
   for(const row of r.relays){assert.ok(row.after<row.before);assert.deepEqual(row.otherAfter,row.otherBefore);assert.equal(row.last,row.after)}
   assert.equal(r.changed,r.expected);assert.equal(r.qualifier,240);assert.equal(r.points,19);
 });

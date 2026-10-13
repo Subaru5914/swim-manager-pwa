@@ -69,7 +69,7 @@ test('a legacy high-school 1:50 qualifier no longer swims 2:20, with one repair 
   assert.ok(r.before>139&&r.before<142,JSON.stringify(r));assert.ok(r.after>110&&r.after<111.2);
   assert.ok(r.pb&&r.qualified&&r.protected&&r.records&&r.snapshot&&r.once&&r.rngUnchanged&&r.ceilings);assert.equal(r.mental,160);
   for(const row of r.races){
-    assert.ok(row.final<112&&row.prelim<114,JSON.stringify(row));assert.ok(row.prelim>row.final);
+    assert.ok(row.final<112&&row.prelim<114,JSON.stringify(row));assert.ok(row.prelim>=row.final);assert.ok(row.delay===0||(row.delay>=.9&&row.delay<=2.2));
     assert.equal(row.last,row.prelim);assert.equal(row.splits,row.prelim);assert.equal(row.finish.distance,200);assert.ok(Math.abs(row.finish.t-row.prelim)<1e-8);
   }
 });

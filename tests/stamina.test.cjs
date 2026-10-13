@@ -24,7 +24,7 @@ test('endurance matters more than speed in 200m strokes and 400m races, with a l
     assert.ok(row.speedGain>0&&row.staminaGain>0,JSON.stringify(row));
     const ratio=row.staminaGain/row.speedGain;
     if(row.e==='im200')assert.ok(ratio>.65&&ratio<.68,JSON.stringify(row));
-    else if(row.e.endsWith('200'))assert.ok(ratio>1.15&&ratio<1.3,JSON.stringify(row));
+    else if(row.e.endsWith('200'))assert.ok(ratio>1&&ratio<1.03,JSON.stringify(row));
     else assert.ok(ratio>1.7&&ratio<2.1,JSON.stringify(row));
   }
 });

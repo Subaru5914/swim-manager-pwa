@@ -111,3 +111,28 @@ test('college ability profiles vary between fresh game seeds while remaining rep
   assert.notDeepEqual(snapshots[0],snapshots[1]);
   assert.deepEqual(snapshots[0],snapshots[2]);
 });
+
+test('strong and prestigious universities turn their depth into actual intercollege titles, podiums and relay points',()=>{
+  const run=game(5914),r=run(`(()=>{
+    const byName=new Map(state.universities.map(u=>[u.name,u])),depth=new Map(state.universities.map(u=>{
+      const roster=state.world.filter(p=>p.category==='university'&&p.organization===u.name&&!p.retired);
+      return[u.name,{roster:roster.length,qualified:roster.filter(p=>meetIndividualEvents('intercollege').some(e=>qualified(p,'intercollege',e))).length}];
+    }));
+    const meet=executeMeet('intercollege',{},{});
+    const standings=Object.entries(meet.teamScores).filter(([name])=>byName.has(name)).sort((a,b)=>b[1]-a[1]).map(([name,points])=>{
+      const u=byName.get(name);return{name,label:reputationLabel(u.reputation),points,...depth.get(name)};
+    });
+    const finalWinners=Object.values(meet.events).filter(e=>e.final.length).map(e=>reputationLabel(universityReputationByName(e.final[0].athlete.organization)));
+    const relayWinners=meet.relays.map(([,finals])=>reputationLabel(universityReputationByName(finals[0].organization)));
+    return{standings,finalWinners,relayWinners,total:Object.values(meet.teamScores).reduce((sum,p)=>sum+p,0),relayCount:meet.relays.length};
+  })()`);
+  if(process.env.SWIM_REPORT_COLLEGE)console.log(JSON.stringify({collegeReport:r}));
+  assert.ok(r.standings.slice(0,3).every(u=>['強豪','名門'].includes(u.label)),JSON.stringify(r.standings.slice(0,5)));
+  assert.ok(r.standings[0].points>=80,JSON.stringify(r.standings[0]));
+  assert.ok(r.finalWinners.filter(label=>['強豪','名門'].includes(label)).length>=10,JSON.stringify(r.finalWinners));
+  assert.ok(r.relayWinners.every(label=>['強豪','名門'].includes(label)),JSON.stringify(r.relayWinners));
+  const strong=r.standings.filter(u=>['強豪','名門'].includes(u.label)),others=r.standings.filter(u=>!['強豪','名門'].includes(u.label));
+  const mean=(teams,k)=>teams.reduce((sum,u)=>sum+u[k],0)/teams.length;
+  assert.ok(mean(strong,'qualified')>mean(others,'qualified')*2);assert.ok(mean(strong,'points')>mean(others,'points')+15);
+  assert.equal(r.relayCount,3);assert.ok(r.standings.every(u=>u.roster===32));
+});
