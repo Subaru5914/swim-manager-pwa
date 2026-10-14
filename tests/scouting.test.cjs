@@ -5,10 +5,9 @@ const vm=require('node:vm');
 const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(){
-  const alerts=[],context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=12345;return a}},alert:text=>alerts.push(text)});
-  vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
-  const run=code=>vm.runInContext(code,context);run('state=createState()');
-  return {run,alerts};
+  const alerts=[];
+  const run=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+'\nreturn code=>eval(code)',['globalThis','alert'])({crypto:{getRandomValues:a=>{a[0]=12345;return a}}},text=>alerts.push(text));
+  run('state=createState();migrateState();true');return {run,alerts};
 }
 
 test('every active third-year high-school swimmer in any top-50 ranking appears, including secondary events and signed recruits',()=>{
@@ -24,10 +23,10 @@ test('every active third-year high-school swimmer in any top-50 ranking appears,
     const expected=EVENTS.flatMap(e=>ranking(e,'high',50).concat(ranking(e,'all',50))).filter(a=>a.category==='high'&&a.grade===3);
     return {covered:expected.every(a=>ids.has(a.id)),secondary:ids.has(secondary.id),signed:ids.has(state.world[4].id),
       fiftieth:ids.has('coverage-50'),grades:board.every(a=>a.grade===3&&!a.retired),unique:ids.size===board.length,
-      omitted:!ids.has('coverage-0')&&!ids.has('coverage-1'),secondaryRank:scoutHighSchoolRank(secondary,'fr400')};
+      omitted:!ids.has('coverage-0')&&!ids.has('coverage-1'),secondaryRank:scoutHighSchoolRank(secondary,secondary.specialty),secondaryEvent:secondary.specialty,oldPB:validRaceTime(secondary.bestTimes.fr400)};
   })())`));
   assert.ok(result.covered&&result.secondary&&result.signed&&result.fiftieth&&result.grades&&result.unique&&result.omitted,JSON.stringify(result));
-  assert.ok(result.secondaryRank>50);
+  assert.equal(result.secondaryRank,1);assert.equal(result.secondaryEvent,'ba100');assert.equal(result.oldPB,false);
 });
 
 test('matching wishes add facility and region bonuses while unrelated facilities and missing wishes do not',()=>{
@@ -35,7 +34,7 @@ test('matching wishes add facility and region bonuses while unrelated facilities
   const result=JSON.parse(run(`JSON.stringify((()=>{
     state.reputation=35;
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
-    a.specialty='fr100';a.accolades=[];a.bestTimes.fr100=JAPAN_RECORD.fr100;
+    a.specialty='fr100';a.accolades=[];a.bestTimes={fr100:JAPAN_RECORD.fr100};
     a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
     state.facilities=Object.fromEntries(STATS.map(k=>[k,0]));const ordinary=scoutProbability(a);
     state.facilities=Object.fromEntries(STATS.map(k=>[k,100]));const withoutWish=scoutProbability(a);
@@ -44,9 +43,9 @@ test('matching wishes add facility and region bonuses while unrelated facilities
     state.facilities.ba_speed=100;state.facilities.mental=100;const unrelated=scoutProbability(a);
     a.scoutPreferences.preferredRegion='kansai';const matched=scoutProbability(a);
     const oldName=state.playerUniversity;state.playerUniversity='大学を改名';const renamed=scoutProbability(a);state.playerUniversity=oldName;
-    a.specialty='im200';state.facilities=Object.fromEntries(STATS.map(k=>[k,k.startsWith('fr_')?100:0]));
+    a.specialty='im200';a.bestTimes={im200:JAPAN_RECORD.im200};state.facilities=Object.fromEntries(STATS.map(k=>[k,k.startsWith('fr_')?100:0]));
     const imPartial=scoutProbabilityDetails(a);state.facilities=Object.fromEntries(STATS.map(k=>[k,100]));const imFull=scoutProbabilityDetails(a);
-    state.reputation=550;a.specialty='fr100';a.bestTimes.fr100=JAPAN_RECORD.fr100*3;const capped=scoutProbability(a);
+    state.reputation=550;a.specialty='fr100';a.bestTimes={fr100:JAPAN_RECORD.fr100*3};const capped=scoutProbability(a);
     return {ordinary,withoutWish,levels,unrelated,matched,renamed,imPartial,imFull,capped};
   })())`));
   assert.equal(result.ordinary,result.withoutWish);assert.equal(result.levels[0],result.ordinary);
@@ -64,11 +63,11 @@ test('equal specialty PBs have equal difficulty, faster PBs get harder and other
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=state.world.find(a=>a.category==='high'&&a.grade===3),b=deepClone(a);
     a.specialty='fr100';a.accolades=[];a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
-    a.bestTimes.fr100=JAPAN_RECORD.fr100*1.1;b.id='same-pb';b.bestTimes.fr100=a.bestTimes.fr100;b.specialty=a.specialty;b.accolades=[];b.scoutPreferences=deepClone(a.scoutPreferences);state.world.push(b);
+    a.bestTimes={fr100:JAPAN_RECORD.fr100*1.1};b.id='same-pb';b.bestTimes.fr100=a.bestTimes.fr100;b.specialty=a.specialty;b.accolades=[];b.scoutPreferences=deepClone(a.scoutPreferences);state.world.push(b);
     const first=scoutProbabilityDetails(a),same=scoutProbabilityDetails(b);
     state.world.push({...deepClone(a),id:'faster-adult',category:'adult',bestTimes:{fr100:1}});
     const otherCategory=scoutProbabilityDetails(a);
-    a.bestTimes.fr50=.5;const otherEvent=scoutProbability(a);
+    a.bestTimes.fr50=JAPAN_RECORD.fr50*3;const otherEvent=scoutProbability(a);
     a.bestTimes.fr100=JAPAN_RECORD.fr100*.99;const faster=scoutProbability(a);
     state.world.push({...deepClone(a),id:'missing-pb',bestTimes:{fr100:null}});
     return {first,same,otherCategory,otherEvent,faster};
@@ -176,7 +175,7 @@ test('reputation starts helping at mid-tier and accelerates; prestige and early-
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
-    a.specialty='fr100';a.bestTimes.fr100=50;a.accolades=[];
+    a.specialty='fr100';a.bestTimes={fr100:50};a.accolades=[];
     a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
     const reps=[0,35,79,80,100,120,140,160,280,450,600].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a)});
     const labels=[279,280,450,600].map(reputationLabel);

@@ -25,7 +25,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
         if(pb<low-.025||pb>high+.025)fail({category,id:a.id,event:e,pb,base,low,high});
         const normal=ranges[2];
         if(category!=='own'&&(pb<base+normal[0]-radius-.025||pb>base+normal[1]+radius+.025))fail({category,id:a.id,event:e,pb,base,reason:'fresh PB outside normal form'});
-      }else if(category!=='own')fail({category,id:a.id,event:e,pb,reason:'missing CPU PB'});
+      }else if(category!=='own'&&a.pbEventSelectionVersion!==1&&!(category==='high'&&state.highSchoolRankedPBVersion===1))fail({category,id:a.id,event:e,pb,reason:'unexpected missing CPU PB'});
       // Exercise production draws for every swimmer/event, with fresh independent
       // prelim/final draws and eight competition dates covering different forms.
       for(let date=0;date<8;date++)withMeetRaceContext('japan_open',date*10+1,2026,()=>{
@@ -81,7 +81,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
   assert.deepEqual(result.bad,[]);
   assert.ok(result.drawProfilesStable&&result.reloadStable&&result.raceProfilesStable);
   assert.equal(result.counts.own,32);
-  assert.equal(result.pbs,(result.pairs-result.counts.own*15));
+  assert.ok(result.pbs>0&&result.pbs<(result.pairs-result.counts.own*15));
   assert.equal(result.draws,result.pairs*16);
   assert.equal(result.races.length,450);
   assert.equal(result.recordChecks.length,45);
