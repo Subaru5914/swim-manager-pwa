@@ -5,10 +5,11 @@ const vm=require('node:vm');
 const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(){
-  const context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
-  vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
-  const run=code=>vm.runInContext(code,context);run(`state=createState();for(const p of state.players.filter(p=>p.year===4))p.bestTimes.fr100=standardFor('japan_open','fr100');migrateState();
-    function participationResult(meet,ids,season=state.season){return {meet,season,events:{fr100:{prelim:ids.map(id=>({source:'PLAYER',athlete:state.players.find(p=>p.id===id)})),final:[]}},relays:[]}}`);
+  // Keep production functions unchanged while avoiding the VM global proxy
+  // overhead in generation and annual school-PB scans.
+  const run=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+
+    `\nfunction participationResult(meet,ids,season=state.season){return {meet,season,events:{fr100:{prelim:ids.map(id=>({source:'PLAYER',athlete:state.players.find(p=>p.id===id)})),final:[]}},relays:[]}}\nreturn code=>eval(code)`,['globalThis'])({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
+  run(`state=createState();for(const p of state.players.filter(p=>p.year===4))p.bestTimes.fr100=standardFor('japan_open','fr100');migrateState();`);
   return run;
 }
 const json=(run,code)=>JSON.parse(run('JSON.stringify('+code+')'));
@@ -74,17 +75,17 @@ test('intercollege retirees are deleted from rosters and plans while qualified s
     selectedTrainingId=retired.id;state.lastTrainingGains=[{id:retired.id,name:retired.name,year:4,changes:[]}];
     state.world.forEach(a=>a.accolades=[]);state.recordRankings={};recordIndividualResult(retired,'fr100',70,'intercollege','予選');
     state.teamTop10={};upsertIndividualTop10('fr100',retired,70,'intercollege','予選');
-    const records=JSON.stringify(state.recordRankings),top=JSON.stringify(state.teamTop10);
+    const records=deepClone(state.recordRankings),top=deepClone(state.teamTop10);
     state.japanTeam={athletes:[{id:retired.id,snapshot:deepClone(retired)}],individual:{fr100:[retired.id]},relays:{}};
     const cpu=state.world.filter(a=>a.category==='university'&&a.grade===4).slice(0,2);cpu[0].bestTimes={};cpu[1].bestTimes={fr100:standardFor('japan_open','fr100')};
     completeMeet(participationResult('intercollege',[]));
     const first=JSON.stringify(state);migrateState();const remaining=state.players.filter(p=>p.year===4).map(p=>p.id);
     return {remaining,expected:seniors.slice(0,2).map(p=>p.id),deleted:seniors.slice(2).every(p=>!state.players.some(a=>a.id===p.id)&&!state.world.some(a=>a.id===p.id)&&!state.retiredArchive.some(a=>a.id===p.id)&&!state.trainingPlans[p.id]&&!state.trainingFocus[p.id]),
       cpuGone:!state.world.some(a=>a.id===cpu[0].id),cpuKept:state.world.some(a=>a.id===cpu[1].id),selected:selectedTrainingId,training:state.lastTrainingGains.length,
-      records:records===JSON.stringify(state.recordRankings),top:top===JSON.stringify(state.teamTop10),snapshots:state.japanTeam.athletes.length,notice:state.pendingSeasonNotices[0].retired.length,
+      records:Object.entries(records).every(([category,book])=>Object.entries(book).every(([event,rows])=>rows.every(row=>(state.recordRankings[category]?.[event]||[]).some(saved=>JSON.stringify(saved)===JSON.stringify(row))))),top:Object.entries(top).every(([event,rows])=>rows.every(row=>(state.teamTop10[event]||[]).some(saved=>JSON.stringify(saved)===JSON.stringify(row)))),snapshots:state.japanTeam.athletes.length,notice:state.pendingSeasonNotices[0].retired.length,
       reload:seniors.slice(2).every(p=>!state.players.some(a=>a.id===p.id))};
   })()`);
-  assert.deepEqual(r.remaining,r.expected);assert.ok(r.deleted&&r.cpuGone&&r.cpuKept&&r.records&&r.top&&r.reload);
+  assert.deepEqual(r.remaining,r.expected);assert.ok(r.deleted&&r.cpuGone&&r.cpuKept&&r.records&&r.top&&r.reload,JSON.stringify(r));
   assert.equal(r.selected,null);assert.equal(r.training,0);assert.equal(r.snapshots,0);assert.equal(r.notice,6);
 });
 

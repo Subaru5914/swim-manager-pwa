@@ -29,7 +29,7 @@ test('the highest ranked eligible event becomes the specialty; extra 50m events 
   })()`);
   assert.equal(r.selected,'ba100');assert.equal(r.persisted,'ba100');assert.equal(r.tied,'ba100');assert.equal(r.title.rank,3);assert.equal(r.title.event,'ba100');assert.ok(r.unchanged);
 });
-test('rankings outside fifty lose internal PBs in one snapshot, keep signed candidates, and reload without changing abilities or history',()=>{
+test('non-specialty rankings outside fifty lose internal PBs in one snapshot, keep signed candidates, and reload without changing abilities or history',()=>{
   const run=game(),r=run(`(()=>{
     state.world=Array.from({length:70},(_,i)=>candidate(i));const signed=state.world[69];signed.scouted=true;state.recruits=[signed.id];
     signed.accolades=[{competition:'全国高校総体',event:'fr100',rank:1,title:'古い優勝',time:49,season:2020}];
@@ -38,16 +38,16 @@ test('rankings outside fifty lose internal PBs in one snapshot, keep signed cand
     const first=JSON.stringify(state);state=JSON.parse(first);refreshScoutBoard();
     return{rows,counts,signed:board.some(a=>a.id===signed.id),title:scoutRankingTitle(signed),probability:scoutProbabilityDetails(signed),stable:first===JSON.stringify(state),protected:before===JSON.stringify(state.world.map(a=>[a.stats,a.accolades]))&&seed===state.rngSeed};
   })()`);
-  assert.deepEqual(r.rows,Array(15).fill(50));assert.deepEqual(r.counts.slice(0,50),Array(50).fill(15));assert.deepEqual(r.counts.slice(50),Array(20).fill(0));assert.ok(r.signed&&r.stable&&r.protected);assert.equal(r.title,null);assert.equal(r.probability.rank,null);assert.equal(r.probability.untitledBonus,.04);
+  assert.deepEqual(r.rows,[50,70,...Array(13).fill(50)]);assert.deepEqual(r.counts.slice(0,50),Array(50).fill(15));assert.deepEqual(r.counts.slice(50),Array(20).fill(1));assert.ok(r.signed&&r.stable&&r.protected);assert.equal(r.title,null);assert.equal(r.probability.rank,70);assert.equal(r.probability.untitledBonus,.04);
 });
-test('equal PBs receive tied ranks but only the fifty displayed swimmers keep their PB',()=>{
+test('equal PBs receive tied ranks and unranked specialty PBs remain measured',()=>{
   const run=game(),r=run(`(()=>{
     state.world=Array.from({length:55},(_,i)=>candidate(i));state.world[16].bestTimes.fr100=state.world[15].bestTimes.fr100;
     state.world[50].bestTimes.fr100=state.world[49].bestTimes.fr100;
     const tied=scoutRankingTitle(state.world[16]);refreshScoutBoard();
-    return{tied,edgeKnown:validRaceTime(state.world[49].bestTimes.fr100),edgeMissing:!Object.hasOwn(state.world[50].bestTimes,'fr100'),count:ranking('fr100','high',50).length};
+    return{tied,edgeKnown:validRaceTime(state.world[49].bestTimes.fr100),edgeMissing:!Object.hasOwn(state.world[50].bestTimes,'ba100'),specialtyKnown:validRaceTime(state.world[50].bestTimes.fr100),count:ranking('fr100','high',50).length};
   })()`);
-  assert.equal(r.tied.rank,16);assert.ok(r.edgeKnown&&r.edgeMissing);assert.equal(r.count,50);
+  assert.equal(r.tied.rank,16);assert.ok(r.edgeKnown&&r.edgeMissing&&r.specialtyKnown);assert.equal(r.count,50);
 });
 test('PB updates change the selected event, title and scouting difficulty without editing historic accolades or consuming RNG',()=>{
   const run=game(),r=run(`(()=>{
@@ -87,7 +87,7 @@ test('current fresh generation, reload, reset and April progression retain selec
       state=createState();migrateState();const errors=[],samples=[];
       function check(label){
         const fields=highSchoolScoutRankings(),board=refreshScoutBoard(fields);
-        for(const e of EVENTS)if(fields.get(e).rows.length>50)errors.push(label+' high '+e);
+        for(const e of EVENTS)if(fields.get(e).rows.slice(50).some(a=>a.specialty!==e))errors.push(label+' high '+e);
         for(const a of board){const event=scoutSpecialty(a,fields),rank=scoutHighSchoolRank(a,event,fields),title=scoutRankingTitle(a,fields);if(a.specialty!==event||SPRINT_EVENTS.includes(event)||SPECIALTY_EVENTS.some(e=>(scoutHighSchoolRank(a,e,fields)??Infinity)<(rank??Infinity)))errors.push(label+' specialty '+a.id);if((rank!=null&&rank<=16)!==!!title||title&&(title.time!==a.bestTimes[event]||title.event!==event||title.rank!==rank))errors.push(label+' title '+a.id)}
         for(const a of state.world)for(const e of EVENTS)if(validRaceTime(a.bestTimes[e])){const d=distanceOf(e),base=expectedTime(a,e),low=base+Math.min(...MEET_FORM_TIME_RANGES[d].map(r=>r[0]))-RACE_EXECUTION_RANGE[d];if(a.bestTimes[e]<low-.025)errors.push(label+' pace '+a.id+' '+e)}
         samples.push({label,cpu:state.world.length,partial:state.world.filter(a=>Object.keys(a.bestTimes).length<15).length,knownPBs:state.world.reduce((n,a)=>n+Object.keys(a.bestTimes).length,0),candidates:board.length});

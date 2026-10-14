@@ -9,7 +9,7 @@ function game(input=html,seed=5914){
     return code=>JSON.parse(JSON.stringify(eval(code)))`,['globalThis','SaveHistory'])({crypto:{getRandomValues:a=>{a[0]=seed;return a}}},SaveHistory);
 }
 function minimal(){const run=game();run(`state={season:2026,slot:43,rngSeed:5914,points:50,reputation:80,playerUniversity:'自大学',players:[],world:[],recruits:[],recordRankings:{},recordBook:{},teamTop10:{},retiredArchive:[],japanTeamHistory:[],facilities:{},schoolPBModelVersion:1,highSchoolPBMeasurementSeason:2025};true`);return run}
-test('annual PB checks compare all unmeasured swimmers together, retain fifty and leave abilities and RNG unchanged',()=>{
+test('annual PB checks compare all unmeasured swimmers together, retain fifty plus specialties and leave abilities and RNG unchanged',()=>{
   const results=[];
   for(const reversed of [false,true]){
     const run=minimal(),r=run(`(()=>{
@@ -20,7 +20,7 @@ test('annual PB checks compare all unmeasured swimmers together, retain fifty an
       const result=updateSchoolPersonalBests(),rows=EVENTS.map(e=>ranking(e,'high',50)),ids=rows.map(rows=>rows.map(a=>a.id).sort());
       const protectedStats=JSON.stringify(state.world.slice().sort((a,b)=>+a.id.slice(7)-+b.id.slice(7)).map(a=>[a.id,a.stats]))===before;
       const clock=state.world.filter(a=>a.id==='school-50'||a.id==='school-51').every(a=>EVENTS.every(e=>a.bestTimes[e]===coherentCpuPB(a,e)));
-      return{result,ids,counts:rows.map(rows=>rows.length),protectedStats,rng:seed===state.rngSeed,clock,lowMissing:state.world.filter(a=>+a.id.slice(7)>=52).every(a=>!Object.keys(a.bestTimes).length)};
+      return{result,ids,counts:rows.map(rows=>rows.length),protectedStats,rng:seed===state.rngSeed,clock,lowMissing:state.world.filter(a=>+a.id.slice(7)>=52).every(a=>Object.keys(a.bestTimes).length===1&&validRaceTime(a.bestTimes[a.specialty]))};
     })()`);
     assert.ok(r.result.highRegistered>0&&r.protectedStats&&r.rng&&r.clock&&r.lowMissing);assert.deepEqual(r.counts,Array(15).fill(50));results.push(r.ids);
   }
@@ -42,7 +42,7 @@ test('a tied unmeasured candidate at the fiftieth place does not displace an exi
   const run=minimal(),r=run(`(()=>{
     state.world=Array.from({length:51},(_,i)=>schoolAthlete(i));const a=state.world[50];
     for(const e of EVENTS){const time=coherentCpuPB(a,e);state.world.slice(0,50).forEach((p,i)=>p.bestTimes[e]=round2(time-(49-i)*.01))}
-    const result=updateSchoolPersonalBests();return{result,missing:!Object.keys(a.bestTimes).length,lastKnown:EVENTS.every(e=>validRaceTime(state.world[49].bestTimes[e]))};
+    const result=updateSchoolPersonalBests();return{result,missing:Object.keys(a.bestTimes).length===1&&validRaceTime(a.bestTimes[a.specialty]),lastKnown:EVENTS.every(e=>validRaceTime(state.world[49].bestTimes[e]))};
   })()`);
   assert.equal(r.result.highRegistered,0);assert.ok(r.missing&&r.lastKnown);
 });
@@ -57,7 +57,7 @@ test('current middle-school PB rules keep strong secondary strokes and earned we
   for(const e of ['fr50','fr100','fr200','fr400','ba50','ba100','ba200','br100'])assert.ok(r.keys.includes(e));for(const e of ['br50','br200','fly50','fly100','fly200','im200','im400'])assert.ok(!r.keys.includes(e));assert.ok(r.protected&&r.rng&&r.recorded);
 });
 test('current v2.01 generation migrates school PBs and medals once, preserving own players, adult/college PBs, stats, progress and the next draw',()=>{
-  const oldHtml=cp.execFileSync('git',['show','HEAD:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
+  const oldHtml=cp.execFileSync('git',['show','1082c4d:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
   const before=old(`(()=>{
     state=createState();migrateState();
     const a=state.world.find(a=>a.category==='high'&&a.grade===3&&!Object.keys(a.bestTimes).length&&!a.accolades.length);a.stats.ba_speed=170;a.stats.ba_stamina=170;a.stats.ba_turn=170;attachMedleyStats(a);
@@ -72,7 +72,7 @@ test('current v2.01 generation migrates school PBs and medals once, preserving o
   assert.ok(result.rank<=50&&result.stable);assert.equal(result.pb,result.clock);assert.equal(result.state.rngSeed,before.state.rngSeed);
   for(const key of ['season','slot','points','reputation','playerUniversity','trainingFocus','facilities'])assert.deepEqual(result.state[key],before.state[key]);
   const byId=new Map(before.state.world.map(a=>[a.id,a]));for(const a of result.state.world){const b=byId.get(a.id);assert.deepEqual(a.stats,b.stats,a.id);if(!['middle','high'].includes(a.category))assert.deepEqual(a.bestTimes,b.bestTimes,a.id)}
-  for(let i=0;i<result.state.players.length;i++)for(const key of ['stats','bestTimes','raceHistory','specialty'])assert.deepEqual(result.state.players[i][key],before.state.players[i][key]);
+  for(let i=0;i<result.state.players.length;i++){for(const key of ['stats','raceHistory','specialty'])assert.deepEqual(result.state.players[i][key],before.state.players[i][key]);for(const [e,t]of Object.entries(before.state.players[i].bestTimes))assert.equal(result.state.players[i].bestTimes[e],t);assert.ok(result.state.players[i].bestTimes[result.state.players[i].specialty]>0)}
   assert.equal(result.main[0].rank,1);assert.equal(result.main[0].event,'fr100');
 });
 test('main results record actual final podiums, exclude self trials/prelims/B finals and update a corrected placement',()=>{
@@ -122,7 +122,7 @@ test('four real April rollovers recheck all high-school distances, leave no fast
       for(let turn=0;turn<8;turn++)trainCommand();newSeason();
       const fields=highSchoolScoutRankings();
       for(const event of EVENTS){
-        const rows=fields.get(event).rows,cutoff=rows.at(-1)?.bestTimes[event];if(rows.length!==50)errors.push(state.season+' count '+event);
+        const all=fields.get(event).rows,rows=all.slice(0,50),cutoff=rows.at(-1)?.bestTimes[event];if(rows.length!==50||all.slice(50).some(a=>a.specialty!==event))errors.push(state.season+' count '+event);
         for(const a of state.world.filter(a=>a.category==='high'&&!a.retired))if(!validRaceTime(a.bestTimes[event])&&coherentCpuPB(a,event)<cutoff-.005)errors.push(state.season+' missing '+a.id+' '+event);
       }
       const first=JSON.stringify(state),seed=state.rngSeed;state=JSON.parse(first);migrateState();

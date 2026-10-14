@@ -55,7 +55,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
     }
     const byId=new Map([...state.players,...state.world].map(a=>[a.id,a]));
     for(const category of ['high','university','japan'])for(const event of EVENTS){
-      const roster=category==='japan'?[...state.players,...state.world]:categories[category];
+      const roster=category==='japan'?[...state.players,...state.world]:category==='university'?[...state.players,...categories.university]:categories[category];
       const expected=roster.filter(a=>validRaceTime(a.bestTimes[event])).sort((a,b)=>a.bestTimes[event]-b.bestTimes[event]).slice(0,10);
       const rows=state.recordRankings[category][event]||[];
       const cutoff=expected.at(-1)?.bestTimes[event],ids=new Set(rows.map(row=>row.athleteId));
