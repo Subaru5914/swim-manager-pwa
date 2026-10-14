@@ -141,7 +141,7 @@ test('actual domestic and world races keep qualified rosters, college limits, re
         for(const row of field.prelim){
           const a=row.athlete;counts[a.id]=(counts[a.id]||0)+1;const key=a.organization+'|'+event;organizations[key]=(organizations[key]||0)+1;
           if(!known.has(a.id)||!qualified(a,meet,event)||(row.source==='CPU'&&!allowedCpu(a,meet)))errors.push('invalid '+a.id);
-          if(meet==='team_trial'?row.race.physics?.preliminaryDelay!==undefined:row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>=0&&row.race.physics.preliminaryProbability>0&&row.race.physics.preliminaryProbability<1))errors.push('prelim delay '+event);
+          if(meet==='team_trial'?row.race.physics?.preliminaryDelay!==undefined:row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>0&&row.race.physics.preliminaryProbability===1))errors.push('prelim delay '+event);
         }
         const wanted=entries[event]||[];
         if(wanted.some(id=>!field.prelim.some(r=>r.athlete.id===id)))errors.push('missing own '+event);
@@ -172,7 +172,7 @@ test('actual domestic and world races keep qualified rosters, college limits, re
     for(const [event,field] of Object.entries(result.events)){
       if(field.heats.length!==preliminaryHeatCount('world_championship',event)||!field.heats.every(h=>h.length===8))errors.push('incomplete world '+event);
       for(const id of state.japanTeam.individual[event])if(!field.prelim.some(r=>r.athlete.id===id))errors.push('missing representative '+id);
-      if(field.prelim.some(row=>row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>=0&&row.race.physics.preliminaryProbability>0&&row.race.physics.preliminaryProbability<1))||field.final.some(row=>row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total))errors.push('world phase '+event);
+      if(field.prelim.some(row=>row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>0&&row.race.physics.preliminaryProbability===1))||field.final.some(row=>row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total))errors.push('world phase '+event);
     }
     for(const [kind,finals,meta] of result.relays){
       if(meta.heats.length!==preliminaryHeatCount('world_championship',kind)||!meta.heats.every(h=>h.length===8))errors.push('incomplete world relay '+kind);

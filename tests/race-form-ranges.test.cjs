@@ -78,7 +78,7 @@ test('real preliminary and final simulation uses the same ability base after a p
     const result=withMeetRaceContext('joint_record',82,2026,()=>runEvent('joint_record','fr100',[p.id]));
     return{before,prelim:result.prelim[0].race.total,final:result.final[0].race.total,finalFinish:result.final[0].race.trajectory.at(-1).t};
   })()`);
-  assert.equal(r.prelim,Math.round((r.before-.82)*100)/100);assert.equal(r.final,Math.round((r.before-1)*100)/100);assert.equal(r.finalFinish,r.final);
+  assert.equal(r.prelim,Math.round((r.before-1)*100)/100);assert.equal(r.final,Math.round((r.before-1)*100)/100);assert.equal(r.finalFinish,r.final);
 });
 test('repeated PB updates never move the ability base while training improves it',()=>{
   const run=game(),r=run(`(()=>{

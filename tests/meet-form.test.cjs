@@ -58,7 +58,7 @@ test('visible form affects individual and CPU times and every relay leg with a s
   for(const row of result.rows){
     assert.ok(Math.abs(row.target-row.expected)<1e-9,JSON.stringify(row));assert.equal(row.tagged,row.level);
     assert.equal(row.time,row.cpu);assert.equal(row.last,row.time);assert.ok(Math.abs(row.finish.t-row.time)<1e-8);
-    assert.equal(row.prelimDelay,0);assert.equal(row.prelim,row.time);
+    assert.ok(Math.abs(row.prelimDelay-(.18+.27*.99))<1e-10);assert.equal(row.prelim,Math.round((row.target+row.prelimDelay)*100)/100);
   }
   for(let i=1;i<result.rows.length;i++)assert.ok(result.rows[i].time<result.rows[i-1].time);
   for(const row of result.relays){assert.deepEqual(row.legs,row.expected);assert.equal(row.total,row.cpu);assert.equal(row.last,row.total);assert.ok(Math.abs(row.finish.t-row.total)<1e-8)}

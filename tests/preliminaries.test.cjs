@@ -5,12 +5,12 @@ const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').matc
 function game(){
   const context=vm.createContext({});vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
   vm.runInContext(`state={rngSeed:12345,season:2026,players:[],world:[],playerUniversity:"自大学"};
-    function forcePreliminaryRng(gates=[0]){let i=0;const seq=gates.flatMap(gate=>[.5,.5,.5,.5,gate,...(gate===0?[.5,.5]:[])]);rng=()=>seq[i++%seq.length]}`,context);
+    function forcePreliminaryRng(){rng=()=>.5}`,context);
   return code=>JSON.parse(vm.runInContext('JSON.stringify('+code+')',context));
 }
 const ranges={50:[.08,.22],100:[.18,.45],200:[.9,2.2],400:[2,4.5]};
 
-test('all individual prelims can apply a distance-dependent delay while retaining exact splits and recorded finish',()=>{
+test('all CPU individual prelims apply a distance-dependent delay while retaining exact splits and recorded finish',()=>{
   const run=game(),rows=run(`(()=>{
     rng=()=>.5;gauss=()=>0;
     const p={id:'individual',stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}};
@@ -73,12 +73,12 @@ test('owned swimmers and owned Japan snapshots never receive or draw prelim dela
     });return rows;
   })()`);
   for(const row of r){
-    assert.equal(row.zero,0);assert.ok(row.unchanged);assert.ok(row.cpuDelay>0&&row.cpuProbability>0&&row.alumni>0);assert.equal(row.graduateWorld,0);
+    assert.equal(row.zero,0);assert.ok(row.unchanged);assert.ok(row.cpuDelay>0);assert.equal(row.cpuProbability,1);assert.equal(row.alumni,1);assert.equal(row.graduateWorld,0);
     for(const race of row.races){assert.equal(race.delay,0);assert.equal(race.probability,0);assert.equal(race.prelim,race.final);assert.equal(race.form,race.finalForm);assert.equal(race.execution,race.finalExecution);assert.equal(race.last,race.prelim);assert.ok(Math.abs(race.finish-race.prelim)<1e-8)}
   }
 });
 
-test('preliminary tendencies differ by swimmer, rise with distance and survive JSON and mental changes without consuming RNG',()=>{
+test('CPU preliminary corrections always apply in every distance regardless of ID, mental or save reload, without consuming RNG for eligibility',()=>{
   const run=game(),r=run(`(()=>{
     const swimmers=Array.from({length:200},(_,i)=>({id:'tendency-'+i,stats:{mental:i},bestTimes:{}}));state.world=swimmers;
     const before=JSON.stringify(state),rates=swimmers.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d)));
@@ -86,11 +86,11 @@ test('preliminary tendencies differ by swimmer, rise with distance and survive J
     for(const p of state.world)p.stats.mental=200-p.stats.mental;
     return{rates,reloaded:state.world.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d))),untouched};
   })()`);
-  assert.ok(r.untouched);assert.deepEqual(r.rates,r.reloaded);assert.ok(new Set(r.rates.map(a=>a[0])).size>190);
-  for(const row of r.rates){[[.10,.40],[.20,.50],[.45,.75],[.60,.90]].forEach(([lo,hi],i)=>assert.ok(row[i]>lo&&row[i]<hi));for(let i=1;i<row.length;i++)assert.ok(row[i]>row[i-1])}
+  assert.ok(r.untouched);assert.deepEqual(r.rates,r.reloaded);
+  for(const row of r.rates)assert.deepEqual(row,[1,1,1,1]);
 });
 
-test('preliminary delay sampling retains both zero and positive outcomes at each personal probability and preserves the saved RNG stream',()=>{
+test('CPU preliminary delay sampling is always positive within each distance range, remains random and preserves the saved RNG stream',()=>{
   const run=game(),r=run(`(()=>{
     const p={id:'sampling',stats:{mental:138}};
     const rows=[50,100,200,400].map(d=>{
@@ -102,13 +102,13 @@ test('preliminary delay sampling retains both zero and positive outcomes at each
     return{rows,reproducible:JSON.stringify(first)===JSON.stringify(Array.from({length:100},()=>samplePreliminaryDelay(p,'fr200')))};
   })()`);
   assert.ok(r.reproducible);
-  for(const row of r.rows){const [lo,hi]=ranges[row.d];assert.ok(Math.abs(row.applied-row.probability)<.015);assert.ok(row.min>=lo&&row.max<=hi);assert.ok(Math.abs(row.mean-row.probability*(lo+hi)/2)<(lo+hi)*.01)}
+  for(const row of r.rows){const [lo,hi]=ranges[row.d];assert.equal(row.probability,1);assert.equal(row.applied,1);assert.ok(row.min>=lo&&row.max<=hi);assert.ok(row.max-row.min>(hi-lo)*.9);assert.ok(Math.abs(row.mean-(lo+hi)/2)<(lo+hi)*.01)}
 });
 
-test('real individual preliminaries may have no delay while no relay swimmer draws one in either phase',()=>{
+test('CPU individual prelims receive a correction even on high RNG rolls while no relay swimmer draws one in either phase',()=>{
   const run=game(),r=run(`(()=>{
     const members=Array.from({length:4},(_,i)=>({id:'mixed-'+i,stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}})),before=JSON.stringify(members);
-    rng=()=>.99;const individuals=EVENTS.map(event=>{const final=simulateRace(members[0],event,true,true),prelim=simulateRace(members[0],event,true,true,false,true);return{event,final:final.total,prelim:prelim.total,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,finish:prelim.trajectory.at(-1).t}});
+    rng=()=>.99;const individuals=EVENTS.map(event=>{const final=simulateRace(members[0],event,true,true),prelim=simulateRace(members[0],event,true,true,false,true);return{event,final:final.total,finalTarget:final.physics.targetTime,prelim:prelim.total,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,finish:prelim.trajectory.at(-1).t}});
     samplePreliminaryDelay=()=>{throw new Error('Unexpected relay preliminary draw')};
     const relays=RELAYS.map(kind=>{
       state.rngSeed=7654321;const final=simulateRelay(members,kind,true);
@@ -118,7 +118,7 @@ test('real individual preliminaries may have no delay while no relay swimmer dra
     return{individuals,relays,unchanged:before===JSON.stringify(members)};
   })()`);
   assert.ok(r.unchanged);
-  for(const row of r.individuals){assert.equal(row.delay,0);assert.equal(row.prelim,row.final);assert.equal(row.finish,row.prelim);assert.ok(row.probability>0&&row.probability<1)}
+  for(const row of r.individuals){const [lo,hi]=ranges[Number(row.event.match(/\d+/)[0])];assert.ok(row.delay>=lo&&row.delay<=hi);assert.equal(row.prelim,Math.round((row.finalTarget+row.delay)*100)/100);assert.equal(row.finish,row.prelim);assert.equal(row.probability,1)}
   for(const row of r.relays){assert.equal(row.finalDelay,null);assert.equal(row.delay,null);assert.equal(row.prelim,row.final);assert.deepEqual(row.legs,row.finalLegs);assert.equal(row.last,row.prelim);assert.ok(Math.abs(row.finish-row.prelim)<1e-8)}
 });
 
