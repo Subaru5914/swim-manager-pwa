@@ -52,13 +52,39 @@ test('all own and CPU relay prelims omit the delay and keep laps, totals and pla
   }
 });
 
+test('owned swimmers and owned Japan snapshots never receive or draw prelim delays, while CPU and alumni remain eligible',()=>{
+  const run=game(),r=run(`(()=>{
+    const make=id=>({id,name:id,stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}}),own=make('own'),graduate=make('graduate'),cpu=make('cpu'),alumni=make('graduate');
+    state.players=[own];state.world=[cpu,alumni];
+    state.japanTeam={year:2027,athletes:[{id:graduate.id,ownAtSelection:true,snapshot:graduate},{id:cpu.id,ownAtSelection:false,snapshot:cpu}]};
+    const originalRng=rng;
+    const rows=EVENTS.map(event=>{
+      rng=originalRng;
+      const races=[own,graduate].map(p=>{
+        state.rngSeed=5914;const final=simulateRace(p,event,true,true);state.rngSeed=5914;const prelim=simulateRace(p,event,true,true,false,true);
+        return{id:p.id,event,prelim:prelim.total,final:final.total,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,
+          form:prelim.physics.formCorrection,finalForm:final.physics.formCorrection,execution:prelim.physics.raceCorrection,finalExecution:final.physics.raceCorrection,last:prelim.cumulative.at(-1),finish:prelim.trajectory.at(-1).t};
+      });
+      const seed=state.rngSeed,zero=samplePreliminaryDelay(own,event),unchanged=seed===state.rngSeed;
+      forcePreliminaryRng();const cpuRace=simulateRace(cpu,event,true,true,false,true);
+      const graduateWorld=withMeetRaceContext('world_championship',36,2027,()=>athletePreliminaryProbability({...alumni},event));
+      return{races,zero,unchanged,cpuDelay:cpuRace.physics.preliminaryDelay,cpuProbability:cpuRace.physics.preliminaryProbability,
+        alumni:withMeetRaceContext('japan_open',67,2027,()=>athletePreliminaryProbability(alumni,event)),graduateWorld};
+    });return rows;
+  })()`);
+  for(const row of r){
+    assert.equal(row.zero,0);assert.ok(row.unchanged);assert.ok(row.cpuDelay>0&&row.cpuProbability>0&&row.alumni>0);assert.equal(row.graduateWorld,0);
+    for(const race of row.races){assert.equal(race.delay,0);assert.equal(race.probability,0);assert.equal(race.prelim,race.final);assert.equal(race.form,race.finalForm);assert.equal(race.execution,race.finalExecution);assert.equal(race.last,race.prelim);assert.ok(Math.abs(race.finish-race.prelim)<1e-8)}
+  }
+});
+
 test('preliminary tendencies differ by swimmer, rise with distance and survive JSON and mental changes without consuming RNG',()=>{
   const run=game(),r=run(`(()=>{
-    const swimmers=Array.from({length:200},(_,i)=>({id:'tendency-'+i,stats:{mental:i},bestTimes:{}}));state.players=swimmers;
+    const swimmers=Array.from({length:200},(_,i)=>({id:'tendency-'+i,stats:{mental:i},bestTimes:{}}));state.world=swimmers;
     const before=JSON.stringify(state),rates=swimmers.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d)));
     const untouched=JSON.stringify(state)===before;state=JSON.parse(before);state.rngSeed=98765;
-    for(const p of state.players)p.stats.mental=200-p.stats.mental;
-    return{rates,reloaded:state.players.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d))),untouched};
+    for(const p of state.world)p.stats.mental=200-p.stats.mental;
+    return{rates,reloaded:state.world.map(p=>[50,100,200,400].map(d=>athletePreliminaryProbability(p,'fr'+d))),untouched};
   })()`);
   assert.ok(r.untouched);assert.deepEqual(r.rates,r.reloaded);assert.ok(new Set(r.rates.map(a=>a[0])).size>190);
   for(const row of r.rates){[[.10,.40],[.20,.50],[.45,.75],[.60,.90]].forEach(([lo,hi],i)=>assert.ok(row[i]>lo&&row[i]<hi));for(let i=1;i<row.length;i++)assert.ok(row[i]>row[i-1])}
