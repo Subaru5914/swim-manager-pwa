@@ -3060,7 +3060,9 @@ function buildCpuUniversityDepth(roster){
       for(const kind of RELAYS){
         const reference=CPU_COLLEGE_RELAY_REFERENCE[region][kind];
         const teams=universities.map(u=>{
-          const swimmers=roster.filter(a=>a.organization===u.name),members=bestRelayMembers(swimmers,kind);
+          // Initial ability calibration precedes the final PB refresh; use its
+          // ability clocks here so legacy and already-calibrated saves agree.
+          const swimmers=roster.filter(a=>a.organization===u.name),members=bestRelayMembers(swimmers,kind,false);
           return{organization:u.name,members,time:members.length===4?expectedRelayTime(members,kind):Infinity};
         }).filter(t=>Number.isFinite(t.time)).sort((a,b)=>a.time-b.time);
         teams.forEach((team,i)=>{
@@ -4809,8 +4811,9 @@ function runEvent(meet,e,userIds,cpuCollegeEntries=null){
   return{prelim,final,heats};
 }
 function relayMemberSeedTime(a,event){return validRaceTime(a.bestTimes?.[event])?a.bestTimes[event]:expectedTime(a,event)}
-function bestRelayMembers(roster,kind){
-  const rank=event=>[...roster].sort((a,b)=>relayMemberSeedTime(a,event)-relayMemberSeedTime(b,event)||a.id.localeCompare(b.id));
+function bestRelayMembers(roster,kind,byPB=true){
+  const time=(a,event)=>byPB?relayMemberSeedTime(a,event):expectedTime(a,event);
+  const rank=event=>[...roster].sort((a,b)=>time(a,event)-time(b,event)||(byPB?a.id.localeCompare(b.id):0));
   if(kind!=="4x100medley")return rank(kind==="4x200fr"?"fr200":"fr100").slice(0,4);
   const picks=[];
   for(const event of relayLegEvents(kind)){

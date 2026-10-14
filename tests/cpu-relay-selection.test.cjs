@@ -8,9 +8,9 @@ test('CPU relay choices use event PBs and unique medley swimmers, rather than th
  const run=game(),r=run(`(()=>{
    expectedTime=(a,e)=>100-a.bestTimes[e];
    const roster=Array.from({length:6},(_,i)=>({id:'p'+i,bestTimes:{fr100:50+i,fr200:110+i,ba100:60+i,br100:65+i,fly100:55+i}}));
-   return RELAYS.map(kind=>({kind,ids:bestRelayMembers(roster,kind).map(a=>a.id)}));
+   return RELAYS.map(kind=>({kind,ids:bestRelayMembers(roster,kind).map(a=>a.id),calibration:bestRelayMembers(roster,kind,false).map(a=>a.id)}));
  })()`);
- for(const row of r)assert.deepEqual(row.ids,['p0','p1','p2','p3'],row.kind);
+ for(const row of r){assert.deepEqual(row.ids,['p0','p1','p2','p3'],row.kind);assert.deepEqual(row.calibration,['p5','p4','p3','p2'],row.kind)}
 });
 
 test('deep relay rosters can rest two first choices, while a bubble team keeps its fastest four',()=>{
@@ -44,7 +44,8 @@ test('actual college relay heats and finals retain distinct lineups, PB seeding,
            time:team.race.total,sum:round2(team.race.legs.reduce((s,t)=>s+t,0)),last:team.race.cumulativeLegs.at(-1)});
        }
        for(const heat of meta.heats){
-         const seeded=[...heat].sort((a,b)=>relaySeedScore(a,kind)-relaySeedScore(b,kind));
+         // Equal combined PBs may keep either team's original seed position.
+         const seeded=[...heat].sort((a,b)=>relaySeedScore(a,kind)-relaySeedScore(b,kind)||SEEDED_LANES.indexOf(a.heatLane)-SEEDED_LANES.indexOf(b.heatLane));
          if(seeded.some((t,i)=>t.heatLane!==SEEDED_LANES[i]))throw new Error('preliminary lane order');
        }
        for(const team of meta.prelim.filter(t=>t.reservedIds.length)){
