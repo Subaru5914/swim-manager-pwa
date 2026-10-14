@@ -67,7 +67,7 @@ test('partial CPU relay corrections update known laps and totals while protectin
   })()`);
   assert.ok(r.protected);assert.equal(r.row.time,221.25);assert.deepEqual(r.row.legs,[61.25,65,50,45]);
 });
-test('eight seasons keep PBs reachable across middle, high, university and adult transitions without repeat calibration',()=>{
+test('eight seasons of daily practice keep PBs reachable across school and adult transitions without repeat calibration',()=>{
   const run=game(),rows=run(`(()=>{
     const rows=[];for(let year=0;year<=8;year++){
       const bad=[];for(const a of [...state.players,...state.world].filter(a=>!a.retired))for(const event of EVENTS){
@@ -82,7 +82,7 @@ test('eight seasons keep PBs reachable across middle, high, university and adult
       }));
       rows.push({season:state.season,bad,stable:profiles===JSON.stringify([state.players,state.world])&&seed===state.rngSeed,
         relays,universityCount:state.world.filter(a=>a.category==='university').length,schoolS:state.world.filter(a=>['middle','high'].includes(a.category)&&STATS.some(k=>k!=='mental'&&a.stats[k]>=188)).length});
-      if(year<8)newSeason();
+      if(year<8){for(let slot=1;slot<=96;slot++){state.slot=slot;trainCommand()}newSeason()}
     }return rows;
   })()`);
   for(const row of rows){

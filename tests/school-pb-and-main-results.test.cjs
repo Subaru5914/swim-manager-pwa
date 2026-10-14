@@ -119,11 +119,12 @@ test('four real April rollovers recheck all high-school distances, leave no fast
   const run=game(),r=run(`(()=>{
     state=createState();migrateState();const errors=[],years=[];
     for(let year=0;year<4;year++){
-      for(let turn=0;turn<8;turn++)trainCommand();newSeason();
+      for(let turn=0;turn<8;turn++)trainCommand();
+      const progressingPBs=new Map(state.world.filter(a=>a.category==='middle'&&a.grade===3&&!a.retired).map(a=>[a.id,{...a.bestTimes}]));newSeason();
       const fields=highSchoolScoutRankings();
       for(const event of EVENTS){
         const all=fields.get(event).rows,rows=all.slice(0,50),cutoff=rows.at(-1)?.bestTimes[event];if(rows.length!==50||all.slice(50).some(a=>a.specialty!==event))errors.push(state.season+' count '+event);
-        for(const a of state.world.filter(a=>a.category==='high'&&!a.retired))if(!validRaceTime(a.bestTimes[event])&&coherentCpuPB(a,event)<cutoff-.005)errors.push(state.season+' missing '+a.id+' '+event);
+        for(const a of state.world.filter(a=>a.category==='high'&&!a.retired))if(!validRaceTime(a.bestTimes[event])&&highSchoolMeasurementCandidate(a,event,progressingPBs)<cutoff-.005)errors.push(state.season+' missing '+a.id+' '+event);
       }
       const first=JSON.stringify(state),seed=state.rngSeed;state=JSON.parse(first);migrateState();
       if(first!==JSON.stringify(state)||seed!==state.rngSeed)errors.push(state.season+' reload');
@@ -132,4 +133,36 @@ test('four real April rollovers recheck all high-school distances, leave no fast
     return{errors,years};
   })()`);
   assert.deepEqual(r.errors,[]);assert.equal(r.years.length,4);for(const year of r.years)assert.equal(year.season,year.measured);
+});
+test('main podium grades are frozen at the swim and survive advancing years, adulthood and detailed-history cleanup',()=>{
+  const run=minimal(),r=run(`(()=>{
+    const p=ownAthlete(0);state.players=[p];updateResultHistory(p,'fr100',60,'intercollege','A決勝',1);
+    const first=playerMainResults(p)[0];state.season++;p.year++;p.age++;const next=playerMainResults(p)[0];
+    const adult=alumniAdultFromPlayer(p,'社会人');state.players=[];state.world=[adult];state.season+=8;adult.age+=8;adult.raceHistory=[];
+    return{first,next,adult:playerMainResults(adult)[0],label:recordSchoolLabel(playerMainResults(adult)[0])};
+  })()`);
+  for(const row of [r.first,r.next,r.adult]){assert.equal(row.schoolCategory,'university');assert.equal(row.gradeAtRecord,2);assert.equal(row.time,60)}assert.equal(r.label,'大2');
+});
+test('v2.03 compact podiums recover race-time school grades once, prefer explicit history and leave undated results unknown',()=>{
+  const run=minimal(),r=run(`(()=>{
+    const p=ownAthlete(0);p.year=2;p.age=20;state.players=[p];state.season=2027;state.mainResultsVersion=1;
+    const record={kind:'podium',season:2026,slot:43,meet:'intercollege',event:'fr100',stage:'決勝',rank:1,time:60};
+    p.accolades=[record,{...record,meet:'全国高校総体',season:2024,event:'ba100',rank:2,time:65},{...record,event:'fly100',season:null,rank:3,time:70}];
+    p.raceHistory=[{...record,schoolCategory:'university',gradeAtRecord:2}];
+    const before=JSON.stringify([p.stats,p.bestTimes]),seed=state.rngSeed;initializeMainResults();const first=JSON.stringify(state);initializeMainResults();
+    return{rows:playerMainResults(p),stable:first===JSON.stringify(state),protected:before===JSON.stringify([p.stats,p.bestTimes])&&seed===state.rngSeed,version:state.mainResultsVersion};
+  })()`);
+  assert.ok(r.stable&&r.protected);assert.equal(r.version,2);
+  const college=r.rows.find(h=>h.event==='fr100'),high=r.rows.find(h=>h.event==='ba100'),unknown=r.rows.find(h=>h.event==='fly100');
+  assert.equal(college.gradeAtRecord,2);assert.equal(college.schoolCategory,'university');assert.equal(high.gradeAtRecord,2);assert.equal(high.schoolCategory,'high');assert.equal(unknown.schoolCategory,'unknown');assert.equal(unknown.gradeAtRecord,null);
+});
+test('relay and Japanese representative podium grades follow the actual race actor rather than the later live roster',()=>{
+  const run=minimal(),r=run(`(()=>{
+    state.players=Array.from({length:4},(_,i)=>ownAthlete(i));state.players.forEach((p,i)=>{p.year=i+1;p.age=19+i});
+    recordRelayResult('4x100fr',{organization:state.playerUniversity,members:state.players,rank:1,race:{total:200,legs:[49,50,50,51]}},'intercollege','決勝');
+    const p=state.players[0],snapshot=attachMedleyStats(deepClone(p));state.japanTeam={year:2026,selectedSeason:2026,athletes:[{id:p.id,ownAtSelection:true,snapshot}]};
+    state.season=2027;p.year=2;p.age=20;recordAthleteMainResult(snapshot,{season:2026,slot:36,meet:'world_championship',event:'fr100',stage:'A決勝',rank:1,time:48});
+    return{relay:state.players.map(a=>playerMainResults(a).find(h=>h.event==='4x100fr').gradeAtRecord),own:playerMainResults(p).find(h=>h.meet==='world_championship'),snapshot:playerMainResults(snapshot).find(h=>h.meet==='world_championship')};
+  })()`);
+  assert.deepEqual(r.relay,[1,2,3,4]);assert.equal(r.own.gradeAtRecord,1);assert.deepEqual(r.own,r.snapshot);
 });
