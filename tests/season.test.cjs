@@ -7,7 +7,7 @@ const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').matc
 function game(){
   const context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
   vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
-  const run=code=>vm.runInContext(code,context);run(`state=createState();for(const p of state.players.filter(p=>p.year===4))p.bestTimes.fr100=standardFor('japan_open','fr100');
+  const run=code=>vm.runInContext(code,context);run(`state=createState();for(const p of state.players.filter(p=>p.year===4))p.bestTimes.fr100=standardFor('japan_open','fr100');migrateState();
     function participationResult(meet,ids,season=state.season){return {meet,season,events:{fr100:{prelim:ids.map(id=>({source:'PLAYER',athlete:state.players.find(p=>p.id===id)})),final:[]}},relays:[]}}`);
   return run;
 }
