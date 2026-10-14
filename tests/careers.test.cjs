@@ -58,7 +58,7 @@ test('adult retirement starts at 25, reaches 90 percent at 30, and actual retire
   state.alumniCareer=[{id:alumnus.id,status:'社会人継続',season:2019}];state.world=[...highs,...adults];
   state.recordRankings={japan:{fr100:[{athleteId:alumnus.id,name:alumnus.name,time:49.99}]}};state.teamTop10={fr100:[{athleteId:alumnus.id,name:alumnus.name,time:49.99}]};
   const records=JSON.stringify([state.recordRankings,state.teamTop10]);
-  for(const key of ['addMiddleSchoolCohort','maintainWorldPopulation','assignInterhigh','prepareCpuMeetPopulation','refreshRecordBook','migrateCpuRaceConsistency'])eval(key+'=()=>{}');
+  for(const key of ['addMiddleSchoolCohort','maintainWorldPopulation','assignInterhigh','prepareCpuMeetPopulation','refreshRecordBook','refreshRecordRankings','migrateCpuRaceConsistency'])eval(key+'=()=>{}');
   rng=()=>.85;newSeason();
   return{rates,remaining:state.world.filter(a=>a.id.startsWith('retire-')).map(a=>a.id),career:state.alumniCareer[0].status,archive:state.retiredArchive.some(a=>a.id===alumnus.id),
     records:records===JSON.stringify([state.recordRankings,state.teamTop10]),stillAlumnus:ownAlumniIds().has(alumnus.id),active:activeAthletes().some(a=>a.id===alumnus.id)};
