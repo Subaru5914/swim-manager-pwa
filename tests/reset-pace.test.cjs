@@ -12,7 +12,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
   run('(state=createState(),migrateState(),true)');
   const result=run(`(()=>{
     const categories={own:state.players,...Object.fromEntries(['middle','high','university','adult'].map(c=>[c,state.world.filter(a=>a.category===c)]))};
-    const before=JSON.stringify([state.players,state.world]),bad=[],races=[],relays=[];
+    const before=JSON.stringify([state.players,state.world]),bad=[],races=[],relays=[],recordChecks=[];
     let pairs=0,pbs=0,draws=0;
     const fail=row=>{if(bad.length<20)bad.push(row)};
     for(const [category,roster]of Object.entries(categories))for(const a of roster)for(const e of EVENTS){
@@ -53,6 +53,17 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
           splits:round2(race.splits.reduce((sum,x)=>sum+x,0)),last:race.cumulative.at(-1),finish:race.trajectory.at(-1).t,distance:race.trajectory.at(-1).distance});
       }
     }
+    const byId=new Map([...state.players,...state.world].map(a=>[a.id,a]));
+    for(const category of ['high','university','japan'])for(const event of EVENTS){
+      const roster=category==='japan'?[...state.players,...state.world]:categories[category];
+      const expected=roster.filter(a=>validRaceTime(a.bestTimes[event])).sort((a,b)=>a.bestTimes[event]-b.bestTimes[event]).slice(0,10);
+      const rows=state.recordRankings[category][event]||[];
+      const cutoff=expected.at(-1)?.bestTimes[event],ids=new Set(rows.map(row=>row.athleteId));
+      recordChecks.push({category,event,expected:expected.map(a=>a.bestTimes[event]),actual:rows.map(row=>row.time),
+        identities:rows.every(row=>{const a=byId.get(row.athleteId);return a&&a.name===row.name&&a.organization===row.organization&&a.bestTimes[event]===row.time}),
+        // Equal PBs at tenth place may keep either tied swimmer's history.
+        fastest:expected.filter(a=>a.bestTimes[event]<cutoff).every(a=>ids.has(a.id)),unique:ids.size===rows.length});
+    }
     for(const meet of ['kansai_college','intercollege'])for(const kind of RELAYS){
       const teams=meetUniversities(meet).filter(n=>n!==state.playerUniversity).map(n=>bestRelayMembers(state.world.filter(a=>a.category==='university'&&a.organization===n),kind))
         .sort((a,b)=>expectedRelayTime(a,kind)-expectedRelayTime(b,kind));
@@ -65,7 +76,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
       }
     }
     return{seed:state.cpuCompetitionSeed,counts:Object.fromEntries(Object.entries(categories).map(([c,r])=>[c,r.length])),pairs,pbs,draws,bad,
-      drawProfilesStable:before===profilesBefore,reloadStable,raceProfilesStable:profilesBefore===JSON.stringify([state.players,state.world]),races,relays};
+      drawProfilesStable:before===profilesBefore,reloadStable,raceProfilesStable:profilesBefore===JSON.stringify([state.players,state.world]),recordChecks,races,relays};
   })()`);
   assert.deepEqual(result.bad,[]);
   assert.ok(result.drawProfilesStable&&result.reloadStable&&result.raceProfilesStable);
@@ -73,6 +84,8 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
   assert.equal(result.pbs,(result.pairs-result.counts.own*15));
   assert.equal(result.draws,result.pairs*16);
   assert.equal(result.races.length,450);
+  assert.equal(result.recordChecks.length,45);
+  for(const row of result.recordChecks){assert.deepEqual(row.actual,row.expected,JSON.stringify(row));assert.ok(row.identities&&row.fastest&&row.unique,JSON.stringify(row))}
   for(const row of result.races){
     assert.equal(row.actualBase,row.base,JSON.stringify(row));
     for(const key of ['expected','splits','last'])assert.equal(row[key],row.total,JSON.stringify(row));
@@ -84,7 +97,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
     assert.equal(row.total,row.legs,JSON.stringify(row));assert.equal(row.total,row.last,JSON.stringify(row));
     assert.ok(Math.abs(row.finish-row.total)<1e-7,JSON.stringify(row));
   }
-  const summary={seed,counts:result.counts,athleteEventPairs:result.pairs,PBs:result.pbs,draws:result.draws,recordedRaces:result.races.length,recordedRelays:result.relays.length,unreachablePBs:result.bad.length};
+  const summary={seed,counts:result.counts,athleteEventPairs:result.pairs,PBs:result.pbs,draws:result.draws,individualTopTens:result.recordChecks.length,recordedRaces:result.races.length,recordedRelays:result.relays.length,unreachablePBs:result.bad.length};
   t.diagnostic(JSON.stringify(summary));
   if(process.env.SWIM_RESET_REPORT_DIR){fs.mkdirSync(process.env.SWIM_RESET_REPORT_DIR,{recursive:true});fs.writeFileSync(path.join(process.env.SWIM_RESET_REPORT_DIR,`reset-${seed}.json`),JSON.stringify({...summary,races:result.races,relays:result.relays},null,2));}
 });
