@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.05</title>
+<title>大学競泳監督シミュレーション PWA版 v2.06</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1313,7 +1313,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.05</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.06</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1524,9 +1524,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.05"></script>
-<script src="./save-history.js?version=v2.05"></script>
-<script src="./cloud-sync.js?version=v2.05"></script>
+<script src="./local-save.js?version=v2.06"></script>
+<script src="./save-history.js?version=v2.06"></script>
+<script src="./cloud-sync.js?version=v2.06"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1754,7 +1754,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.05";
+  state.version="pwa-v2.06";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -2180,6 +2180,12 @@ const MEET_FORM_TIME_RANGES={
   200:[[-.1,5],[-.25,3.5],[-.5,2],[-.8,1.2],[-1.2,.5]],
   400:[[-.2,10],[-.5,7],[-1,4],[-1.5,2.5],[-2.5,1]]
 };
+// Relay legs favor PB-level swimming without moving the ability benchmark
+// or extending the fastest possible correction beyond an individual race.
+const RELAY_FORM_TIME_RANGES={
+  100:[[-.04,1.2],[-.1,.6],[-.2,.2],[-.3,0],[-.6,-.1]],
+  200:[[-.1,2.5],[-.25,1.2],[-.5,.5],[-.8,.1],[-1.2,-.2]]
+};
 const RACE_CENTERED_DRAW_RATE=.8;
 const RACE_EXECUTION_RANGE={50:.5,100:.8,200:1,400:2};
 function sampleRaceCorrection(min,max){
@@ -2263,10 +2269,11 @@ function withMeetRaceContext(meet,slot,season,run){
   const previous=activeRaceMeetContext;activeRaceMeetContext={meet,slot,season};
   try{return run()}finally{activeRaceMeetContext=previous}
 }
-function raceTimeCorrections(p,e){
+function raceTimeCorrections(p,e,relayLeg=false){
   const base=expectedTime(p,e);
   const form=activeRaceMeetContext?athleteMeetForm(p,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season):MEET_FORMS[2];
-  const distance=distanceOf(e),[min,max]=MEET_FORM_TIME_RANGES[distance][form.level+2],execution=RACE_EXECUTION_RANGE[distance];
+  const distance=distanceOf(e),ranges=relayLeg&&RELAY_FORM_TIME_RANGES[distance]||MEET_FORM_TIME_RANGES[distance];
+  const [min,max]=ranges[form.level+2],execution=RACE_EXECUTION_RANGE[distance];
   // Form and execution are independent centered draws. Keep the full form range;
   // execution widens individual races without moving the mean or using PB/mental.
   return{base,formCorrection:sampleRaceCorrection(min,max),raceCorrection:sampleRaceCorrection(-execution,execution)};
@@ -2374,11 +2381,11 @@ function samplePreliminaryDelay(p,event){
   const probability=athletePreliminaryProbability(p,event);
   return probability>0&&rng()<probability?sampleRaceCorrection(...PRELIMINARY_TIME_DELAY[distanceOf(event)]):0;
 }
-function simulateRace(p,event,champ=true,record=false,relayTakeover=false,preliminary=false){
+function simulateRace(p,event,champ=true,record=false,relayTakeover=false,preliminary=false,relayLeg=false){
   // Repair registered athletes with a PB their current profile cannot reproduce.
   // The clock below still uses ability, form and execution; it is not clamped to PB.
   if(registeredRaceAthlete(p))restoreAthletePaceFromPB(p);
-  const {base,formCorrection,raceCorrection}=raceTimeCorrections(p,event);
+  const {base,formCorrection,raceCorrection}=raceTimeCorrections(p,event,relayLeg);
   let target=Math.max(1,base+formCorrection+raceCorrection);
   if(relayTakeover)target=Math.max(1,target-(reactionTime(p,event)-reactionTime(p,event,true)));
   const preliminaryProbability=preliminary?athletePreliminaryProbability(p,event):0;
@@ -2395,6 +2402,7 @@ function simulateRace(p,event,champ=true,record=false,relayTakeover=false,prelim
   retimeRace(r,target,strokeForEvent(event)==="im"?medleySectionTimes(p,event):null);
   r.event=event;r.distance=distanceOf(event);r.record=r.total<JAPAN_RECORD[event];
   r.physics={engine:"swim_physics_js_v1",reactionTime:r.reaction,paceBias:r.paceBias,targetTime:target,abilityBase:base,formCorrection,raceCorrection};
+  if(relayLeg)r.physics.relayLeg=true;
   if(activeRaceMeetContext)r.physics.meetFormLevel=athleteMeetForm(p,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season).level;
   if(preliminary){r.physics.preliminaryDelay=preliminaryDelay;r.physics.preliminaryProbability=preliminaryProbability}
   return r;
@@ -2405,7 +2413,7 @@ function simulateRelay(members,kind,record=false,preliminary=false){
       legs=[],cumulativeLegs=[],total=0,trajectory=[],distOff=0;
   evs.forEach((e,i)=>{
     // Relay preliminaries use the same timing rules as finals, with fresh race draws.
-    let r=simulateRace(members[i],e,true,record,i>0,false),before=total;
+    let r=simulateRace(members[i],e,true,record,i>0,false,true),before=total;
     legs.push(r.total);total+=r.total;cumulativeLegs.push(round2(total));
     if(record)for(let s of r.trajectory)trajectory.push({...s,t:before+s.t,distance:distOff+s.distance,legIndex:i,athleteName:members[i].name});
     distOff+=r.distance;
@@ -4035,7 +4043,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.05",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.06",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5047,7 +5055,7 @@ function cpuRelayTimeBounds(members,kind){
   let low=0,high=0;
   relayLegEvents(kind).forEach((event,i)=>{
     const a=members[i],distance=distanceOf(event),form=activeRaceMeetContext?athleteMeetForm(a,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season).level:0;
-    const range=MEET_FORM_TIME_RANGES[distance][form+2],radius=RACE_EXECUTION_RANGE[distance];
+    const range=RELAY_FORM_TIME_RANGES[distance][form+2],radius=RACE_EXECUTION_RANGE[distance];
     const base=expectedTime(a,event)-(i?reactionTime(a,event)-reactionTime(a,event,true):0);
     low+=base+range[0]-radius;high+=base+range[1]+radius;
   });
@@ -5171,6 +5179,8 @@ function refreshCpuRelayRankings(){
         // Keep genuine, still-reachable historical times. Repair only legacy
         // CPU snapshots whose laps or total are outside the current ability range.
         const bounds=relayLegEvents(kind).map((event,i)=>{
+          // Old, genuinely earned relays keep the timing bounds they raced
+          // under. Only new swims and reserve planning use the relay ranges.
           const d=distanceOf(event),ranges=MEET_FORM_TIME_RANGES[d],radius=RACE_EXECUTION_RANGE[d],base=expectedTime(members[i],event)-(i?reactionTime(members[i],event)-reactionTime(members[i],event,true):0);
           return{low:base+Math.min(...ranges.map(r=>r[0]))-radius,high:base+Math.max(...ranges.map(r=>r[1]))+radius};
         });
@@ -5987,11 +5997,24 @@ function showMeetFormRanges(){
   const root=document.getElementById("modalRoot"),previous=[...root.childNodes];
   const positions=[...root.querySelectorAll(".modal,.table-wrap")].map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
   const signed=value=>`${value<0?"−":"＋"}${Math.abs(value).toFixed(2)}`;
+  const formTable=relay=>{
+    const distances=relay?[100,200]:[50,100,200,400],ranges=relay?RELAY_FORM_TIME_RANGES:MEET_FORM_TIME_RANGES;
+    return `<table><thead><tr><th>調子</th>${distances.map(d=>`<th>${d}m</th>`).join("")}</tr></thead><tbody>${[...MEET_FORMS].reverse().map(form=>`<tr><td><span class="meet-form ${form.className}">${form.label}</span></td>${distances.map(d=>`<td>${ranges[d][form.level+2].map(signed).join("〜")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  };
   const m=showModal(`<div class="row"><h2 style="margin-right:auto">調子別のタイム補正幅</h2><button id="closeFormRanges">戻る</button></div>
     <p class="small muted">単位：秒。能力の基準タイムに、表の調子補正とレース乱数を独立して加えます。両方を80％は中央寄りの三角分布、20％は一様分布で抽選します。PB更新は実際のPBと比較します。</p>
-    <div class="table-wrap"><table><thead><tr><th>調子</th>${[50,100,200,400].map(d=>`<th>${d}m</th>`).join("")}</tr></thead><tbody>${[...MEET_FORMS].reverse().map(form=>`<tr><td><span class="meet-form ${form.className}">${form.label}</span></td>${[50,100,200,400].map(d=>`<td>${MEET_FORM_TIME_RANGES[d][form.level+2].map(signed).join("〜")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="row" role="group" aria-label="補正を表示する種目"><button id="individualFormRanges" class="primary" aria-pressed="true">個人種目</button><button id="relayFormRanges" aria-pressed="false">リレー</button></div>
+    <div class="table-wrap" id="formRangesTable">${formTable(false)}</div>
+    <p id="relayFormInfo" class="small muted" hidden>リレーの各泳者は、普通なら0秒付近、好調・絶好調ならマイナス寄りの調子補正です。第1泳者もこの表を使い、第2〜4泳者には引き継ぎによる短縮が加わります。自チーム・CPU共通で、予選・決勝とも泳者・レースごとに抽選します。リレーのラップは個人PBとして登録しません。</p>
     <p class="small muted">レース乱数：${[50,100,200,400].map(d=>`${d}m ±${RACE_EXECUTION_RANGE[d].toFixed(2)}秒`).join(" ／ ")}。<br>CPUの個人種目の予選補正は、距離別の基準発生率（${[50,100,200,400].map(d=>`${d}m ${Math.round(PRELIMINARY_DELAY_RATE[d]*100)}％`).join(" ／ ")}）に選手固有の±15ポイントの傾向を加え、レースごとに発生を抽選します。発生しない場合もあります。発生時の加算秒数は${[50,100,200,400].map(d=>`${d}m ${PRELIMINARY_TIME_DELAY[d].map(signed).join("〜")}秒`).join(" ／ ")}の範囲から中央寄りで抽選します。自チームの選手（世界大会の自チーム代表を含む）と全リレーには予選補正を加えません。</p>`);
   m.classList.add("modal-form-boost","modal-form-ranges");
+  const switchTable=relay=>{
+    m.querySelector("#formRangesTable").innerHTML=formTable(relay);m.querySelector("#relayFormInfo").hidden=!relay;
+    for(const [id,selected]of [["individualFormRanges",!relay],["relayFormRanges",relay]]){
+      const button=m.querySelector("#"+id);button.classList.toggle("primary",selected);button.setAttribute("aria-pressed",String(selected));
+    }
+  };
+  m.querySelector("#individualFormRanges").onclick=()=>switchTable(false);m.querySelector("#relayFormRanges").onclick=()=>switchTable(true);
   m.querySelector("#closeFormRanges").onclick=()=>closeModal(()=>{root.append(...previous);for(const {el,top,left} of positions){el.scrollTop=top;el.scrollLeft=left}});
 }
 function showMeetFormBoostEditor(athletes,context){
