@@ -49,7 +49,7 @@ test('visible form affects individual and CPU times and every relay leg with a s
     }));
     const members=roster.slice(0,4),relays=withMeetRaceContext('intercollege',41,2026,()=>RELAYS.map(kind=>{
       const evs=kind==='4x100fr'?['fr100','fr100','fr100','fr100']:kind==='4x200fr'?['fr200','fr200','fr200','fr200']:['ba100','br100','fly100','fr100'];
-      const expected=members.map((a,i)=>simulateRace(a,evs[i],true,true,i>0,false,true).total),own=simulateRelay(members,kind,true),cpu=simulateCpuRelay(members,kind,'intercollege');
+      const expected=members.map((a,i)=>simulateRace(a,evs[i],true,true,i>0,false,i>0).total),own=simulateRelay(members,kind,true),cpu=simulateCpuRelay(members,kind,'intercollege');
       return{expected,legs:own.legs,total:own.total,cpu:cpu.total,last:own.cumulativeLegs.at(-1),finish:own.trajectory.at(-1)};
     }));
     gauss=originalGauss;rng=originalRng;

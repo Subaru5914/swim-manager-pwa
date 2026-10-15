@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.08</title>
+<title>大学競泳監督シミュレーション PWA版 v2.09</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1318,7 +1318,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.08</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.09</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1529,9 +1529,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.08"></script>
-<script src="./save-history.js?version=v2.08"></script>
-<script src="./cloud-sync.js?version=v2.08"></script>
+<script src="./local-save.js?version=v2.09"></script>
+<script src="./save-history.js?version=v2.09"></script>
+<script src="./cloud-sync.js?version=v2.09"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1759,7 +1759,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.08";
+  state.version="pwa-v2.09";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -2185,11 +2185,11 @@ const MEET_FORM_TIME_RANGES={
   200:[[-.1,5],[-.25,3.5],[-.5,2],[-.8,1.2],[-1.2,.5]],
   400:[[-.2,10],[-.5,7],[-1,4],[-1.5,2.5],[-2.5,1]]
 };
-// Relay legs favor PB-level swimming without moving the ability benchmark
-// or extending the fastest possible correction beyond an individual race.
+// Flying relay legs remain favorable but less consistently beat PB than before.
+// Lead-off swimmers use the individual ranges, with a normal start.
 const RELAY_FORM_TIME_RANGES={
-  100:[[-.04,1.2],[-.1,.6],[-.2,.2],[-.3,0],[-.6,-.1]],
-  200:[[-.1,2.5],[-.25,1.2],[-.5,.5],[-.8,.1],[-1.2,-.2]]
+  100:[[-.04,1.5],[-.1,.85],[-.2,.4],[-.3,.15],[-.6,0]],
+  200:[[-.1,3],[-.25,1.7],[-.5,.9],[-.8,.35],[-1.2,0]]
 };
 const RACE_CENTERED_DRAW_RATE=.8;
 const RACE_EXECUTION_RANGE={50:.5,100:.8,200:1,400:2};
@@ -2418,7 +2418,7 @@ function simulateRelay(members,kind,record=false,preliminary=false){
       legs=[],cumulativeLegs=[],total=0,trajectory=[],distOff=0;
   evs.forEach((e,i)=>{
     // Relay preliminaries use the same timing rules as finals, with fresh race draws.
-    let r=simulateRace(members[i],e,true,record,i>0,false,true),before=total;
+    let r=simulateRace(members[i],e,true,record,i>0,false,i>0),before=total;
     legs.push(r.total);total+=r.total;cumulativeLegs.push(round2(total));
     if(record)for(let s of r.trajectory)trajectory.push({...s,t:before+s.t,distance:distOff+s.distance,legIndex:i,athleteName:members[i].name});
     distOff+=r.distance;
@@ -4048,7 +4048,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.08",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.09",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5069,7 +5069,7 @@ function cpuRelayTimeBounds(members,kind){
   let low=0,high=0;
   relayLegEvents(kind).forEach((event,i)=>{
     const a=members[i],distance=distanceOf(event),form=activeRaceMeetContext?athleteMeetForm(a,activeRaceMeetContext.meet,activeRaceMeetContext.slot,activeRaceMeetContext.season).level:0;
-    const range=RELAY_FORM_TIME_RANGES[distance][form+2],radius=RACE_EXECUTION_RANGE[distance];
+    const range=(i?RELAY_FORM_TIME_RANGES:MEET_FORM_TIME_RANGES)[distance][form+2],radius=RACE_EXECUTION_RANGE[distance];
     const base=expectedTime(a,event)-(i?reactionTime(a,event)-reactionTime(a,event,true):0);
     low+=base+range[0]-radius;high+=base+range[1]+radius;
   });
@@ -6017,9 +6017,9 @@ function showMeetFormRanges(){
   };
   const m=showModal(`<div class="row"><h2 style="margin-right:auto">調子別のタイム補正幅</h2><button id="closeFormRanges">戻る</button></div>
     <p class="small muted">単位：秒。能力の基準タイムに、表の調子補正とレース乱数を独立して加えます。両方を80％は中央寄りの三角分布、20％は一様分布で抽選します。PB更新は実際のPBと比較します。</p>
-    <div class="row" role="group" aria-label="補正を表示する種目"><button id="individualFormRanges" class="primary" aria-pressed="true">個人種目</button><button id="relayFormRanges" aria-pressed="false">リレー</button></div>
+    <div class="row" role="group" aria-label="補正を表示する種目"><button id="individualFormRanges" class="primary" aria-pressed="true">個人種目・第1泳者</button><button id="relayFormRanges" aria-pressed="false">第2〜4泳者</button></div>
     <div class="table-wrap" id="formRangesTable">${formTable(false)}</div>
-    <p id="relayFormInfo" class="small muted" hidden>リレーの各泳者は、普通なら0秒付近、好調・絶好調ならマイナス寄りの調子補正です。第1泳者もこの表を使い、第2〜4泳者には引き継ぎによる短縮が加わります。自チーム・CPU共通で、予選・決勝とも泳者・レースごとに抽選します。第1泳者が個人PBを上回った場合はPB・ランキング・該当する10傑を更新します。第2〜4泳者のラップは個人PBとして登録しません。</p>
+    <p id="relayFormInfo" class="small muted" hidden>この表は第2〜4泳者専用です。個人種目より速いラップが出やすい調子補正に、引き継ぎによる短縮が加わります。第1泳者は「個人種目・第1泳者」の表を使う通常スタートです。自チーム・CPU共通で、予選・決勝とも泳者・レースごとに抽選します。第1泳者が個人PBを上回った場合はPB・ランキング・該当する10傑を更新します。第2〜4泳者のラップは個人PBとして登録しません。</p>
     <p class="small muted">レース乱数：${[50,100,200,400].map(d=>`${d}m ±${RACE_EXECUTION_RANGE[d].toFixed(2)}秒`).join(" ／ ")}。<br>CPUの個人種目の予選補正は、距離別の基準発生率（${[50,100,200,400].map(d=>`${d}m ${Math.round(PRELIMINARY_DELAY_RATE[d]*100)}％`).join(" ／ ")}）に選手固有の±15ポイントの傾向を加え、レースごとに発生を抽選します。発生しない場合もあります。発生時の加算秒数は${[50,100,200,400].map(d=>`${d}m ${PRELIMINARY_TIME_DELAY[d].map(signed).join("〜")}秒`).join(" ／ ")}の範囲から中央寄りで抽選します。自チームの選手（世界大会の自チーム代表を含む）と全リレーには予選補正を加えません。</p>`);
   m.classList.add("modal-form-boost","modal-form-ranges");
   const switchTable=relay=>{
