@@ -63,7 +63,7 @@ test('college conflicts retain random three events and replace withdrawn entries
   assert.ok(new Set(reports.map(report=>report.allocation.join(','))).size>3,'conflict allocation varies across seeds');
 });
 
-test('national meets retain all standard-clearing CPU ages and all strokes, adding heats beyond the old cap',()=>{
+test('national meets retain selected qualifiers from all CPU ages and strokes, adding heats beyond the old cap',()=>{
   const run=game();
   const result=run(`(()=>{
     const reports=[];
@@ -90,6 +90,70 @@ test('national meets retain all standard-clearing CPU ages and all strokes, addi
     assert.deepEqual(report.ages.sort(),['adult','high','middle','university']);
     assert.equal(report.groups.length,10);assert.ok(report.groups.every(size=>size>=4&&size<=8));
   }
+});
+
+test('national entries prioritize specialty, every qualified distance of that stroke, then the strongest distance-weighted abilities up to five',()=>{
+  const run=game(),rows=run(`(()=>{
+    const rows=[];
+    for(const meet of ['japan_open','japan_championship'])for(const specialty of ['fr100','ba100','br100','fly100','im200']){
+      const a={id:'selection-'+specialty,category:'adult',specialty,stats:Object.fromEntries(STATS.map(k=>[k,80])),imAptitude:{speed:0,stamina:0},bestTimes:Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.99]))};
+      a.stats.start=100;a.stats.fr_speed=190;a.stats.fr_stamina=100;a.stats.fr_turn=100;
+      if(specialty==='fr100'){a.stats.fr_speed=60;a.stats.fr_stamina=60;a.stats.fr_turn=60;a.stats.br_speed=190;a.stats.br_stamina=100;a.stats.br_turn=100;a.bestTimes.fly50=standardFor(meet,'fly50')*.8}
+      const before=JSON.stringify(a),seed=state.rngSeed,selected=cpuEntryEvents(a,meet),sameStroke=EVENTS.filter(e=>strokeForEvent(e)===strokeForEvent(specialty));
+      rows.push({meet,specialty,selected,sameStroke,unchanged:before===JSON.stringify(a)&&seed===state.rngSeed});
+    }return rows;
+  })()`);
+  for(const row of rows){
+    assert.equal(row.selected.length,5);assert.equal(new Set(row.selected).size,5);assert.equal(row.selected[0],row.specialty);assert.ok(row.unchanged);
+    assert.deepEqual([...row.selected.slice(0,row.sameStroke.length)].sort(),[...row.sameStroke].sort(),JSON.stringify(row));
+    assert.deepEqual(row.selected.slice(row.sameStroke.length),row.specialty==='fr100'?['br50']:row.specialty==='im200'?['fr50','fr100','fr200']:['fr50','fr100'],JSON.stringify(row));
+  }
+});
+
+test('national selections respect each meet standard, missing or invalid PBs, and allow fewer than five entries or an unqualified specialty',()=>{
+  const run=game(),r=run(`(()=>{
+    const a={id:'qualifying',category:'adult',specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,140])),bestTimes:{fr100:50.1,fr50:22.7,fr200:Infinity,fr400:0,ba100:NaN,br100:999}};
+    const open=cpuEntryEvents(a,'japan_open'),championship=cpuEntryEvents(a,'japan_championship');
+    a.bestTimes={};const none=cpuEntryEvents(a,'japan_open');a.bestTimes.fr100=standardFor('japan_open','fr100');const exact=cpuEntryEvents(a,'japan_open');
+    return{open,championship,none,exact};
+  })()`);
+  assert.deepEqual(r.open,['fr100','fr50']);assert.deepEqual(r.championship,['fr50']);assert.deepEqual(r.none,[]);assert.deepEqual(r.exact,['fr100']);
+});
+
+test('national plans include every eligible age and adult alumnus once, exclude outsiders, and preserve all swimmer data and the next draw',()=>{
+  const run=game(),r=run(`(()=>{
+    const meet='japan_open',stats=Object.fromEntries(STATS.map(k=>[k,140])),bestTimes=Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.99]));
+    state.world=['middle','high','university','adult'].map(category=>({id:category,category,specialty:'im200',stats,bestTimes}));
+    state.world.push({id:'alumni',category:'adult',alumni:true,specialty:'ba100',stats,bestTimes},
+      {id:'retired',category:'adult',retired:true,specialty:'fr100',stats,bestTimes},{id:'foreign',category:'foreign',specialty:'fr100',stats,bestTimes},
+      {id:'no-pb',category:'high',specialty:'fr100',stats,bestTimes:{}});
+    state.players=[{id:'own',year:1,specialty:'fr100',stats,bestTimes}];
+    const before=JSON.stringify(state),entries=buildCpuNationalEntries(meet),repeat=buildCpuNationalEntries(meet),counts={};
+    for(const ids of Object.values(entries))for(const id of ids)counts[id]=(counts[id]||0)+1;
+    return{counts,unchanged:before===JSON.stringify(state),stable:JSON.stringify(entries)===JSON.stringify(repeat),otherMeet:buildCpuNationalEntries('intercollege')};
+  })()`);
+  assert.deepEqual(r.counts,{middle:5,high:5,university:5,adult:5,alumni:5});assert.ok(r.unchanged&&r.stable);assert.ok(Object.values(r.otherMeet).every(ids=>!ids.length));
+});
+
+test('actual national execution freezes five CPU events before new PBs qualify for another event while preserving manual own entries',()=>{
+  const run=game(),reports=run(`(()=>{
+    const reports=[];
+    simulateRace=(a,e)=>({total:a.bestTimes[e]+.1});simulateMeetRace=simulateRace;
+    runRelays=()=>[];teamScoring=()=>({});refreshRecordBook=()=>{};refreshScoutBoard=()=>{};prepareMeetCompletion=()=>{};selectJapanTeam=()=>null;
+    for(const meet of ['japan_open','japan_championship']){
+      const stats=Object.fromEntries(STATS.map(k=>[k,100])),bestTimes=Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.99]));
+      const cpu={id:'cpu',category:'adult',specialty:'fr100',organization:'CPU',stats:{...stats,ba_speed:180,fly_speed:200},bestTimes:Object.fromEntries(['fr50','fr100','fr200','fr400','ba50'].map(e=>[e,bestTimes[e]]))};
+      const own={id:'own',year:1,organization:state.playerUniversity,specialty:'fr100',stats,bestTimes};
+      state.world=[cpu];state.players=[own];state.points=0;state.pointLog=[];state.meetHistory=[];
+      updateResultHistory=(a,e,t,m,stage,rank)=>{if(a===cpu&&e==='ba50')a.bestTimes.fly50=standardFor(meet,'fly50')-.01;return{rank,pb:false,newlyCleared:[]}};
+      const plan=buildCpuNationalEntries(meet),result=executeMeetWithForm(meet,Object.fromEntries(EVENTS.map(e=>[e,['own']])),{});
+      const cpuEvents=EVENTS.filter(e=>result.events[e].prelim.some(row=>row.athlete.id==='cpu'));
+      const ownEvents=EVENTS.filter(e=>result.events[e].prelim.some(row=>row.athlete.id==='own'));
+      reports.push({meet,cpuEvents,ownEvents,qualifiedLater:qualified(cpu,meet,'fly50'),nowWouldChoose:cpuEntryEvents(cpu,meet),plan:EVENTS.filter(e=>plan[e].includes('cpu')),
+        correctFinals:EVENTS.every(e=>result.events[e].final.every(row=>result.events[e].prelim.some(pre=>pre.athlete.id===row.athlete.id)))});
+    }return reports;
+  })()`);
+  for(const r of reports){assert.deepEqual(r.cpuEvents,['fr50','fr100','fr200','fr400','ba50']);assert.deepEqual(r.cpuEvents,r.plan);assert.equal(r.ownEvents.length,15);assert.ok(r.qualifiedLater&&r.correctFinals);assert.ok(r.nowWouldChoose.includes('fly50')&&!r.nowWouldChoose.includes('ba50'))}
 });
 
 test('college races preserve every university selection beyond nominal heat capacity',()=>{

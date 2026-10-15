@@ -126,7 +126,7 @@ test('actual domestic and world races keep qualified rosters, college limits, re
     for(const meet of ['team_trial','kansai_college','intercollege','japan_open','japan_championship','joint_record']){
       const entries={fr100:[ids[0]],br100:[ids[1]],im200:[ids[2]],ba100:[ids[3]]};
       const relays=Object.fromEntries(RELAYS.map(kind=>[kind,[...ids]]));
-      const nationalQualified=Object.fromEntries(EVENTS.map(event=>[event,state.world.filter(a=>allowedCpu(a,meet)&&qualified(a,meet,event)).map(a=>a.id)]));
+      const nationalEntries=UNLIMITED_STANDARD_MEETS.has(meet)?buildCpuNationalEntries(meet):null;
       // Capture the exact college allocation used by executeMeet, because
       // overloaded swimmers' retained three events are selected at random.
       const originalBuilder=buildCpuCollegeEntries;let selectedCollege=null;
@@ -141,13 +141,13 @@ test('actual domestic and world races keep qualified rosters, college limits, re
         for(const row of field.prelim){
           const a=row.athlete;counts[a.id]=(counts[a.id]||0)+1;const key=a.organization+'|'+event;organizations[key]=(organizations[key]||0)+1;
           if(!known.has(a.id)||!qualified(a,meet,event)||(row.source==='CPU'&&!allowedCpu(a,meet)))errors.push('invalid '+a.id);
-          if(meet==='team_trial'?row.race.physics?.preliminaryDelay!==undefined:row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>0&&row.race.physics.preliminaryProbability===1))errors.push('prelim delay '+event);
+          if(meet==='team_trial'?row.race.physics?.preliminaryDelay!==undefined:row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>=0&&row.race.physics.preliminaryProbability>0&&row.race.physics.preliminaryProbability<1))errors.push('prelim delay '+event);
         }
         const wanted=entries[event]||[];
         if(wanted.some(id=>!field.prelim.some(r=>r.athlete.id===id)))errors.push('missing own '+event);
         if(['japan_open','japan_championship'].includes(meet)){
           const actual=field.prelim.filter(r=>r.source==='CPU').map(r=>r.athlete.id).sort();
-          if(JSON.stringify(actual)!==JSON.stringify([...nationalQualified[event]].sort()))errors.push('missing national qualifier '+event);
+          if(JSON.stringify(actual)!==JSON.stringify([...nationalEntries[event]].sort()))errors.push('missing national selection '+event);
         }
         if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
           const actual=field.prelim.filter(r=>r.source==='CPU').map(r=>r.athlete.id).sort();
@@ -157,6 +157,7 @@ test('actual domestic and world races keep qualified rosters, college limits, re
         for(const row of field.final)if(row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total)errors.push('final time '+event);
       }
       if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)&&(Object.values(counts).some(n=>n>3)||Object.values(organizations).some(n=>n>3)))errors.push('college limit');
+      if(nationalEntries&&state.world.some(a=>(counts[a.id]||0)>5))errors.push('national athlete limit');
       for(const [kind,finals,meta] of result.relays){
         if(meta.heats.length!==Math.ceil(meta.prelim.length/8)||meta.heats.some(h=>h.length>8))errors.push('relay heat count '+kind);
         if(meta.prelim.length>8&&meta.heats.some((h,i)=>h.length<4&&!(i===0&&meta.prelim.length>24&&meta.prelim.length<28)))errors.push('tiny relay '+kind);
@@ -172,7 +173,7 @@ test('actual domestic and world races keep qualified rosters, college limits, re
     for(const [event,field] of Object.entries(result.events)){
       if(field.heats.length!==preliminaryHeatCount('world_championship',event)||!field.heats.every(h=>h.length===8))errors.push('incomplete world '+event);
       for(const id of state.japanTeam.individual[event])if(!field.prelim.some(r=>r.athlete.id===id))errors.push('missing representative '+id);
-      if(field.prelim.some(row=>row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>0&&row.race.physics.preliminaryProbability===1))||field.final.some(row=>row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total))errors.push('world phase '+event);
+      if(field.prelim.some(row=>row.source==='PLAYER'?(row.race.physics?.preliminaryDelay!==0||row.race.physics.preliminaryProbability!==0):!(row.race.physics?.preliminaryDelay>=0&&row.race.physics.preliminaryProbability>0&&row.race.physics.preliminaryProbability<1))||field.final.some(row=>row.race.physics?.preliminaryDelay!==undefined||row.prelimTime!==field.prelim.find(p=>p.athlete.id===row.athlete.id)?.race.total))errors.push('world phase '+event);
     }
     for(const [kind,finals,meta] of result.relays){
       if(meta.heats.length!==preliminaryHeatCount('world_championship',kind)||!meta.heats.every(h=>h.length===8))errors.push('incomplete world relay '+kind);
