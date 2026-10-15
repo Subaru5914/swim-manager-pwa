@@ -33,19 +33,19 @@ test('deep relay rosters can rest two first choices, while a bubble team keeps i
 
 test('actual college relay heats and finals retain distinct lineups, PB seeding, lap clocks and fastest final choices',()=>{
  const run=game(true),r=run(`(()=>{
-   const ownBefore=JSON.stringify(state.players),profileBefore=JSON.stringify(state.world),rows=[];
+   const ownBefore=JSON.stringify(state.players),profileBefore=JSON.stringify(state.world.map(a=>a.stats)),rows=[],planned=new Map(),seeds=new Map(),originalPlan=cpuRelayPreliminaryEntries;
+   cpuRelayPreliminaryEntries=(entries,kind,rosters)=>{const result=originalPlan(entries,kind,rosters);for(const team of result){planned.set(kind+team.organization,team.finalMembers.map(a=>a.id));seeds.set(kind+team.organization,relaySeedScore(team,kind))}return result};
    for(const meet of ['kansai_college','intercollege'])withMeetRaceContext(meet,meet==='kansai_college'?28:44,state.season,()=>{
      for(const [kind,finals,meta]of runRelays(meet,{})){
        const preIds=new Map(meta.prelim.map(t=>[t.organization,t.members.map(a=>a.id)]));
        for(const team of finals){
-         const roster=state.world.filter(a=>a.category==='university'&&a.organization===team.organization&&!a.retired);
-         rows.push({meet,kind,org:team.organization,ids:team.members.map(a=>a.id),best:bestRelayMembers(roster,kind).map(a=>a.id),
+         rows.push({meet,kind,org:team.organization,ids:team.members.map(a=>a.id),best:planned.get(kind+team.organization),
            pre:preIds.get(team.organization),kept:team.preliminaryMemberIds,
            time:team.race.total,sum:round2(team.race.legs.reduce((s,t)=>s+t,0)),last:team.race.cumulativeLegs.at(-1)});
        }
        for(const heat of meta.heats){
          // Equal combined PBs may keep either team's original seed position.
-         const seeded=[...heat].sort((a,b)=>relaySeedScore(a,kind)-relaySeedScore(b,kind)||SEEDED_LANES.indexOf(a.heatLane)-SEEDED_LANES.indexOf(b.heatLane));
+         const seeded=[...heat].sort((a,b)=>seeds.get(kind+a.organization)-seeds.get(kind+b.organization)||SEEDED_LANES.indexOf(a.heatLane)-SEEDED_LANES.indexOf(b.heatLane));
          if(seeded.some((t,i)=>t.heatLane!==SEEDED_LANES[i]))throw new Error('preliminary lane order');
        }
        for(const team of meta.prelim.filter(t=>t.reservedIds.length)){
@@ -53,7 +53,7 @@ test('actual college relay heats and finals retain distinct lineups, PB seeding,
        }
      }
    });
-   return{rows,own:ownBefore===JSON.stringify(state.players),cpu:profileBefore===JSON.stringify(state.world)};
+   return{rows,own:ownBefore===JSON.stringify(state.players),cpu:profileBefore===JSON.stringify(state.world.map(a=>a.stats))};
  })()`);
  assert.ok(r.own&&r.cpu);assert.equal(r.rows.length,48);assert.ok(r.rows.some(row=>row.ids.some((id,i)=>id!==row.pre[i])));
  for(const row of r.rows){assert.deepEqual(row.ids,row.best);assert.deepEqual(row.kept,row.pre);assert.equal(row.time,row.sum);assert.equal(row.time,row.last)}

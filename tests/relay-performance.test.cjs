@@ -39,12 +39,43 @@ test('all relay kinds use the dedicated ranges for every leg, retain takeover ga
  })()`);
  assert.ok(r.untouched);for(const row of r.rows){assert.deepEqual(row.legs,row.expected);assert.deepEqual(row.cpu,row.legs);assert.equal(row.total,row.last);assert.equal(row.total,row.sum);assert.ok(Math.abs(row.finish.t-row.total)<1e-8);assert.equal(row.finish.distance,row.distance);assert.ok(row.total>=row.bounds.low&&row.total<=row.bounds.high);for(const p of row.physics){assert.ok(p.relay);assert.equal(p.base,p.expected);assert.equal(p.form,0);assert.ok(Math.abs(p.target-(p.base-p.gain))<1e-8)}}
 });
-test('relay laps and records do not change individual PBs, standards or abilities',()=>{
+test('official first legs update individual PBs and applicable records for own, CPU and international swimmers only',()=>{
+ for(const category of ['own','middle','high','university','adult','international'])for(const kind of ['4x100fr','4x200fr','4x100medley']){
+  const run=game(),r=run(`(()=>{
+   const category=${JSON.stringify(category)},kind=${JSON.stringify(kind)},events=relayLegEvents(kind),legs=kind==='4x200fr'?[110,109,108,107]:kind==='4x100medley'?[55,60,52,49]:[50,49,48,47];
+   const members=Array.from({length:4},(_,i)=>{const a=relayAthlete(category+i);a.category=category==='own'?'university':category;a.organization=category==='own'?state.playerUniversity:'検証チーム';a.bestTimes[events[i]]=legs[i]+.5;ensureStandardAchievements(a);return a});
+   if(category==='own')state.players=members;else if(category==='international')state.internationalWorld={athletes:members};else state.world=members;
+   const stats=JSON.stringify(members.map(a=>a.stats)),team={members,organization:members[0].organization,rank:1,race:{total:round2(legs.reduce((s,t)=>s+t,0)),legs}};
+   recordRelayResult(kind,team,'intercollege','決勝');
+   const before=JSON.stringify(state);recordRelayResult(kind,team,'intercollege','決勝');
+   return{event:events[0],time:legs[0],pb:members[0].bestTimes[events[0]],stats:stats===JSON.stringify(members.map(a=>a.stats)),otherPBs:members.slice(1).map((a,i)=>a.bestTimes[events[i+1]]),expected:legs.slice(1).map(t=>t+.5),
+    stable:before===JSON.stringify(state),standards:members[0].standardAchievements[events[0]],expectedStandards:standardsCleared(events[0],legs[0]),
+    japan:state.recordRankings.japan?.[events[0]]||[],school:state.recordRankings[category==='own'?'university':category]?.[events[0]]||[],own:state.teamTop10[events[0]]||[],
+    falsePodiums:members.flatMap(a=>playerMainResults(a)).filter(h=>!RELAYS.includes(h.event))};
+  })()`);
+  assert.equal(r.pb,r.time);assert.ok(r.stats&&r.stable);assert.deepEqual(r.otherPBs,r.expected);assert.ok(r.expectedStandards.every(s=>r.standards.includes(s)));assert.deepEqual(r.falsePodiums,[]);
+  if(category==='international')assert.deepEqual(r.japan,[]);else {assert.equal(r.japan[0].time,r.time);assert.match(r.japan[0].stage,/リレー第1泳者/);if(['own','high','university'].includes(category))assert.equal(r.school[0].time,r.time)}
+  assert.equal(r.own.length,category==='own'?1:0);
+ }
+});
+test('slower, tied, missing or invalid first-leg clocks never erase a PB or register a flying leg',()=>{
  const run=game(),r=run(`(()=>{
-  state.players=Array.from({length:4},(_,i)=>relayAthlete('record-'+i));state.players.forEach(a=>a.bestTimes.fr100=coherentCpuPB(a,'fr100'));
-  const before=JSON.stringify(state.players.map(a=>[a.stats,a.bestTimes,a.standardAchievements]));
-  const race=withMeetRaceContext('intercollege',44,2026,()=>simulateRelay(state.players,'4x100fr',true));recordRelayResult('4x100fr',{organization:state.playerUniversity,members:state.players,race,rank:1},'intercollege','決勝');
-  return{unchanged:before===JSON.stringify(state.players.map(a=>[a.stats,a.bestTimes,a.standardAchievements])),histories:state.players.map(a=>playerRaceHistory(a).filter(h=>h.kind==='relay').map(h=>h.lapTime)),legs:race.legs};
+  state.players=Array.from({length:4},(_,i)=>relayAthlete('guard-'+i));const members=state.players;members.forEach(a=>a.bestTimes.fr100=50);
+  for(const time of [51,50,49.999,null,undefined,0,-1,.001,NaN,Infinity,201])recordRelayResult('4x100fr',{members,organization:state.playerUniversity,rank:1,race:{total:200,legs:[time,48,48,48]}},'intercollege','決勝');
+  const before=JSON.stringify(members.map(a=>a.bestTimes));simulateRelay(members,'4x100fr',true);
+  return{pbs:members.map(a=>a.bestTimes.fr100),unchanged:before===JSON.stringify(members.map(a=>a.bestTimes))};
  })()`);
- assert.ok(r.unchanged);r.histories.forEach((rows,i)=>assert.deepEqual(rows,[Math.round(r.legs[i]*100)/100]));
+ assert.deepEqual(r.pbs,[50,50,50,50]);assert.ok(r.unchanged);
+});
+test('pending relay final first legs are registered only after confirming the final lineup',()=>{
+ const run=game(),r=run(`(()=>{
+  const members=Array.from({length:5},(_,i)=>relayAthlete('pending-'+i));state.players=members;state.universities=[];state.interIds=[];state.recordBook={};members.forEach(a=>a.bestTimes.fr100=80);
+  rng=()=>.5;gauss=()=>0;
+  const team={organization:state.playerUniversity,members:members.slice(0,4),rank:1,race:simulateRelay(members.slice(0,4),'4x100fr',true)},meta={finalEntryPending:true};
+  const result={meet:'intercollege',slot:44,season:2026,events:Object.fromEntries(EVENTS.map(e=>[e,{final:[]}])),relays:[['4x100fr',[team],meta]]};
+  const provisional=team.race.legs[0],before=members[0].bestTimes.fr100;
+  setRelayFinalEntry(result,'4x100fr',members.slice(1).map(a=>a.id));
+  return{before,oldFirst:members[0].bestTimes.fr100,pbs:members.slice(1).map(a=>a.bestTimes.fr100),lap:round2(team.race.legs[0]),pending:meta.finalEntryPending};
+ })()`);
+ assert.equal(r.before,80);assert.equal(r.oldFirst,80);assert.equal(r.pbs[0],r.lap);assert.deepEqual(r.pbs.slice(1),[80,80,80]);assert.equal(r.pending,false);
 });
