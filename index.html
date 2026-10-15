@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.10</title>
+<title>大学競泳監督シミュレーション PWA版 v2.11</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1154,6 +1154,16 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 #page-team-top10 .top10-table-wrap{width:100%!important;max-width:100%!important}
 #page-team-top10 .top10-table{width:100%!important;min-width:0!important;table-layout:auto!important}
 #page-team-top10 .top10-table th,#page-team-top10 .top10-table td{padding:6px 8px}
+.team-record-panel[hidden]{display:none}
+.team-record-views{margin-bottom:12px}
+.team-podium-meet{margin-top:18px}
+.team-podium-table{width:100%;min-width:0!important;table-layout:auto}
+.team-podium-table th,.team-podium-table td{padding:7px 8px;vertical-align:top;white-space:normal}
+.team-podium-table th:first-child,.team-podium-table td:first-child,.team-podium-time{white-space:nowrap!important}
+.team-podium-table td:nth-child(2){min-width:110px}
+.team-podium-athlete{overflow-wrap:anywhere}
+.team-podium-relay-leg{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.team-podium-lap{margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
 .top10-relay-leg,.record-relay-leg{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:8px;align-items:center;margin:4px 0}
 .top10-relay-name,.record-relay-name{overflow-wrap:anywhere}
 .top10-relay-order,.record-relay-order{margin-right:4px;font-size:11px;color:var(--muted);white-space:nowrap}
@@ -1325,7 +1335,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.10</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.11</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1478,11 +1488,17 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 </section>
 
 <section id="page-team-top10" class="page">
-  <div class="page-lead"><div><h1>自チーム歴代10傑</h1><p>個人15種目・リレー3種目の歴代記録を確認できます。卒業・引退した選手の記録も残ります。</p></div></div>
-  <div class="card">
+  <div class="page-lead"><div><h1>自チーム歴代10傑</h1><p>歴代記録と、年度ごとの主要大会表彰台を確認できます。卒業・引退後も成績は残ります。</p></div></div>
+  <div class="row team-record-views" aria-label="自チーム記録の表示切替"><button data-team-record-view="top10" class="primary" aria-pressed="true">歴代10傑</button><button data-team-record-view="podiums" aria-pressed="false">主要大会表彰台</button></div>
+  <div id="teamTop10Panel" class="card team-record-panel">
     <div class="row"><h2 id="teamTop10Title" style="margin-right:auto">100mFr 歴代10傑</h2><label>種目 <select id="teamTop10Event"></select></label></div>
     <p class="muted small">現役の自チーム選手を青色と学年で表示しています。リレーは泳順・各泳者のラップを併記します。</p>
     <div id="teamTop10Body"></div>
+  </div>
+  <div id="teamPodiumPanel" class="card team-record-panel" hidden>
+    <div class="row"><h2 id="teamPodiumTitle" style="margin-right:auto">主要大会表彰台</h2><label>年度 <select id="teamPodiumYear"></select></label></div>
+    <p class="muted small">関西カレッジ・インカレ・帝嶋山選手権・ジャパンオープン・日本選手権・世界大会の決勝1〜3位。学年は出場時のものです。世界大会は自チームから選出された日本代表の成績を表示します。過去の成績はセーブに残っている記録から表示します。</p>
+    <div id="teamPodiumBody"></div>
   </div>
 </section>
 
@@ -1536,9 +1552,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.10"></script>
-<script src="./save-history.js?version=v2.10"></script>
-<script src="./cloud-sync.js?version=v2.10"></script>
+<script src="./local-save.js?version=v2.11"></script>
+<script src="./save-history.js?version=v2.11"></script>
+<script src="./cloud-sync.js?version=v2.11"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1577,6 +1593,7 @@ const BALANCE_MODEL_VERSION=1;
 const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
 const MEETS={"4-4-後半":"team_trial","5-4-後半":"team_trial","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-2-後半":"world_championship","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","11-2-後半":"teijimayama_championship","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
 const MEET_LABEL={team_trial:"自チーム記録会",kansai_college:"関西カレッジ",intercollege:"インカレ",teijimayama_championship:"帝嶋山選手権",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",world_championship:"世界大会",initial_pb:"初期PB",cpu_training:"練習記録会"};
+const TEAM_PODIUM_MEETS=["kansai_college","world_championship","intercollege","teijimayama_championship","japan_open","japan_championship"];
 const JOINT_RECORD_NAMES={1:"Higashikata CUP",2:"ダイナミオープン"};
 const RESTRICTED=new Set(["kansai_college","intercollege","japan_open","japan_championship"]);
 const RELAY_MEETS=new Set(["kansai_college","intercollege","teijimayama_championship","joint_record","world_championship"]);
@@ -1766,7 +1783,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.10";
+  state.version="pwa-v2.11";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -1887,6 +1904,7 @@ function migrateState(){
   ensureSpecialtyPBs();
   updateSchoolPersonalBests();
   refreshScoutBoard();
+  initializeTeamPodiumHistory();
   if(state.pendingMeetCompletion)completeMeet({...state.pendingMeetCompletion,events:{},relays:[]});
   if(state.completedMeetKeys.includes(`${state.season}:intercollege`)&&!state.seniorRetirementSeasons.includes(state.season)){
     const retired=processSeniorRetirement(state.season);
@@ -4055,7 +4073,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.10",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.11",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4098,6 +4116,8 @@ function createState(nameSettings=null){
 let state;
 let selectedTrainingId=null;
 let selectedTeamTop10Event="fr100";
+let selectedTeamRecordView="top10";
+let selectedTeamPodiumYear=null;
 let selectedJapanTeamYear=null;
 let raceAnim=null;
 
@@ -4373,6 +4393,7 @@ function recordRelayResult(kind,team,meet,stage){
     members:team.members.map(a=>({id:a.id,name:a.name,...recordSchoolInfo(a)})),season:activeCompetitionSeason(),slot:activeCompetitionSlot(),meet,stage,
     rank:stage==="予選"?team.prelimRank??null:team.rank??null,heatLane:team.heatLane??null,
     legs:team.members.map((a,i)=>validRaceTime(team.race.legs?.[i])?round2(team.race.legs[i]):null)};
+  recordTeamRelayPodium(record);
   // Only the lead-off leg has an individual start. Commit its official clock
   // here, never during simulations or before a pending final lineup is fixed.
   const first=team.members[0],event=relayLegEvent(kind,0),time=record.legs[0],individualStage=`リレー第1泳者・${stage}`;
@@ -4452,6 +4473,109 @@ function recordAthleteMainResult(a,history){
   const representative=state.japanTeam?.athletes?.find(p=>p.id===a.id&&p.ownAtSelection);
   if(representative?.snapshot)targets.add(representative.snapshot);
   for(const target of targets)upsertMainResult(target,{...history,...school});
+  if(targets.size&&!RELAYS.includes(record.event)&&teamPodiumOwnSchool(a,{...record,...school})){
+    upsertTeamPodium({...record,...school,kind:"individual",athleteId:a.id,name:a.name});
+  }
+}
+function teamPodiumKey(record){return JSON.stringify([record.season,record.meet,record.event,record.kind==="relay"?"relay":record.athleteId??`name:${record.name}`])}
+function upsertTeamPodium(record){
+  if(!TEAM_PODIUM_MEETS.includes(record.meet)||!Number.isInteger(record.season)||!mainResultRecord(record))return;
+  if(!Array.isArray(state.teamPodiumHistory))state.teamPodiumHistory=[];
+  const key=teamPodiumKey(record),index=state.teamPodiumHistory.findIndex(row=>teamPodiumKey(row)===key);
+  if(record.rank>3){if(index>=0)state.teamPodiumHistory.splice(index,1);return}
+  const saved=deepClone(record);
+  if(index>=0)state.teamPodiumHistory[index]=saved;else state.teamPodiumHistory.push(saved);
+  // Replace an anonymous legacy-summary row when the athlete's identity is known.
+  if(record.kind==="individual"&&record.athleteId)state.teamPodiumHistory=state.teamPodiumHistory.filter(row=>
+    row.athleteId||row.kind!=="individual"||row.season!==record.season||row.meet!==record.meet||row.event!==record.event||row.name!==record.name);
+}
+function teamPodiumOwnSchool(a,record){
+  if(record.meet==="world_championship"){
+    const entry=(state.japanTeamHistory||[]).find(row=>(row.worldSeason??row.year)===record.season),member=entry?.athletes?.find(member=>member.id===a.id);
+    if(member)return !!member.own;
+    if(state.japanTeam?.year===calendarYear(record.season,record.slot||36)){
+      const selected=state.japanTeam.athletes?.find(member=>member.id===a.id);if(selected)return !!selected.ownAtSelection;
+    }
+  }
+  return record.schoolCategory==="university";
+}
+function recordTeamRelayPodium(record){
+  if(!TEAM_PODIUM_MEETS.includes(record.meet)||raceHistoryPhaseOrder(record)!==0)return;
+  const world=record.meet==="world_championship";
+  if(world?record.organization!=="日本":record.organization!==state.playerUniversity)return;
+  const members=record.members.map((member,i)=>({...member,legIndex:i,own:world?ownJapanAthlete(member.id):state.players.some(a=>a.id===member.id)}));
+  if(!members.some(member=>member.own)){
+    const key=teamPodiumKey({...record,kind:"relay"});
+    if(Array.isArray(state.teamPodiumHistory))state.teamPodiumHistory=state.teamPodiumHistory.filter(row=>teamPodiumKey(row)!==key);
+    return;
+  }
+  upsertTeamPodium({...record,kind:"relay",members});
+}
+function initializeTeamPodiumHistory(){
+  if(state.teamPodiumHistoryVersion>=1)return;
+  if(!Array.isArray(state.teamPodiumHistory))state.teamPodiumHistory=[];
+  const athletes=[...state.players,...state.world.filter(a=>a.alumni),...(state.retiredArchive||[]),
+    ...(state.japanTeam?.athletes||[]).filter(member=>member.ownAtSelection).map(member=>member.snapshot).filter(Boolean)];
+  const relays=new Map();
+  for(const athlete of athletes)for(const record of playerMainResults(athlete)){
+    if(!TEAM_PODIUM_MEETS.includes(record.meet)||!teamPodiumOwnSchool(athlete,record))continue;
+    if(!RELAYS.includes(record.event)){
+      upsertTeamPodium({...record,kind:"individual",athleteId:athlete.id,name:athlete.name});continue;
+    }
+    const key=teamPodiumKey({...record,kind:"relay"});
+    let row=relays.get(key);
+    if(!row){row={...record,kind:"relay",members:[],legs:[null,null,null,null]};delete row.legIndex;delete row.legEvent;delete row.lapTime;relays.set(key,row)}
+    if(!row.members.some(member=>member.id===athlete.id))row.members.push({id:athlete.id,name:athlete.name,own:true,legIndex:record.legIndex,schoolCategory:record.schoolCategory,gradeAtRecord:record.gradeAtRecord});
+    if(Number.isInteger(record.legIndex)&&record.legIndex>=0&&record.legIndex<4)row.legs[record.legIndex]=record.lapTime;
+  }
+  for(const row of relays.values()){
+    const books=[state.teamTop10,state.recordRankings?.university,state.recordRankings?.japan];
+    const full=books.flatMap(book=>book?.[row.event]||[]).find(record=>record.season===row.season&&record.meet===row.meet&&raceHistoryPhaseOrder(record)===0&&Math.abs(record.time-row.time)<.005&&record.members?.length===4&&row.members.every(member=>record.members.some(m=>m.id===member.id)));
+    if(full){
+      row.members=full.members.map((member,i)=>({...member,legIndex:i,own:row.members.some(own=>own.id===member.id)}));
+      row.legs=relayRecordLegs({...full,event:row.event});
+    }
+    row.members.sort((a,b)=>(a.legIndex??4)-(b.legIndex??4));upsertTeamPodium(row);
+  }
+  // A final stored in a record book can outlive all four athlete objects.
+  for(const book of [state.recordRankings?.university,state.recordRankings?.japan])for(const event of RELAYS)for(const record of book?.[event]||[]){
+    if(record.organization!==state.playerUniversity||record.members?.length!==4||!mainResultRecord({...record,event})||record.rank>3)continue;
+    const previous=state.teamPodiumHistory.find(row=>teamPodiumKey(row)===teamPodiumKey({...record,event,kind:"relay"}));
+    upsertTeamPodium({...record,event,kind:"relay",members:record.members.map((member,i)=>{
+      const known=previous?.members?.find(saved=>saved.id===member.id);
+      return{...member,...(!knownRecordSchoolInfo(member)&&known?{schoolCategory:known.schoolCategory,gradeAtRecord:known.gradeAtRecord}:{}),legIndex:i,own:true};
+    }),legs:relayRecordLegs({...record,event})});
+  }
+  // Major domestic meet summaries contain the A-final podium. They can retain
+  // a name even after an ineligible senior's athlete data has been deleted.
+  for(const meet of state.meetHistory||[]){
+    if(!TEAM_PODIUM_MEETS.includes(meet.meet)||meet.meet==="world_championship")continue;
+    for(const [event,rows]of Object.entries(meet.podiums||{}))for(const row of rows||[]){
+      if(!EVENTS.includes(event)||row.organization!==state.playerUniversity||row.rank<1||row.rank>3||(row.stage&&raceHistoryPhaseOrder(row)!==0))continue;
+      if(state.teamPodiumHistory.some(saved=>saved.kind==="individual"&&saved.season===meet.season&&saved.meet===meet.meet&&saved.event===event&&saved.name===row.name))continue;
+      if(athletes.some(a=>a.name===row.name&&[...playerRaceHistory(a),...(a.accolades||[])].some(h=>h.season===meet.season&&h.meet===meet.meet&&h.event===event&&raceHistoryPhaseOrder(h)===0)))continue;
+      upsertTeamPodium({kind:"individual",season:meet.season,slot:meet.slot??null,meet:meet.meet,event,stage:"決勝",rank:row.rank,time:row.time,athleteId:null,name:row.name,schoolCategory:"university",gradeAtRecord:null});
+    }
+  }
+  // The representative archive retains the final lineup and explicit own-team
+  // identity, even when those swimmers no longer exist in any live roster.
+  for(const entry of state.japanTeamHistory||[]){
+    const stamp={season:entry.worldSeason??entry.year,slot:entry.worldSlot??null,meet:"world_championship",stage:"決勝"};
+    for(const [event,rows]of Object.entries(entry.results?.individual||{}))for(const row of rows){
+      const member=entry.athletes?.find(member=>member.id===row.athleteId);
+      if(member?.own&&row.final){
+        const record={...stamp,...row.final,event,kind:"individual",athleteId:member.id,name:member.name};
+        const previous=state.teamPodiumHistory.find(saved=>teamPodiumKey(saved)===teamPodiumKey(record));
+        // Selection-year grades are not necessarily the grades at the August race.
+        upsertTeamPodium({...record,...mainResultSchoolInfo(athletes.find(a=>a.id===member.id),record,previous)});
+      }
+    }
+    for(const [event,relay]of Object.entries(entry.results?.relays||{})){
+      const record=relay.final;if(!record?.members?.some(member=>member.own))continue;
+      upsertTeamPodium({...stamp,...record,event,kind:"relay",members:record.members.map((member,i)=>({...member,legIndex:member.legIndex??i})),legs:record.legs||[]});
+    }
+  }
+  state.teamPodiumHistoryVersion=1;
 }
 function playerMainResults(p){
   const rows=new Map();
@@ -5926,6 +6050,9 @@ function relayRecordLegs(record){
 }
 function renderTeamTop10(){
     let selector=document.getElementById("teamTop10Event");if(!selector)return;
+    document.getElementById("teamTop10Panel").hidden=selectedTeamRecordView!=="top10";
+    document.getElementById("teamPodiumPanel").hidden=selectedTeamRecordView!=="podiums";
+    document.querySelectorAll("[data-team-record-view]").forEach(button=>{const active=button.dataset.teamRecordView===selectedTeamRecordView;button.classList.toggle("primary",active);button.setAttribute("aria-pressed",String(active))});
     let e=selector.value,rows=state.teamTop10[e]||[];
     document.getElementById("teamTop10Title").textContent=(EVENT_LABEL[e]||RELAY_LABEL[e])+" 歴代10傑";
     const alumniIds=ownAlumniIds(),currentIds=new Set(state.players.map(a=>a.id).concat(state.world.filter(a=>a.alumni&&!a.retired).map(a=>a.id)));
@@ -5938,6 +6065,33 @@ function renderTeamTop10(){
       }else names=top10AthleteName(r.athleteId,r.name);
       return `<tr class="${active?"top10-active":alumnus?"top10-alumnus":""}"><td>${i+1}</td><td>${fmt(r.time)}</td><td>${names}</td><td>${r.season}</td><td>${meetMonthLabel(r.meet,r.slot)}</td></tr>`;
     }).join("")||'<tr><td colspan="5">記録なし</td></tr>'}</tbody></table></div>`;
+    renderTeamPodiums();
+}
+function renderTeamPodiums(){
+  const selector=document.getElementById("teamPodiumYear");if(!selector)return;
+  const history=(state.teamPodiumHistory||[]).filter(row=>TEAM_PODIUM_MEETS.includes(row.meet)&&Number.isInteger(row.season)&&row.rank>=1&&row.rank<=3);
+  const years=[...new Set([state.season,...history.map(row=>row.season)])].sort((a,b)=>b-a);
+  if(!years.includes(selectedTeamPodiumYear))selectedTeamPodiumYear=state.season;
+  selector.innerHTML=years.map(year=>`<option value="${year}">${year}年度</option>`).join("");selector.value=String(selectedTeamPodiumYear);
+  selector.onchange=()=>{selectedTeamPodiumYear=Number(selector.value);renderTeamPodiums()};
+  document.getElementById("teamPodiumTitle").textContent=`${selectedTeamPodiumYear}年度 主要大会表彰台`;
+  const rows=history.filter(row=>row.season===selectedTeamPodiumYear),events=[...EVENTS,...RELAYS];
+  document.getElementById("teamPodiumBody").innerHTML=rows.length?TEAM_PODIUM_MEETS.map(meet=>{
+    const results=rows.filter(row=>row.meet===meet).sort((a,b)=>events.indexOf(a.event)-events.indexOf(b.event)||a.rank-b.rank||String(a.name||"").localeCompare(String(b.name||""),"ja"));
+    if(!results.length)return "";
+    return `<section class="team-podium-meet" data-podium-meet="${meet}"><h3>${esc(meetLabel(meet))}</h3><div class="table-wrap"><table class="team-podium-table"><thead><tr><th>順位</th><th>種目</th><th>選手 / 出場時の学年</th><th>記録</th></tr></thead><tbody>${results.map(record=>{
+      const name=member=>`<b class="team-podium-athlete">${esc(member.name||"選手名不明")}</b>${gradeBadge(member.gradeAtRecord,recordSchoolLabel(member),"record-school-label")}`;
+      let names=name(record);
+      if(record.kind==="relay"){
+        names=(record.members||[]).filter(member=>member.own).map(member=>{
+          const i=member.legIndex,known=Number.isInteger(i)&&i>=0&&i<4;
+          return `<div class="team-podium-relay-leg"><span>${known?`<span class="top10-relay-order">${i+1}泳 ${EVENT_LABEL[relayLegEvent(record.event,i)]}</span> `:""}${name(member)}</span>${known&&validRaceTime(record.legs?.[i])?`<b class="team-podium-lap">${fmt(record.legs[i])}</b>`:""}</div>`;
+        }).join("");
+        if((record.members||[]).length<4)names+='<span class="muted small">保存されている出場選手のみ</span>';
+      }
+      return `<tr data-podium-event="${record.event}" data-podium-rank="${record.rank}"><td>${raceHistoryRank(record)}</td><td>${EVENT_LABEL[record.event]||RELAY_LABEL[record.event]}${meet==="world_championship"?'<div class="small muted">日本代表</div>':""}</td><td>${names}</td><td class="team-podium-time"><b>${fmt(record.time)}</b></td></tr>`;
+    }).join("")}</tbody></table></div></section>`;
+  }).join(""):'<p class="muted">この年度の主要大会表彰台の記録はありません。</p>';
 }
 function japanTeamMemberHtml(member){
   if(!member)return '<span class="muted">選手名不明</span>';
@@ -7555,6 +7709,7 @@ function initSelectors(){
   let r=document.getElementById("rankEvent");
   if(r){r.innerHTML=EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("");r.value="fr100"}
   let teamEvent=document.getElementById("teamTop10Event");
+  document.querySelectorAll("[data-team-record-view]").forEach(button=>button.onclick=()=>{selectedTeamRecordView=button.dataset.teamRecordView;renderTeamTop10()});
   if(teamEvent){
     teamEvent.innerHTML=[...EVENTS,...RELAYS].map(e=>`<option value="${e}">${EVENT_LABEL[e]||RELAY_LABEL[e]}</option>`).join("");
     teamEvent.value=selectedTeamTop10Event;

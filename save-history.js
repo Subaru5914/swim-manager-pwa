@@ -51,7 +51,8 @@ class SwimSaveHistory {
     const latestScore = save.teamScoreHistory?.at(-1);
     add(save, 'teamScoreHistory', ['teamScoreHistory'], row => row !== latestScore);
     // Reputation histories, completion guards, representative archives, career
-    // identities, accolades and all ability/PB/training fields are untouched.
+    // identities, accolades, teamPodiumHistory and all ability/PB/training fields
+    // are untouched, including medals earned by swimmers already deleted.
     candidates.sort((a, b) => a.season - b.season || a.slot - b.slot || a.index - b.index);
     let estimated = beforeBytes, removed = 0;
     for (const candidate of candidates) {
