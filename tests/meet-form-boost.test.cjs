@@ -9,24 +9,24 @@ function game(){
     function member(id,mental=80){return{id,name:id,year:2,stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?mental:138])),bestTimes:{fr100:55},specialty:'fr100'}}`,context);
   return code=>JSON.parse(vm.runInContext('JSON.stringify('+code+')',context));
 }
-test('one point buys exactly one form level up to excellent, persists and does not alter abilities, PBs or race RNG',()=>{
+test('ten points buy exactly one form level up to excellent, persists and does not alter abilities, PBs or race RNG',()=>{
   const run=game(),r=run(`(()=>{
-    const a=Array.from({length:500},(_,i)=>member('poor-'+i)).find(a=>athleteMeetForm(a,'intercollege',41,2026).level===-2);state.players=[a];
+    const a=Array.from({length:500},(_,i)=>member('poor-'+i)).find(a=>athleteMeetForm(a,'intercollege',41,2026).level===-2);state.players=[a];state.points=50;
     const player=JSON.stringify(a),seed=state.rngSeed,steps=[];
     for(let i=0;i<4;i++){const result=improveMeetForm(a.id,'intercollege',41,2026);steps.push({ok:result.ok,before:result.before.level,after:result.after.level,points:state.points})}
     const capped=improveMeetForm(a.id,'intercollege',41,2026),saved=JSON.stringify(state);
     state=JSON.parse(saved);normalizeMeetFormBoosts();
     return{steps,capped:capped.ok,points:state.points,level:athleteMeetForm(a,'intercollege',41,2026).level,count:meetFormBoostCount(a.id,'intercollege',41,2026),same:player===JSON.stringify(a)&&seed===state.rngSeed&&saved===JSON.stringify(state)};
   })()`);
-  assert.deepEqual(r.steps,[-2,-1,0,1].map((before,i)=>({ok:true,before,after:before+1,points:19-i})));
-  assert.equal(r.capped,false);assert.equal(r.points,16);assert.equal(r.level,2);assert.equal(r.count,4);assert.ok(r.same);
+  assert.deepEqual(r.steps,[-2,-1,0,1].map((before,i)=>({ok:true,before,after:before+1,points:40-i*10})));
+  assert.equal(r.capped,false);assert.equal(r.points,10);assert.equal(r.level,2);assert.equal(r.count,4);assert.ok(r.same);
 });
 test('insufficient points, CPU swimmers, recruits, invalid meets and dates never spend points or save a boost',()=>{
   const run=game(),r=run(`(()=>{
     const a=member('own');state.players=[a];state.world=[member('cpu')];state.recruits=['cpu'];
     const invalid=[['cpu','intercollege',41,2026],['missing','intercollege',41,2026],['own','initial_pb',1,2026],['own','missing',1,2026],['own','intercollege',0,2026],['own','intercollege',97,2026],['own','intercollege',41.5,2026],['own','intercollege',41,NaN]];
     const before=JSON.stringify(state),rejected=invalid.map(args=>improveMeetForm(...args).ok),unchanged=before===JSON.stringify(state);
-    state.points=0;const empty=JSON.stringify(state),noMoney=improveMeetForm(a.id,'intercollege',41,2026);
+    state.points=9;const empty=JSON.stringify(state),noMoney=improveMeetForm(a.id,'intercollege',41,2026);
     return{rejected,unchanged,noMoney:noMoney.ok,emptySame:empty===JSON.stringify(state)};
   })()`);
   assert.ok(r.rejected.every(ok=>!ok));assert.ok(r.unchanged&&r.emptySame);assert.equal(r.noMoney,false);
@@ -38,7 +38,7 @@ test('boosts are scoped to the exact meet, date and season, including the two wi
     const before=dates.map(args=>athleteMeetForm(a,...args).level);improveMeetForm(a.id,...dates[0]);
     return{before,after:dates.map(args=>athleteMeetForm(a,...args).level),counts:dates.map(args=>meetFormBoostCount(a.id,...args)),points:state.points};
   })()`);
-  assert.deepEqual(r.after,[r.before[0]+1,...r.before.slice(1)]);assert.deepEqual(r.counts,[1,0,0,0]);assert.equal(r.points,19);
+  assert.deepEqual(r.after,[r.before[0]+1,...r.before.slice(1)]);assert.deepEqual(r.counts,[1,0,0,0]);assert.equal(r.points,10);
 });
 test('a started meet rejects changes while an earlier winter meet does not block the later cup',()=>{
   const run=game(),r=run(`(()=>{
@@ -49,7 +49,7 @@ test('a started meet rejects changes while an earlier winter meet does not block
     state.meetHistory=[];state.pendingMeetCompletion={meet:'team_trial',slot:1,season:2026};
     const pending=improveMeetForm(a.id,'team_trial',1,2026);return{later:later.ok,started:started.ok,pending:pending.ok,same,points:state.points};
   })()`);
-  assert.ok(r.later&&r.same);assert.equal(r.started,false);assert.equal(r.pending,false);assert.equal(r.points,19);
+  assert.ok(r.later&&r.same);assert.equal(r.started,false);assert.equal(r.pending,false);assert.equal(r.points,10);
 });
 test('world representatives allow owned graduates and relay-only members while excluding other Japanese swimmers and other years',()=>{
   const run=game(),r=run(`(()=>{
@@ -60,7 +60,7 @@ test('world representatives allow owned graduates and relay-only members while e
     const before=JSON.stringify(state),other=improveMeetForm(cpu.id,'world_championship',36,2027),year=improveMeetForm(graduate.id,'world_championship',36,2029);
     return{ownGrad:ownGrad.ok,relay:relay.ok,other:other.ok,year:year.ok,same:before===JSON.stringify(state),points:state.points};
   })()`);
-  assert.ok(r.ownGrad&&r.relay&&r.same);assert.equal(r.other,false);assert.equal(r.year,false);assert.equal(r.points,18);
+  assert.ok(r.ownGrad&&r.relay&&r.same);assert.equal(r.other,false);assert.equal(r.year,false);assert.equal(r.points,0);
 });
 test('paid form is used in preliminary and final physics, every relay leg and changed final lineups',()=>{
   const run=game(),r=run(`(()=>{
@@ -81,20 +81,20 @@ test('paid form is used in preliminary and final physics, every relay leg and ch
   })()`);
   for(const row of r.individual){assert.ok(row.after<row.before);assert.equal(row.level,1);assert.ok(Math.abs((row.targetBefore-row.targetAfter)-.795)<1e-8);assert.ok(Math.abs(row.finish-row.after)<1e-8)}
   for(const row of r.relays){assert.ok(row.after<row.before);assert.deepEqual(row.otherAfter,row.otherBefore);assert.equal(row.last,row.after)}
-  assert.equal(r.changed,r.expected);assert.equal(r.qualifier,240);assert.equal(r.points,19);
+  assert.equal(r.changed,r.expected);assert.equal(r.qualifier,240);assert.equal(r.points,10);
 });
 test('normalization accepts legacy missing data and keeps only valid boosts from the current or future seasons',()=>{
   const run=game(),r=run(`(()=>{
     normalizeMeetFormBoosts();const legacy=deepClone(state.meetFormBoosts);state.season=2027;
     state.meetFormBoosts={'2026:41:intercollege':{a:1},'2027:41:intercollege':{a:2,b:4,c:0,d:5,e:1.5,f:'1'},'2029:36:world_championship':{g:1},'2027:0:team_trial':{a:1},'2027:97:team_trial':{a:1},'2027:1:initial_pb':{a:1},'2027:1:missing':{a:1},'2027:1:joint_record':['a']};
-    const seed=state.rngSeed;normalizeMeetFormBoosts();return{legacy,boosts:state.meetFormBoosts,unchanged:seed===state.rngSeed};
+    const seed=state.rngSeed;normalizeMeetFormBoosts();return{legacy,boosts:state.meetFormBoosts,points:state.points,unchanged:seed===state.rngSeed};
   })()`);
-  assert.deepEqual(r.legacy,{});assert.deepEqual(r.boosts,{'2027:41:intercollege':{a:2,b:4},'2029:36:world_championship':{g:1}});assert.ok(r.unchanged);
+  assert.deepEqual(r.legacy,{});assert.deepEqual(r.boosts,{'2027:41:intercollege':{a:2,b:4},'2029:36:world_championship':{g:1}});assert.equal(r.points,20);assert.ok(r.unchanged);
 });
 test('at the same actual meet form and race RNG, different mental values produce identical individual and relay clocks',()=>{
   const run=game(),groups=run(`[138,173].map(value=>[0,100,200].map(mental=>{
     const p=member('mental-clock',mental);for(const k of STATS)if(k!=='mental')p.stats[k]=value;
-    state.players=[p];state.points=20;state.meetFormBoosts={};
+    state.players=[p];state.points=40;state.meetFormBoosts={};
     const natural=athleteMeetForm(p,'intercollege',41,2026).level;
     for(let i=natural;i<2;i++)improveMeetForm(p.id,'intercollege',41,2026);
     for(const e of EVENTS)p.bestTimes[e]=expectedTime(p,e)+30;
