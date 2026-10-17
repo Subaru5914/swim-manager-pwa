@@ -93,9 +93,9 @@ test('college entries choose each university\'s fastest qualified PBs, regardles
 
 test('college medley priority uses each university ranking top fifteen, includes own students and respects qualification',()=>{
   const run=game(),result=run(`(()=>{
-    const events=['fr50','fr100','fr200','im200','im400'],reports=[];
+    const events=['fr50','fr100','fr200','fr400','im200','im400'],reports=[];
     const fixture=(rank200,rank400)=>{
-      const target={id:'target',category:'university',organization:'関西大学',specialty:'fr100',bestTimes:{fr50:23,fr100:50,fr200:110,im200:120,im400:255}};
+      const target={id:'target',category:'university',organization:'関西大学',specialty:'fr100',bestTimes:{fr50:23,fr100:50,fr200:110,fr400:220,im200:120,im400:255}};
       state.players=[{id:'own-ranker',year:1,bestTimes:{im200:115,im400:245}}];
       state.world=[target,...Array.from({length:14},(_,i)=>({id:'ranker-'+i,category:'university',organization:'大会外大学',bestTimes:{...(i<rank200-2?{im200:111+i*.1}:{}),...(i<rank400-2?{im400:240+i*.1}:{})}})),
         ...['middle','high','adult'].map(category=>({id:category,category,bestTimes:{im200:117,im400:247}})),
@@ -121,7 +121,7 @@ test('college medley priority uses each university ranking top fifteen, includes
   for(const row of result.reports){
     assert.deepEqual(row.actualRanks,[row.rank200,row.rank400]);assert.ok(row.globalRanks.every(rank=>rank>15));assert.ok(row.unchanged);
     const expected=['fr100',...(row.rank200===15?['im200']:[]),...(row.rank400===15?['im400']:[])];
-    for(const event of ['fr50','fr200'])if(expected.length<3)expected.push(event);
+    for(const event of ['fr200','fr400','fr50'])if(expected.length<3)expected.push(event);
     assert.deepEqual([...row.selected].sort(),expected.sort(),JSON.stringify(row));
   }
   assert.ok(result.restricted.every(Boolean));assert.deepEqual(result.few,['fr100','im200']);
@@ -145,6 +145,37 @@ test('ranked college medleys are retained more often without making their entry 
   })()`);
   for(const row of rows){assert.ok(row.valid&&row.unchanged);assert.ok(row.lineups>5)}
   for(const event of ['im200','im400']){assert.ok(rows[0].counts[event]>rows[1].counts[event]*1.5,JSON.stringify(rows));assert.ok(rows[0].counts[event]<400)}
+});
+
+test('college three-event draws reduce 50m freestyle for specialists and other swimmers while preserving short entry lists',()=>{
+  const run=game(),rows=run(`(()=>{
+    const events=['fr50','fr100','fr200','fr400','ba100'],rows=[];
+    for(const meet of ['kansai_college','intercollege','teijimayama_championship'])for(const specialty of ['fr100','ba100','fr50']){
+      const target={id:'target',category:'university',organization:'関西大学',specialty,bestTimes:Object.fromEntries(events.map(event=>[event,standardFor('intercollege',event)*.95]))};
+      state.world=[target];const before=JSON.stringify(state.world),counts=Object.fromEntries(events.map(event=>[event,0])),lineups=new Set();let valid=true;
+      for(let seed=1;seed<=800;seed++){
+        state.rngSeed=profileHash('fr50-invitations:'+seed);const entries=buildCpuCollegeEntries(meet),selected=EVENTS.filter(event=>entries[event].includes(target.id));
+        if(selected.length!==3||Object.values(entries).some(ids=>ids.length>3))valid=false;
+        for(const event of selected)if(event in counts)counts[event]++;
+        lineups.add(selected.join('|'));
+      }
+      const unchanged=before===JSON.stringify(state.world);
+      // A meet without standards permits PB-less entries too. Test short lists
+      // in the two restricted college meets, where missing PBs exclude events.
+      let few=null,noDraw=null;
+      if(meet!=='teijimayama_championship'){
+        target.bestTimes=Object.fromEntries(['fr50','fr100','fr200'].map(event=>[event,target.bestTimes[event]]));
+        const seed=state.rngSeed,entries=buildCpuCollegeEntries(meet);few=EVENTS.filter(event=>entries[event].includes(target.id));noDraw=seed===state.rngSeed;
+      }
+      rows.push({meet,specialty,counts,valid,lineups:lineups.size,unchanged,few,noDraw});
+    }return rows;
+  })()`);
+  for(const row of rows){
+    const comparison=row.specialty==='fr100'?'fr200':'fr100';
+    assert.ok(row.counts.fr50<row.counts[comparison],JSON.stringify(row));
+    assert.ok(row.counts.fr50>0&&row.counts.fr50<800,JSON.stringify(row));assert.ok(row.valid&&row.unchanged,JSON.stringify(row));assert.ok(row.lineups>3);
+    if(row.few){assert.deepEqual(row.few,['fr50','fr100','fr200']);assert.ok(row.noDraw)}
+  }
 });
 
 test('college conflicts retain random three events and replace withdrawn entries by qualified PB order',()=>{
