@@ -98,14 +98,14 @@ test('actual scouting uses the displayed odds, charges attempts once, respects e
   const result=JSON.parse(run(`JSON.stringify((()=>{
     let renders=0,saves=0;renderAll=()=>renders++;scheduleAutoSave=()=>saves++;
     const original=rng,candidates=refreshScoutBoard().filter(a=>!a.scouted).slice(0,9),oldIds=candidates.map(a=>a.id);
-    state.points=9;let blockedDraws=0;rng=()=>{blockedDraws++;return 0};
+    state.points=4;let blockedDraws=0;rng=()=>{blockedDraws++;return 0};
     const low=JSON.stringify(state);doScout(candidates[0].id);const insufficient=low===JSON.stringify(state)&&blockedDraws===0;
     state.points=100;const probability=scoutProbability(candidates[0]);
-    rng=()=>probability+.00001;doScout(candidates[0].id);const failure=!candidates[0].scouted&&state.points===90;
-    rng=()=>Math.max(0,probability-.00001);doScout(candidates[0].id);const success=candidates[0].scouted&&state.recruits.includes(candidates[0].id)&&state.points===80;
-    doScout(candidates[0].id);const repeat=state.points===80;
+    rng=()=>probability+.00001;doScout(candidates[0].id);const failure=!candidates[0].scouted&&state.points===95;
+    rng=()=>Math.max(0,probability-.00001);doScout(candidates[0].id);const success=candidates[0].scouted&&state.recruits.includes(candidates[0].id)&&state.points===90;
+    doScout(candidates[0].id);const repeat=state.points===90;
     rng=()=>0;for(const a of candidates.slice(1))doScout(a.id);
-    const cap=state.recruits.length===8&&scoutRecruitCount()===8&&!candidates[8].scouted&&state.points===10;
+    const cap=state.recruits.length===8&&scoutRecruitCount()===8&&!candidates[8].scouted&&state.points===55;
     rng=original;newSeason();
     const newcomers=state.players.filter(p=>p.year===1),board=refreshScoutBoard(),expected=EVENTS.flatMap(e=>ranking(e,'high',50)).filter(a=>a.grade===3);
     return {insufficient,failure,success,repeat,cap,renders,saves,enrolled:oldIds.slice(0,8).every(id=>newcomers.some(p=>p.id===id)),

@@ -12,6 +12,65 @@ function game(){
   return code=>JSON.parse(run(`JSON.stringify(${code})`));
 }
 
+test('winter invitations favor event ability and prestigious colleges while keeping four age groups and random outsiders',()=>{
+  const run=game(),result=run(`(()=>{
+    state.universities=[{name:'一般大学',reputation:80},{name:'強豪大学',reputation:200},{name:'名門大学',reputation:300}];
+    const categories=['middle','high','university','adult'];
+    const candidates=categories.flatMap(category=>Array.from({length:99},(_,i)=>({id:category+i,category,organization:state.universities[i%3].name,
+      stats:Object.fromEntries(STATS.map(k=>[k,195-i])),bestTimes:{fr100:48+i*.1},index:i})));
+    const before=JSON.stringify(candidates),counts=Object.fromEntries(categories.map(category=>[category,{top:0,bottom:0,total:0}])),college={},lineups=new Set();
+    for(let seed=1;seed<=400;seed++){
+      state.rngSeed=seed;const entries=selectJointCpuEntries(candidates,48,'fr100');
+      if(entries.length!==48||new Set(entries.map(a=>a.id)).size!==48)throw Error('invalid capacity');
+      for(const category of categories)if(entries.filter(a=>a.category===category).length!==12)throw Error('age group lost');
+      for(const a of entries){const c=counts[a.category];c.total++;if(a.index<25)c.top++;if(a.index>=74)c.bottom++;if(a.category==='university')college[a.organization]=(college[a.organization]||0)+1}
+      lineups.add(entries.map(a=>a.id).sort().join('|'));
+    }
+    return{counts,college,lineups:lineups.size,unchanged:before===JSON.stringify(candidates)};
+  })()`);
+  assert.ok(result.unchanged);assert.equal(result.lineups,400);
+  for(const counts of Object.values(result.counts)){
+    assert.ok(counts.top/counts.total>.4,JSON.stringify(counts));
+    assert.ok(counts.bottom/counts.total>.02,JSON.stringify(counts));
+  }
+  assert.ok(result.college['名門大学']>result.college['強豪大学']&&result.college['強豪大学']>result.college['一般大学'],JSON.stringify(result.college));
+});
+
+test('winter invitation draws use each event, handle tied abilities fairly and retain capacity edge cases',()=>{
+  const run=game(),result=run(`(()=>{
+    const candidates=Array.from({length:80},(_,i)=>({id:'tie-'+i,category:'high',stats:Object.fromEntries(STATS.map(k=>[k,120])),bestTimes:{fr100:60}}));
+    const before=JSON.stringify(candidates);let first=0,last=0;
+    for(let seed=1;seed<=200;seed++){state.rngSeed=seed;for(const a of selectJointCpuEntries(candidates,16,'fr100')){if(+a.id.split('-')[1]<40)first++;else last++}}
+    const many=selectJointCpuEntries(candidates,100,'fr100'),none=selectJointCpuEntries(candidates,0,'fr100'),empty=selectJointCpuEntries([],8,'fr100');
+    const tiesUnchanged=before===JSON.stringify(candidates);
+    candidates.forEach((a,i)=>{a.stats.fr_speed=a.stats.fr_stamina=a.stats.fr_turn=190-i;a.stats.ba_speed=a.stats.ba_stamina=a.stats.ba_turn=110+i});
+    const average=event=>{let sum=0;for(let seed=1;seed<=100;seed++){state.rngSeed=seed;sum+=selectJointCpuEntries(candidates,16,event).reduce((n,a)=>n+ +a.id.split('-')[1],0)}return sum/1600};
+    state.rngSeed=123;const one=selectJointCpuEntries(candidates,16,'fr100').map(a=>a.id);state.rngSeed=123;const again=selectJointCpuEntries(candidates,16,'fr100').map(a=>a.id);
+    return{first,last,edges:many.length===80&&many!==candidates&&none.length===0&&empty.length===0,tiesUnchanged,fr:average('fr100'),ba:average('ba100'),one,again};
+  })()`);
+  assert.ok(result.edges&&result.tiesUnchanged);assert.ok(result.first/(result.first+result.last)>.45&&result.first/(result.first+result.last)<.55,JSON.stringify(result));
+  assert.ok(result.fr<32&&result.ba>47,JSON.stringify(result));assert.deepEqual(result.one,result.again);
+});
+
+test('January and February record races preserve own entries and fill heats with eligible swimmers from every age',()=>{
+  const run=game(),rows=run(`(()=>{
+    simulateRace=(a,e)=>({total:a.bestTimes[e]+.5});simulateMeetRace=simulateRace;updateResultHistory=()=>({pb:false,newlyCleared:[]});
+    const reports=[];
+    for(const slot of [76,84])for(const event of ['fr50','fr100','fr200','fr400','ba50','im200']){
+      state.slot=slot;
+      state.world=['middle','high','university','adult'].flatMap(category=>Array.from({length:40},(_,i)=>({id:category+i,category,organization:'参加チーム',specialty:SPECIALTY_EVENTS.includes(event)?event:strokeForEvent(event)+'100',
+        stats:Object.fromEntries(STATS.map(k=>[k,170-i])),imAptitude:{speed:0,stamina:0},bestTimes:{[event]:distanceOf(event)+i}})));
+      state.world.push({...state.world[0],id:'retired',retired:true},{...state.world[0],id:'foreign',category:'foreign'});
+      state.players=[{id:'own',name:'自選手',bestTimes:{[event]:distanceOf(event)+10}}];
+      const result=runEvent('joint_record',event,['own']);
+      reports.push({label:meetLabel('joint_record',slot),count:result.prelim.length,expected:preliminaryHeatCount('joint_record',event)*8,
+        sizes:result.heats.map(h=>h.length),ids:result.prelim.map(row=>row.athlete.id),ages:[...new Set(result.prelim.filter(row=>row.source==='CPU').map(row=>row.athlete.category))]});
+    }return reports;
+  })()`);
+  for(const row of rows){assert.equal(row.count,row.expected);assert.ok(row.sizes.every(n=>n===8));assert.equal(new Set(row.ids).size,row.count);assert.ok(row.ids.includes('own'));assert.ok(!row.ids.includes('retired')&&!row.ids.includes('foreign'));assert.deepEqual(row.ages.sort(),['adult','high','middle','university'])}
+  assert.deepEqual([...new Set(rows.map(row=>row.label))],['Higashikata CUP','ダイナミオープン']);
+});
+
 test('college entries choose each university\'s fastest qualified PBs, regardless of specialty or filler flag',()=>{
   const run=game();
   const result=run(`(()=>{
