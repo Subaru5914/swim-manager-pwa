@@ -91,11 +91,69 @@ test('college entries choose each university\'s fastest qualified PBs, regardles
   assert.deepEqual(result.inter.ba50,[]);
 });
 
+test('college medley priority uses each university ranking top fifteen, includes own students and respects qualification',()=>{
+  const run=game(),result=run(`(()=>{
+    const events=['fr50','fr100','fr200','im200','im400'],reports=[];
+    const fixture=(rank200,rank400)=>{
+      const target={id:'target',category:'university',organization:'関西大学',specialty:'fr100',bestTimes:{fr50:23,fr100:50,fr200:110,im200:120,im400:255}};
+      state.players=[{id:'own-ranker',year:1,bestTimes:{im200:115,im400:245}}];
+      state.world=[target,...Array.from({length:14},(_,i)=>({id:'ranker-'+i,category:'university',organization:'大会外大学',bestTimes:{...(i<rank200-2?{im200:111+i*.1}:{}),...(i<rank400-2?{im400:240+i*.1}:{})}})),
+        ...['middle','high','adult'].map(category=>({id:category,category,bestTimes:{im200:117,im400:247}})),
+        {id:'retired',category:'university',retired:true,bestTimes:{im200:116,im400:246}}];
+      return target;
+    };
+    rng=()=>.5;
+    for(const meet of ['kansai_college','intercollege','teijimayama_championship'])for(const rank200 of [15,16])for(const rank400 of [15,16]){
+      fixture(rank200,rank400);const before=JSON.stringify([state.players,state.world]);
+      const actualRanks=['im200','im400'].map(event=>ranking(event,'university',50).findIndex(a=>a.id==='target')+1);
+      const globalRanks=['im200','im400'].map(event=>ranking(event,'all',50).findIndex(a=>a.id==='target')+1);
+      const entries=buildCpuCollegeEntries(meet),selected=events.filter(event=>entries[event].includes('target'));
+      reports.push({meet,rank200,rank400,actualRanks,globalRanks,selected,unchanged:before===JSON.stringify([state.players,state.world])});
+    }
+    const restricted=[];
+    for(const meet of ['kansai_college','intercollege']){
+      const target=fixture(15,15);for(const event of ['im200','im400'])target.bestTimes[event]=standardFor(meet,event)+.01;
+      const entries=buildCpuCollegeEntries(meet);restricted.push(['im200','im400'].every(event=>!entries[event].includes(target.id)));
+    }
+    const target=fixture(15,15);target.bestTimes={fr100:50,im200:120};const few=buildCpuCollegeEntries('intercollege');
+    return{reports,restricted,few:events.filter(event=>few[event].includes(target.id))};
+  })()`);
+  for(const row of result.reports){
+    assert.deepEqual(row.actualRanks,[row.rank200,row.rank400]);assert.ok(row.globalRanks.every(rank=>rank>15));assert.ok(row.unchanged);
+    const expected=['fr100',...(row.rank200===15?['im200']:[]),...(row.rank400===15?['im400']:[])];
+    for(const event of ['fr50','fr200'])if(expected.length<3)expected.push(event);
+    assert.deepEqual([...row.selected].sort(),expected.sort(),JSON.stringify(row));
+  }
+  assert.ok(result.restricted.every(Boolean));assert.deepEqual(result.few,['fr100','im200']);
+});
+
+test('ranked college medleys are retained more often without making their entry mandatory',()=>{
+  const run=game(),rows=run(`(()=>{
+    const events=['fr50','fr100','fr200','im200','im400'],rows=[];
+    for(const rank of [15,16]){
+      const target={id:'target',category:'university',organization:'関西大学',specialty:'fr100',bestTimes:{fr50:23,fr100:50,fr200:110,im200:120,im400:255}};
+      state.world=[target,...Array.from({length:rank-1},(_,i)=>({id:'ranker-'+i,category:'university',organization:'大会外大学',bestTimes:{im200:111+i*.1,im400:240+i*.1}}))];
+      const before=JSON.stringify(state.world),counts={im200:0,im400:0},lineups=new Set();let valid=true;
+      for(let seed=1;seed<=400;seed++){
+        state.rngSeed=seed;const entries=buildCpuCollegeEntries('intercollege'),selected=events.filter(event=>entries[event].includes(target.id));
+        if(selected.length!==3||Object.values(entries).some(ids=>ids.length>3))valid=false;
+        for(const event of ['im200','im400'])if(selected.includes(event))counts[event]++;
+        lineups.add(selected.join('|'));
+      }
+      rows.push({rank,counts,valid,lineups:lineups.size,unchanged:before===JSON.stringify(state.world)});
+    }return rows;
+  })()`);
+  for(const row of rows){assert.ok(row.valid&&row.unchanged);assert.ok(row.lineups>5)}
+  for(const event of ['im200','im400']){assert.ok(rows[0].counts[event]>rows[1].counts[event]*1.5,JSON.stringify(rows));assert.ok(rows[0].counts[event]<400)}
+});
+
 test('college conflicts retain random three events and replace withdrawn entries by qualified PB order',()=>{
   const run=game();
   const reports=run(`(()=>{
-    const events=['fr50','fr100','fr200','ba100','br100','fly100'];
-    state.world=Array.from({length:8},(_,i)=>({id:'p'+i,category:'university',organization:'関西大学',specialty:'fr100',
+    const events=['fr50','fr100','fr200','ba100','br100','fly100','im200','im400'];
+    // Eight events need 24 places; ten swimmers retain the original fixture's
+    // six spare athlete-event places for PB-ordered replacements.
+    state.world=Array.from({length:10},(_,i)=>({id:'p'+i,category:'university',organization:'関西大学',specialty:'fr100',
       bestTimes:Object.fromEntries(events.map(e=>[e,standardFor('intercollege',e)*(.75+i*.02)]))}));
     const results=[];
     for(let seed=1;seed<=30;seed++){
