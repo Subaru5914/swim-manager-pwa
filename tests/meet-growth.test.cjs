@@ -22,9 +22,9 @@ test('meet awards double ordinary expected training, respecting focus, facilitie
     }
     return outcomes;
   })()`);
-  assert.deepEqual(r.map(x=>x.gain),[7.61,2.14,4.57,1.9,.27,9.89,10.05,0,0]);
+  assert.deepEqual(r.map(x=>x.gain),[5.71,1.61,4.57,1.9,.27,7.42,7.53,0,0]);
   assert.ok(r.every(x=>x.others&&x.pb&&x.rows===1));
-  assert.equal(r[0].reported[0].up,7.61);assert.equal(r.at(-1).reported.length,0);
+  assert.equal(r[0].reported[0].up,5.71);assert.equal(r.at(-1).reported.length,0);
 });
 
 test('individuals, prelim relay members and actual final reserves are paid once; unused reserves and CPU are excluded',()=>{
@@ -37,7 +37,7 @@ test('individuals, prelim relay members and actual final reserves are paid once;
     return {unchanged,pendingBefore,ids:state.pendingMeetGrowthRewards[0].gains.map(g=>g.id),once:after===JSON.stringify(state),changes:p.map(a=>round2(a.stats.fr_speed-100)),cpu:world===JSON.stringify(state.world),last:last===JSON.stringify(state.lastTrainingGains),pending:state.pendingMeetCompletion};
   })()`);
   assert.ok(r.unchanged&&r.once&&r.cpu&&r.last);assert.deepEqual(r.pendingBefore,['p0','p1','p2','p3']);
-  assert.deepEqual(r.ids,['p0','p1','p2','p3','p4','p5']);assert.deepEqual(r.changes,[7.61,7.61,7.61,7.61,7.61,7.61,0]);assert.equal(r.pending,null);
+  assert.deepEqual(r.ids,['p0','p1','p2','p3','p4','p5']);assert.deepEqual(r.changes,[5.71,5.71,5.71,5.71,5.71,5.71,0]);assert.equal(r.pending,null);
 });
 
 test('secondary growth still occurs only sometimes and remains subject to diminishing returns and the cap',()=>{
@@ -47,8 +47,8 @@ test('secondary growth still occurs only sometimes and remains subject to dimini
       applyPlayerTraining(p,{multiplier:2,expected:true,precise:true});samples.push({speed:p.stats.fr_speed,stamina:p.stats.fr_stamina,turn:p.stats.fr_turn});
     }return samples;
   })()`);
-  assert.deepEqual(r[0],{speed:107.61,stamina:175,turn:199.99});assert.equal(r[1].speed,107.61);
-  assert.equal(r[1].stamina,175.07);assert.equal(r[1].turn,199.99);
+  assert.deepEqual(r[0],{speed:105.71,stamina:175,turn:199.99});assert.equal(r[1].speed,105.71);
+  assert.equal(r[1].stamina,175.05);assert.equal(r[1].turn,199.99);
 });
 
 test('all external meet types earn growth, both winter cups have separate guards, and own trials or non-entry do not',()=>{
@@ -73,7 +73,7 @@ test('pending real races restore one award from saved participant IDs, while old
     const stats=JSON.stringify(state.players.map(a=>a.stats));migrateState();
     return{gain,once,notices,pending,oldStats:stats===JSON.stringify(state.players.map(a=>a.stats)),oldNotices:state.pendingMeetGrowthRewards.length};
   })()`);
-  assert.equal(r.gain,7.61);assert.ok(r.once&&r.oldStats);assert.equal(r.notices,1);assert.equal(r.pending,null);assert.equal(r.oldNotices,0);
+  assert.equal(r.gain,5.71);assert.ok(r.once&&r.oldStats);assert.equal(r.notices,1);assert.equal(r.pending,null);assert.equal(r.oldNotices,0);
 });
 
 test('intercollege seniors obtain the award before retirement and their result remains in its popup',()=>{
@@ -82,7 +82,7 @@ test('intercollege seniors obtain the award before retirement and their result r
     completeMeet({meet:'intercollege',season:2026,slot:42,events:{fr100:{prelim:[{athlete:p}]}},relays:[]});
     return{gone:!state.players.some(a=>a.id===p.id),award:state.pendingMeetGrowthRewards[0].gains.find(g=>g.id===p.id),notice:state.pendingSeasonNotices[0].retired.some(a=>a.id===p.id)};
   })()`);
-  assert.ok(r.gone&&r.notice);assert.equal(r.award.year,4);assert.equal(r.award.changes.find(c=>c.stat==='mental').up,7.61);
+  assert.ok(r.gone&&r.notice);assert.equal(r.award.year,4);assert.equal(r.award.changes.find(c=>c.stat==='mental').up,5.71);
 });
 
 test('save capacity cleanup preserves awarded guards and unacknowledged growth popups',()=>{

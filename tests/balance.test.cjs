@@ -285,7 +285,7 @@ test('prodigy stats are random and capped at low A, including already strong arr
   assert.ok(maxima.size > 100);
 });
 
-test('max facilities yield about 30 per eight focused turns and B/A/S progressively slow down', () => {
+test('max facilities yield about 26 from D80 per eight focused turns and C/B/A/S progressively slow down', () => {
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify([80,113,138,163,188].map(value=>{
     let gains=[];
@@ -297,7 +297,7 @@ test('max facilities yield about 30 per eight focused turns and B/A/S progressiv
     }
     return {value,mean:gains.reduce((a,b)=>a+b,0)/gains.length};
   }))`));
-  assert.ok(rows[0].mean >= 28 && rows[0].mean <= 32, JSON.stringify(rows));
+  assert.ok(rows[0].mean >= 24 && rows[0].mean <= 27, JSON.stringify(rows));
   for (let i = 1; i < rows.length; i++) assert.ok(rows[i].mean < rows[i - 1].mean);
   assert.ok(rows[2].mean < 15);
   assert.ok(rows[3].mean < 6);
@@ -479,7 +479,7 @@ test('new seasons preserve eight real candidates including prodigy abilities and
   assert.equal(result.pbs,15);assert.ok(result.stats&&result.pb);
 });
 
-test('facility upgrades progressively improve eight-turn gains while level 100 stays near +30', () => {
+test('facility upgrades progressively improve eight-turn gains while level 100 stays near +26 from D80', () => {
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([0,25,50,75,100].map(level=>{
     let sum=0;
@@ -492,7 +492,7 @@ test('facility upgrades progressively improve eight-turn gains while level 100 s
     return {level,gain:sum/300};
   }))`));
   assert.ok(rows[0].gain<10);
-  assert.ok(rows[4].gain>=28&&rows[4].gain<=32);
+  assert.ok(rows[4].gain>=24&&rows[4].gain<=27);
   for(let i=1;i<rows.length;i++)assert.ok(rows[i].gain>rows[i-1].gain+3,JSON.stringify(rows));
   console.log('Facility growth:',rows.map(r=>`Lv.${r.level}: +${r.gain.toFixed(2)}`).join(', '));
 });

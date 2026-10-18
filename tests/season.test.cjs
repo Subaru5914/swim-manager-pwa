@@ -165,6 +165,6 @@ test('actual focused training peaks early for early types, stays even for normal
   })()`);
   assert.ok(r.early.every((v,i)=>i===0||v<r.early[i-1]),JSON.stringify(r));
   assert.ok(r.late.every((v,i)=>i===0||v>r.late[i-1]),JSON.stringify(r));
-  assert.ok(r.normal.every(v=>v===r.normal[0]));assert.ok(r.normal[0]>=28&&r.normal[0]<=32);
+  assert.ok(r.normal.every(v=>v===r.normal[0]));assert.ok(r.normal[0]>=24&&r.normal[0]<=27);
   assert.ok(r.early[0]>r.normal[0]&&r.normal[0]>r.late[0]);assert.ok(r.late[3]>r.normal[3]&&r.normal[3]>r.early[3]);
 });
