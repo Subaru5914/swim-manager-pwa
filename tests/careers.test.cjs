@@ -38,10 +38,10 @@ test('a real April transition retains all strong seniors, announces actual colle
   if(!notice.rows.find(a=>a.id===signed.id)?.own||state.players.filter(a=>a.year===1).length!==8)errors.push('own admission');
   const college=buildCpuCollegeEntries('intercollege'),announced=new Set(notice.rows.filter(a=>!a.own).map(a=>a.id));let collegeEntries=0;
   for(const ids of Object.values(college))for(const id of ids)if(announced.has(id)){const a=byId.get(id),row=notice.rows.find(r=>r.id===id);collegeEntries++;if(a.organization!==row.to||!allowedCpu(a,'intercollege'))errors.push('college affiliation')}
-  const result=executeMeet('japan_open',{},{});let nationalEntries=0,adultEntries=0;
+  const nationalPlan=buildCpuNationalEntries('japan_open'),result=executeMeet('japan_open',{},{});let nationalEntries=0,adultEntries=0;
   for(const [e,field] of Object.entries(result.events)){
    for(const row of field.prelim){const announced=notice.rows.find(a=>a.id===row.athlete.id);if(announced){nationalEntries++;if(row.athlete.organization!==announced.to||row.athlete.category!=='university')errors.push('national affiliation')}if(strong.some(a=>a.id===row.athlete.id)){adultEntries++;if(row.athlete.category!=='adult')errors.push('adult affiliation')}}
-   for(const row of notice.rows.filter(a=>!a.own)){const a=byId.get(row.id);if(qualified(a,'japan_open',e)&&!field.prelim.some(r=>r.athlete.id===a.id))errors.push('missing entrant')}
+   for(const row of notice.rows.filter(a=>!a.own)){const a=byId.get(row.id);if(nationalPlan[e].includes(a.id)&&!field.prelim.some(r=>r.athlete.id===a.id))errors.push('missing entrant')}
   }
   const protectedData=()=>JSON.stringify([state.pendingCollegeAdmissions,state.players,state.world.map(a=>{const {discovered,...saved}=a;return saved})]);const snapshot=protectedData();state=JSON.parse(JSON.stringify(state));migrateState();
   return{errors,strong:strong.length,leaders:leaders.length,collegeEntries,nationalEntries,adultEntries,stable:snapshot===protectedData()};

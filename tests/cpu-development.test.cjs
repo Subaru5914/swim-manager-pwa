@@ -12,7 +12,7 @@ test('current v2.03 migration and reset preserve every existing ability, IM apti
  const oldHtml=cp.execFileSync('git',['show','88e8311:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
  const before=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run(`state=${JSON.stringify(before)};migrateState();true`);
  const migrated=run(`(()=>{const first=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed}})()`);
- assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.21');
+ assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.22');
  for(const k of ['season','slot','points','reputation','playerUniversity','rngSeed','trainingFocus','facilities','recruits'])assert.deepEqual(migrated.state[k],before[k],k);
  const reset=game();const generated=reset('(state=createState(),migrateState(),deepClone(state))');
  for(const after of [migrated.state,generated])for(const group of ['world','players']){
