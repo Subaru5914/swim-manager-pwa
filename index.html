@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.22</title>
+<title>大学競泳監督シミュレーション PWA版 v2.23</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1066,6 +1066,11 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .modal-freshmen-welcome{width:min(680px,calc(var(--game-vw) * 86));max-width:680px}
 .modal-freshmen-welcome table{width:max-content;min-width:0;table-layout:auto;margin:auto}
 .modal-freshmen-welcome th,.modal-freshmen-welcome td{padding:4px 6px}
+.modal-year-end-retirements{width:min(900px,calc(var(--game-vw) * 90));max-width:900px;max-height:calc(var(--game-vh) * 94);display:flex;flex-direction:column;overflow:hidden}
+.modal-year-end-retirements>.row,.modal-year-end-retirements>.notice{flex-shrink:0}
+.modal-year-end-retirements>.table-wrap{min-height:0;overflow:auto}
+.modal-year-end-retirements table{width:max-content;min-width:0;table-layout:auto;margin:auto}
+.modal-year-end-retirements th,.modal-year-end-retirements td{padding:4px 6px}
 .modal-japan-celebration{width:min(900px,calc(var(--game-vw) * 92));max-width:900px}
 .modal-college-admissions{width:min(900px,calc(var(--game-vw) * 90));max-width:900px}
 .modal-college-admissions table{width:max-content;min-width:0;table-layout:auto;margin:auto}
@@ -1360,7 +1365,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.22</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.23</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1577,9 +1582,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.22"></script>
-<script src="./save-history.js?version=v2.22"></script>
-<script src="./cloud-sync.js?version=v2.22"></script>
+<script src="./local-save.js?version=v2.23"></script>
+<script src="./save-history.js?version=v2.23"></script>
+<script src="./cloud-sync.js?version=v2.23"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1809,7 +1814,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.22";
+  state.version="pwa-v2.23";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -1829,6 +1834,7 @@ function migrateState(){
   if(!state.alumniCareer)state.alumniCareer=[];
   if(!state.pendingFreshmenWelcome)state.pendingFreshmenWelcome=[];
   if(!Array.isArray(state.pendingCollegeAdmissions?.rows))state.pendingCollegeAdmissions=null;
+  if(!Array.isArray(state.pendingSeasonRetirements?.rows)||!state.pendingSeasonRetirements.rows.length)state.pendingSeasonRetirements=null;
   if(!state.organizationNames)state.organizationNames={middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]};
   let upgradeOrganizationNames=state.orgNameModelVersion!==2;
   if(upgradeOrganizationNames){migrateLegacyOrganizationNames();state.orgNameModelVersion=2}
@@ -4100,7 +4106,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.22",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.23",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5707,6 +5713,27 @@ function adultRetirementProbability(age){
   if(!Number.isFinite(age)||age<25)return 0;
   return [.05,.15,.30,.50,.70,.90,.93,.96,.99][Math.min(8,Math.floor(age)-25)];
 }
+function seasonRetirementRow(a,own=false){
+  const category=own?"university":a.category,specialty=EVENTS.includes(a.specialty)?a.specialty:null;
+  return{id:a.id,name:a.name,organization:own?state.playerUniversity:a.organization||"所属不明",category,own,alumni:!!a.alumni,
+    grade:category==="university"?4:null,age:category==="university"&&!own?a.age-1:a.age,
+    specialty,specialtyPB:specialty&&validRaceTime(a.bestTimes?.[specialty])?a.bestTimes[specialty]:null};
+}
+function showSeasonRetirements(onClose){
+  const notice=state.pendingSeasonRetirements;
+  if(!notice?.rows?.length)return false;
+  const group=a=>a.own?0:a.alumni?1:a.category==="university"?2:3;
+  const rows=[...notice.rows].sort((a,b)=>group(a)-group(b)||a.organization.localeCompare(b.organization,"ja")||a.name.localeCompare(b.name,"ja"));
+  const colleges=rows.filter(a=>a.category==="university").length;
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">年度末の引退選手</h2><button id="retirementsNext" class="primary">確認して次へ</button></div>
+    <div class="notice"><b>${notice.season}年度末 ／ ${rows.length}名が競技を引退しました</b><br>大学卒業 ${colleges}名・社会人 ${rows.length-colleges}名。これまでの活躍に感謝しましょう。</div>
+    <div class="table-wrap"><table><thead><tr><th>選手</th><th>所属</th><th>学年／年齢</th><th>専門種目</th><th>PB</th></tr></thead><tbody>${rows.map(a=>
+      `<tr data-retirement-id="${esc(a.id)}" class="${a.own?"result-own":a.alumni?"own-ranking":""}"><td><b>${a.own||a.alumni?"★ ":""}${esc(a.name)}</b> ${a.own?'<span class="tag">自チーム</span>':a.alumni?'<span class="alumni-tag">卒業生</span>':""}</td><td>${esc(a.organization)}</td><td>${a.category==="university"?gradeBadge(4,"大4"):Number.isFinite(a.age)?`${a.age}歳`:"—"}</td><td>${a.specialty?specialtyTag(a.specialty):"—"}</td><td><b>${fmt(a.specialtyPB)}</b></td></tr>`
+    ).join("")}</tbody></table></div>`);
+  m.classList.add("modal-year-end-retirements");
+  m.querySelector("#retirementsNext").onclick=()=>{state.pendingSeasonRetirements=null;autoSaveNow();closeModal(onClose)};
+  return true;
+}
 function graduatingHighSchoolLeaders(){
   const rankings=highSchoolScoutRankings();
   return state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired).map(a=>{
@@ -5853,7 +5880,8 @@ function showCollegeAdmissions(onClose){
 }
 function showSeasonTransitionNotices(){
   const welcome=()=>{if(state.slot===1&&state.pendingFreshmenWelcome?.length)showFreshmenWelcome()};
-  if(!showCollegeAdmissions(welcome))welcome();
+  const admissions=()=>{if(!showCollegeAdmissions(welcome))welcome()};
+  if(!showSeasonRetirements(admissions))admissions();
 }
 
 function addMiddleSchoolCohort(){
@@ -5936,6 +5964,7 @@ function rebalanceCpuCollegeAdmissions(parentPBs){
 
 function newSeason(){
   const graduatingLeaders=graduatingHighSchoolLeaders(),endingSeason=state.season;
+  const retiring=[];
   // A category change is not a new swim: reuse an incoming student's existing
   // measured clock if the annual high-school check prunes and re-adds it.
   const progressingPBs=new Map(state.world.filter(a=>a.category==="middle"&&a.grade===3&&!a.retired).map(a=>[a.id,{...a.bestTimes}]));
@@ -5957,6 +5986,7 @@ function newSeason(){
       state.world.push(alumni);
       state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:org,status:"社会人継続",age:p.age});
     }else{
+      retiring.push(seasonRetirementRow(p,true));
       state.retiredArchive.push({id:p.id,name:p.name,organization:p.organization,age:p.age,reason:"大学卒業・競技終了",season:state.season,bestTimes:deepClone(p.bestTimes),raceHistory:deepClone(p.raceHistory),accolades:deepClone(p.accolades)});
       state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:"-",status:"大学卒業・競技終了",age:p.age});
     }
@@ -5978,6 +6008,7 @@ function newSeason(){
     if(a.category==="adult"){
       const retirement=adultRetirementProbability(a.age);
       if(!(a.alumni&&a.graduationSeason===state.season)&&retirement>0&&rng()<retirement){
+        retiring.push(seasonRetirementRow(a));
         // Only own-team alumni need retirement tracking.
         if(a.alumni){
           state.retiredArchive.push({id:a.id,name:a.name,organization:a.organization,age:a.age,reason:"社会人引退",season:state.season,bestTimes:deepClone(a.bestTimes),raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades)});
@@ -6008,6 +6039,7 @@ function newSeason(){
           a.almaMater=a.organization;a.graduationSeason=state.season;
           a.category="adult";a.grade=null;a.organization=choice(organizationNames().adult);
         }else{
+          retiring.push(seasonRetirementRow(a));
           continue;
         }
       }
@@ -6038,6 +6070,7 @@ function newSeason(){
   addMiddleSchoolCohort();maintainWorldPopulation();assignInterhigh();prepareCpuMeetPopulation();
   finalizeGeneratedPBs();refreshRecordRankings();migrateCpuRaceConsistency();ensureSpecialtyPBs();updateSchoolPersonalBests(progressingPBs);refreshRecordBook();refreshScoutBoard();
   saveCollegeAdmissionsNotice(graduatingLeaders,endingSeason,{signedIds:readyScoutIds,playerProfiles});
+  state.pendingSeasonRetirements=retiring.length?{season:endingSeason,rows:retiring}:null;
 }
 function worldToPlayer(a){
   let p={id:a.id,name:a.name,year:1,gender:"M",potential:Object.fromEntries(STATS.map(k=>[k,200])),stats:deepClone(a.stats),imAptitude:deepClone(a.imAptitude||{}),condition:65,fatigue:0,injury_weeks:0,bestTimes:deepClone(a.bestTimes||{}),potentialType:a.potentialType,growthProfile:deepClone(a.growthProfile),age:19,organization:state.playerUniversity,raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades),specialty:a.specialty,prodigy:!!a.prodigy,strokeProfileVersion:a.strokeProfileVersion};
@@ -7980,14 +8013,14 @@ document.getElementById("advanceBtn").onclick=()=>{
   advanceSlot();
   if(japanTeamCelebrationDue(competitionSeason,competitionSlot))state.pendingJapanCelebrationYear=competitionSeason;
   renderAll();
-  if(state.pendingJapanCelebrationYear||state.pendingCollegeAdmissions)autoSaveNow();
+  if(state.pendingJapanCelebrationYear||state.pendingSeasonRetirements||state.pendingCollegeAdmissions)autoSaveNow();
 
   showTrainingGrowth(gains,()=>{
     const proceed=()=>{
       if(meet)openMeetEntry(meet,competitionSlot,competitionSeason);
       else{
         renderAll();
-        if(state.pendingCollegeAdmissions||(state.slot===1&&state.pendingFreshmenWelcome?.length))setTimeout(()=>showSeasonTransitionNotices(),0);
+        if(state.pendingSeasonRetirements||state.pendingCollegeAdmissions||(state.slot===1&&state.pendingFreshmenWelcome?.length))setTimeout(()=>showSeasonTransitionNotices(),0);
       }
     };
     if(japanTeamCelebrationDue(competitionSeason,competitionSlot))showJapanTeamCelebration(proceed);
@@ -8094,7 +8127,7 @@ function finishGameStartup(loaded){
   renderAll();initializeCloudSync();
   const showStartupCelebrations=()=>{
     if(state.japanTeam&&state.pendingJapanCelebrationYear===state.japanTeam.year&&!state.japanTeam.announced)setTimeout(()=>showJapanTeamCelebration(showSeasonTransitionNotices),0);
-    else if(state.pendingCollegeAdmissions||(state.slot===1&&state.pendingFreshmenWelcome?.length))setTimeout(()=>showSeasonTransitionNotices(),0);
+    else if(state.pendingSeasonRetirements||state.pendingCollegeAdmissions||(state.slot===1&&state.pendingFreshmenWelcome?.length))setTimeout(()=>showSeasonTransitionNotices(),0);
   };
   if(state.pendingMeetGrowthRewards.length||state.pendingSeasonNotices.length)setTimeout(()=>showPendingMeetGrowthRewards(()=>showPendingSeasonNotices(()=>{renderAll();showStartupCelebrations()})),0);
   else showStartupCelebrations();

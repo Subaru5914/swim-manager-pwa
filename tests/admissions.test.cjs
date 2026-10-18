@@ -26,7 +26,7 @@ function fixture(){
  `);return run;
 }
 test('automatic destinations, ability, PB, career processing and random sequence match the previous release exactly',()=>{
- const snapshot=`(()=>{state=createState();migrateState();newSeason();const notice=deepClone(state.pendingCollegeAdmissions),copy=deepClone(state);delete copy.version;delete copy.pendingCollegeAdmissions;return{state:copy,rows:notice.rows,fromSeason:notice.fromSeason,toSeason:notice.toSeason}})()`;
+ const snapshot=`(()=>{state=createState();migrateState();newSeason();const notice=deepClone(state.pendingCollegeAdmissions),copy=deepClone(state);delete copy.version;delete copy.pendingCollegeAdmissions;delete copy.pendingSeasonRetirements;return{state:copy,rows:notice.rows,fromSeason:notice.fromSeason,toSeason:notice.toSeason}})()`;
  const old=game(cp.execFileSync('git',['show','c060de9:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}))(snapshot);
  const run=game(),current=run(snapshot);assert.deepEqual(current,old);
  const moved=run(`(()=>{

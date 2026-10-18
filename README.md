@@ -1,6 +1,14 @@
-# 大学競泳監督シミュレーション PWA v2.22
+# 大学競泳監督シミュレーション PWA v2.23
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v2.23 の変更
+
+- 年度末の練習結果の後に、その年度末に競技を引退した自チーム・他大学・社会人の選手を一覧で表示します。名前・所属・引退時の学年／年齢・専門種目・PBを確認でき、自チームと卒業生を先頭に表示します。
+- 通知は「引退選手 → 有力高校生の進学先 → 新入生歓迎」の順です。未確認の引退一覧はセーブ・オフライン再起動でも保持し、確認後は再表示しません。引退者がいない年度は一覧を省略します。
+- 保存する通知は直近の未確認一覧だけです。従来の引退判定・競技継続・進学先の選考と、能力・PB・歴代記録は維持します。
+
+検証：関連12件で、実際の引退者との一致、競技継続者の除外、旧版と引退判定・進学先・能力・PB・記録・抽選回数が一致すること、未確認通知のセーブ復元と容量整理での保持を確認しました。PC／iPhone相当で一覧の表示・オフライン再開・確認後の非表示・進学先と新入生への連続表示、v2.22からのPWA更新とセーブ復元を確認済みです。
 
 ## v2.22 の変更
 
@@ -933,7 +941,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。
