@@ -54,13 +54,13 @@ test('specialty changes add a reachable PB to own-team rankings and preserve an 
 });
 test('v2.02 data automatically fills specialties, preserving measured clocks, balanced abilities, progress and random sequence on reload',()=>{
   const oldHtml=cp.execFileSync('git',['show','244c8aaf:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
-  const legacy=old(`(state=createState(),migrateState(),deepClone(state))`),run=game();run(`state=${JSON.stringify(legacy)};migrateStartAbilities();true`);
+  const legacy=old(`(state=createState(),migrateState(),deepClone(state))`),run=game();run(`state=${JSON.stringify(legacy)};migrateStartAbilities();trimGraduatingCohort();true`);
   const before=run('deepClone(state)');run('migrateState();true');
   const r=run(`(()=>{
     const first=JSON.stringify(state),seed=state.rngSeed,all=[...state.players,...state.world.filter(a=>!a.retired)],fields=highSchoolScoutRankings();migrateState();
     return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed,missing:all.filter(a=>!validRaceTime(a.bestTimes[a.specialty])).map(a=>a.id),extra:EVENTS.some(e=>fields.get(e).rows.slice(50).some(a=>a.specialty!==e))};
   })()`);
-  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.27');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
+  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.28');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
   for(const k of ['rngSeed','season','slot','points','reputation','playerUniversity','facilities','trainingFocus','recruits'])assert.deepEqual(r.state[k],before[k]);
   for(const group of ['players','world'])for(let i=0;i<before[group].length;i++){
     const a=r.state[group][i],b=before[group][i];assert.equal(a.id,b.id);for(const k of ['stats','imAptitude','accolades','raceHistory','potentialType'])assert.deepEqual(a[k],b[k],a.id+' '+k);

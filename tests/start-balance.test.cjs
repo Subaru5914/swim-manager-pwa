@@ -10,7 +10,8 @@ function game(input=html,seed=12345){
 }
 test('existing v2.25 swimmers keep every PB and record while excessive starts are reduced once and remain race-reachable',()=>{
  const old=game(cp.execFileSync('git',['show','d1da09e:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
- const before=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(before)+';migrateState();true');
+ const legacy=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(legacy)+';trimGraduatingCohort();true');
+ const before=run('deepClone(state)');run('migrateState();true');
  const result=run(`(()=>{const saved=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:saved===JSON.stringify(state)&&seed===state.rngSeed,bad:unreachablePBs()}})()`);
  assert.ok(result.stable);assert.deepEqual(result.bad,[]);
  for(const key of ['rngSeed','season','slot','points','reputation','playerUniversity','facilities','trainingFocus','trainingPlans','teamTop10','recordRankings','recordBook','recruits','japanTeamHistory'])assert.deepEqual(result.state[key],before[key],key);

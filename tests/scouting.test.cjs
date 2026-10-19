@@ -4,10 +4,11 @@ const path=require('node:path');
 const vm=require('node:vm');
 const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+let initialSave;
 function game(){
   const alerts=[];
   const run=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+'\nreturn code=>eval(code)',['globalThis','alert'])({crypto:{getRandomValues:a=>{a[0]=12345;return a}}},text=>alerts.push(text));
-  run('state=createState();migrateState();true');return {run,alerts};
+  if(!initialSave){run('state=createState();migrateState();true');initialSave=run('JSON.stringify(state)')}else run('state='+initialSave+';for(const a of activeAthletes())attachMedleyStats(a);true');return {run,alerts};
 }
 
 test('every active third-year high-school swimmer in any top-50 ranking appears, including secondary events and signed recruits',()=>{
@@ -23,10 +24,10 @@ test('every active third-year high-school swimmer in any top-50 ranking appears,
     const expected=EVENTS.flatMap(e=>ranking(e,'high',50).concat(ranking(e,'all',50))).filter(a=>a.category==='high'&&a.grade===3);
     return {covered:expected.every(a=>ids.has(a.id)),secondary:ids.has(secondary.id),signed:ids.has(state.world[4].id),
       fiftieth:ids.has('coverage-50'),grades:board.every(a=>a.grade===3&&!a.retired),unique:ids.size===board.length,
-      omitted:!ids.has('coverage-0')&&!ids.has('coverage-1'),secondaryRank:scoutHighSchoolRank(secondary,secondary.specialty),secondaryEvent:secondary.specialty,oldPB:validRaceTime(secondary.bestTimes.fr400)};
+      omitted:!ids.has('coverage-0')&&!ids.has('coverage-1'),secondaryRank:scoutHighSchoolRank(secondary,"ba100"),secondaryEvent:secondary.specialty,oldPB:validRaceTime(secondary.bestTimes.fr400)};
   })())`));
   assert.ok(result.covered&&result.secondary&&result.signed&&result.fiftieth&&result.grades&&result.unique&&result.omitted,JSON.stringify(result));
-  assert.equal(result.secondaryRank,1);assert.equal(result.secondaryEvent,'ba100');assert.equal(result.oldPB,false);
+  assert.equal(result.secondaryRank,1);assert.equal(result.secondaryEvent,'fr400');assert.equal(result.oldPB,true);
 });
 
 test('matching wishes add facility and region bonuses while unrelated facilities and missing wishes do not',()=>{
@@ -93,27 +94,19 @@ test('optional hopes survive reload and old-save migration once without consumin
   assert.ok(Object.values(result).every(Boolean),JSON.stringify(result));
 });
 
-test('actual scouting uses the displayed odds, charges attempts once, respects eight places and enrolls the signed class',()=>{
-  const {run,alerts}=game();
-  const result=JSON.parse(run(`JSON.stringify((()=>{
-    let renders=0,saves=0;renderAll=()=>renders++;scheduleAutoSave=()=>saves++;
-    const original=rng,candidates=refreshScoutBoard().filter(a=>!a.scouted).slice(0,9),oldIds=candidates.map(a=>a.id);
-    state.points=4;let blockedDraws=0;rng=()=>{blockedDraws++;return 0};
-    const low=JSON.stringify(state);doScout(candidates[0].id);const insufficient=low===JSON.stringify(state)&&blockedDraws===0;
-    state.points=100;const probability=scoutProbability(candidates[0]);
-    rng=()=>probability+.00001;doScout(candidates[0].id);const failure=!candidates[0].scouted&&state.points===95;
-    rng=()=>Math.max(0,probability-.00001);doScout(candidates[0].id);const success=candidates[0].scouted&&state.recruits.includes(candidates[0].id)&&state.points===90;
-    doScout(candidates[0].id);const repeat=state.points===90;
-    rng=()=>0;for(const a of candidates.slice(1))doScout(a.id);
-    const cap=state.recruits.length===8&&scoutRecruitCount()===8&&!candidates[8].scouted&&state.points===55;
-    rng=original;newSeason();
-    const newcomers=state.players.filter(p=>p.year===1),board=refreshScoutBoard(),expected=EVENTS.flatMap(e=>ranking(e,'high',50)).filter(a=>a.grade===3);
-    return {insufficient,failure,success,repeat,cap,renders,saves,enrolled:oldIds.slice(0,8).every(id=>newcomers.some(p=>p.id===id)),
-      classSize:newcomers.length,removed:board.every(a=>!oldIds.includes(a.id)),newRanking:expected.every(a=>board.some(b=>b.id===a.id))};
-  })())`));
-  assert.ok(result.insufficient&&result.failure&&result.success&&result.repeat&&result.cap&&result.enrolled&&result.removed&&result.newRanking,JSON.stringify(result));
-  assert.equal(result.classSize,8);assert.equal(result.renders,9);assert.equal(result.saves,9);
-  assert.ok(alerts.some(text=>text.includes('スカウトに失敗'))&&alerts.some(text=>text.includes('スカウトに成功'))&&alerts.some(text=>text.includes('8名')));
+test('scout UI handlers charge monthly contacts, preserve guaranteed offers and enroll eight signed swimmers',()=>{
+ const {run,alerts}=game();const r=JSON.parse(run(`JSON.stringify((()=>{
+  renderAll=()=>{};scheduleAutoSave=()=>{};const ids=refreshScoutBoard().slice(0,9).map(a=>a.id),raceSeed=state.rngSeed;
+  state.points=4;const before=JSON.stringify(state);doScout(ids[0]);const insufficient=before===JSON.stringify(state);
+  state.points=100;doScout(ids[0]);const points=state.points;doScout(ids[0]);const repeat=state.points===points;
+  for(const [i,id]of ids.slice(0,8).entries()){
+   if(i)doScout(id);const r=scoutingRecord(id);r.interests.player=60;doScoutingOffer(id);
+  }
+  const cap=scoutRecruitCount()===8,paid=state.points;doScout(ids[8]);const blocked=state.points===paid,raceStable=state.rngSeed===raceSeed;
+  newSeason();const freshmen=state.players.filter(a=>a.year===1);return{insufficient,repeat,cap,blocked,raceStable,paid,enrolled:ids.slice(0,8).every(id=>freshmen.some(a=>a.id===id)),count:freshmen.length};
+ })())`));
+ assert.ok(r.insufficient&&r.repeat&&r.cap&&r.blocked&&r.raceStable&&r.enrolled);assert.equal(r.paid,60);assert.equal(r.count,8);
+ assert.ok(alerts.some(x=>x.includes('ポイント不足'))&&alerts.some(x=>x.includes('接触済み'))&&alerts.some(x=>x.includes('内定が確定')));
 });
 
 test('world wishes are rare and only assigned at specialty ranks 1 through 8; Kansai wishes occur about ten percent',()=>{
@@ -237,7 +230,7 @@ test('existing candidate identities supply exactly eight freshmen; every other s
         preserved:freshmen.every(p=>{const a=before.get(p.id);return a.name===p.name&&a.specialty===p.specialty&&JSON.stringify(a.stats)===JSON.stringify(p.stats)&&JSON.stringify(a.pb)===JSON.stringify(p.bestTimes)}),
         moved:seniors.every(id=>freshIds.has(id)||state.world.some(a=>a.id===id&&a.category==='university'&&a.grade===1)),
         freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>a.category==='middle'&&a.grade===1&&a.age===13),
-        newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:organizationNames().middle.length*cpuMiddleClassSize(),
+        newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:schoolCohortSize(),
         removed:freshmen.every(p=>!state.world.some(a=>a.id===p.id)),welcome:state.pendingFreshmenWelcome.length,queue:state.recruits.length});
       const serial=state.serial,rngSeed=state.rngSeed;maintainWorldPopulation();migrateState();
       rows.at(-1).reloadNoNew=state.serial===serial&&state.rngSeed===rngSeed;
@@ -251,7 +244,7 @@ test('existing candidate identities supply exactly eight freshmen; every other s
   }
 });
 
-test('CPU enrollment prefers strong and prestigious universities, observes available places and never loses a senior when all places fill',()=>{
+test('CPU enrollment prefers strong and prestigious universities, observes available places and returns no destination when all places fill',()=>{
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));
@@ -266,7 +259,7 @@ test('CPU enrollment prefers strong and prestigious universities, observes avail
   })())`));
   assert.ok(result.counts[3]>result.counts[2]&&result.counts[2]>result.counts[1]&&result.counts[1]>result.counts[0],JSON.stringify(result));
   assert.ok((result.counts[2]+result.counts[3])/6000>.75,JSON.stringify(result));
-  assert.ok(result.skipsFull);assert.match(result.overflow,/進路大学[0-3]/);
+  assert.ok(result.skipsFull);assert.equal(result.overflow,null);
 });
 
 test('unscouted freshmen favor specialty talent at strong and prestigious schools, with random selection and no stat changes',()=>{

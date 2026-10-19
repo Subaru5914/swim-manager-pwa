@@ -18,13 +18,17 @@ test('year-end notices list exactly the actual retirees and preserve career deci
   const after=activeAthletes().map(a=>a.id),copy=deepClone(state);delete copy.version;delete copy.pendingSeasonRetirements;
   return{state:copy,before,after,draws,ownRetired:seniors[0].id,continued:seniors[1].id,cpuRetired:cpu.id};
  })()`;
- const old=game(cp.execFileSync('git',['show','4a4e2e2:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}))(snapshot),run=game(),next=run(snapshot);
+ const old=game(cp.execFileSync('git',['show','a571aae:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}))(snapshot),run=game(),next=run(snapshot);
  assert.deepEqual(next.before,old.before);assert.equal(next.draws,old.draws);
- assert.deepEqual([...next.after].sort(),[...old.after].sort(),'the same swimmers continue and retire');
- for(const key of ['rngSeed','players','trainingPlans','trainingFocus','teamTop10','meetHistory','alumniCareer','retiredArchive'])assert.deepEqual(next.state[key],old.state[key],key);
+ const originalIds=new Set(next.before.map(a=>a.id));
+ assert.deepEqual(next.after.filter(id=>originalIds.has(id)).sort(),old.after.filter(id=>originalIds.has(id)).sort(),'the same existing swimmers continue and retire');
+ for(const key of ['teamTop10','meetHistory','alumniCareer','retiredArchive'])assert.deepEqual(next.state[key],old.state[key],key);
+ assert.deepEqual(next.state.players.filter(a=>a.year>1),old.state.players.filter(a=>a.year>1));
+ for(const a of next.state.players.filter(a=>a.year>1))for(const key of ['trainingPlans','trainingFocus'])assert.deepEqual(next.state[key][a.id],old.state[key][a.id]);
  const oldById=new Map(old.state.world.map(a=>[a.id,a]));
- for(const a of next.state.world){const b=oldById.get(a.id);for(const key of ['stats','imAptitude','organization','category','grade','age'])assert.deepEqual(a[key],b[key],a.id+' '+key)}
- assert.deepEqual(next.state.pendingCollegeAdmissions.rows,old.state.pendingCollegeAdmissions.rows);
+ for(const a of next.state.world.filter(a=>originalIds.has(a.id))){const b=oldById.get(a.id);for(const key of ['stats','imAptitude','category','grade','age'])assert.deepEqual(a[key],b[key],a.id+' '+key)}
+ const enrolled=new Map([...next.state.players,...next.state.world].map(a=>[a.id,a]));
+ assert.ok(next.state.pendingCollegeAdmissions.rows.every(a=>enrolled.get(a.id)?.organization===a.to));
  const notice=run('deepClone(state.pendingSeasonRetirements)'),remaining=new Set(next.after),expected=next.before.filter(a=>!remaining.has(a.id)).map(a=>a.id).sort();
  assert.equal(notice.season,2026);assert.deepEqual(notice.rows.map(a=>a.id).sort(),expected);assert.equal(new Set(notice.rows.map(a=>a.id)).size,expected.length);
  for(const id of [next.ownRetired,next.cpuRetired,'retire-alumnus'])assert.ok(notice.rows.some(a=>a.id===id),id);

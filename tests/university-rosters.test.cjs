@@ -98,8 +98,8 @@ test('each new season progresses existing school IDs into balanced university pl
     return samples;
   })()`);
   for(const row of r){
-    assert.ok(row.count>=39*32&&row.count<=39*36,JSON.stringify(row));assert.ok(row.grades.every(n=>n>=8&&n<=9));
-    assert.ok(row.existingFreshmen&&row.ownExisting&&row.onlyMiddle,JSON.stringify(row));assert.equal(row.created,336);
+    assert.equal(row.count,39*32);assert.ok(row.grades.every(n=>n===8));
+    assert.ok(row.existingFreshmen&&row.ownExisting&&row.onlyMiddle,JSON.stringify(row));assert.equal(row.created,320);
     assert.ok(Math.abs(row.afterP90-r[0].beforeP90)<12,JSON.stringify(row));
     if(row.season>r[3].season)assert.ok(Math.abs(row.afterP90-r[3].afterP90)<3,JSON.stringify(row));
   }

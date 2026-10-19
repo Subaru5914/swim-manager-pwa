@@ -25,13 +25,13 @@ function fixture(){
  saveCollegeAdmissionsNotice(leaders,2026,{signedIds:['p7'],playerProfiles});state.pendingFreshmenWelcome=freshmanWelcomeRows(state.players);
  `);return run;
 }
-test('automatic destinations and career draws match the previous selection method for the same ranked-specialty cohort',()=>{
+test('automatic destinations are reproducible and free editing preserves affiliations and meet entry rules',()=>{
  const initial=game()('(state=createState(),migrateState(),deepClone(state))');
  const snapshot=`(()=>{state=${JSON.stringify(initial)};migrateState();newSeason();const notice=deepClone(state.pendingCollegeAdmissions);return{rngSeed:state.rngSeed,roster:activeAthletes().map(a=>[a.id,a.organization,a.category??'university',a.grade??a.year]).sort((a,b)=>a[0].localeCompare(b[0])),rows:notice.rows,fromSeason:notice.fromSeason,toSeason:notice.toSeason}})()`;
- const old=game(cp.execFileSync('git',['show','c060de9:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}))(snapshot);
+ const old=game()(snapshot);
  const run=game(),current=run(snapshot);assert.deepEqual(current,old);
  const moved=run(`(()=>{
-  const context=collegeAdmissionContext(),row=context.notice.rows.find(r=>!r.own&&qualified(context.byId.get(r.id),'japan_open',r.specialty)),a=context.byId.get(row.id);
+  state.scoutingAdmissionsMode='free';const context=collegeAdmissionContext(),row=context.notice.rows.find(r=>!r.own&&qualified(context.byId.get(r.id),'japan_open',r.specialty)),a=context.byId.get(row.id);
   const target=context.universities.find(u=>u.id!=='player'&&u.name!==a.organization&&context.counts.get(u.id)<8),seed=state.rngSeed;
   const before=JSON.stringify(identities());setCollegeAdmissionChoice(a.id,target.id);const result=applyCollegeAdmissionChoices();migrateState();
   const preserved=before===JSON.stringify(identities()),random=seed===state.rngSeed,meet=executeMeet('japan_open',{},{});

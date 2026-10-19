@@ -1,6 +1,17 @@
-# 大学競泳監督シミュレーション PWA v2.27
+# 大学競泳監督シミュレーション PWA v2.28
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v2.28 の変更
+
+- 高校3年生のスカウトを、他大学と志望度を競う継続交渉へ変更しました。接触は5pt・同じ選手へ月1回。内定打診と撤回は無料で、確定内定と有効な打診は各大学8名までです。
+- 志望度は0～100で、成功確率とは異なります。専門種目の高校順位・大学評判・肩書・進学希望を評価し、接触の伸びに反映します。内訳は表示しません。競合状況から各校の評判・志望度・打診状態を確認できます。
+- CPU大学も年間予算内で月末に0～2回接触します。卒業生の泳法、翌年度のPB上位層、リレーの補強需要と選手の希望を考慮し、1選手を最大3校が勧誘します。専用の保存済み乱数を使い、レース抽選へ影響を与えません。
+- 競合なしは志望度50以上で即時内定。競合中は11月末・1月末に志望度70以上かつ他校との差12以上で早期内定。3月末は志望度40以上の打診校から志望度に応じて最終決断します。確定内定は取り消されず、セーブ再読込で再抽選しません。
+- スカウト画面に「競合結果を優先／進路を自由編集」を残しました。新規ゲームは競合優先、既存セーブは従来の自由編集を維持します。自由編集なら年度末に内定先も変更でき、確定時には一般入学者を再配分して各大学8名を守ります。
+- 新しく生成する中学1年生は全40大学の入学枠に合わせて計320名です。学校間の端数を配分し、336名から生じていた16名の超過をなくしました。新規ゲームの中高生も各学年320名です。
+- 既存の大きい世代は高校3年生時に超過分を削除します。確定内定者を保護し、未内定者の専門能力が低い順に選びます。対象の選手本体・PB・交渉・ランキング・10傑・リレーの記録・関連履歴の参照を完全に取り除き、引退選手としても残しません。初期の330名世代では10名、336名世代では16名を削除します。削除後は補充生成しません。
+- 内定者を全大学で先に予約し、残る高校生が同じ選手ID・能力・PBで進学します。自チーム・CPUとも新入生は計8名で、大学入学時に新しい選手は生成しません。現在のレース計算式・成長ルールは変更していません。
 
 ## v2.27 の変更
 
@@ -977,7 +988,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/scouting-competition.test.cjs tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。

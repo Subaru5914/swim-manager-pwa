@@ -10,10 +10,10 @@ function game(input=current,seed=5914){
 function minimal(){const run=game();run(`state={season:2026,slot:1,rngSeed:5914,cpuCompetitionSeed:5914,cpuDevelopmentVersion:1,playerUniversity:'自大学',players:[],world:[],recruits:[],recordRankings:{},recordBook:{},teamTop10:{},retiredArchive:[],japanTeamHistory:[],universities:[{name:'検証大学',region:'kansai',reputation:150}],facilities:{}};true`);return run}
 test('v2.03 migration preserves growth, IM aptitude, retained PBs and the next random draw after the one-time start correction',()=>{
  const oldHtml=cp.execFileSync('git',['show','88e8311:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
- const legacy=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run(`state=${JSON.stringify(legacy)};migrateStartAbilities();true`);
+ const legacy=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run(`state=${JSON.stringify(legacy)};migrateStartAbilities();trimGraduatingCohort();true`);
  const before=run('deepClone(state)');run('migrateState();true');
  const migrated=run(`(()=>{const first=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed}})()`);
- assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.27');
+ assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.28');
  for(const k of ['season','slot','points','reputation','playerUniversity','rngSeed','trainingFocus','facilities','recruits'])assert.deepEqual(migrated.state[k],before[k],k);
  for(const after of [migrated.state])for(const group of ['world','players']){
   assert.equal(after[group].length,before[group].length);
