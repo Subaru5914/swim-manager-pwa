@@ -59,7 +59,7 @@ test('current v2.02 data automatically fills specialties, preserving measured cl
     const first=JSON.stringify(state),seed=state.rngSeed,all=[...state.players,...state.world.filter(a=>!a.retired)],fields=highSchoolScoutRankings();migrateState();
     return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed,missing:all.filter(a=>!validRaceTime(a.bestTimes[a.specialty])).map(a=>a.id),extra:EVENTS.some(e=>fields.get(e).rows.slice(50).some(a=>a.specialty!==e))};
   })()`);
-  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.24');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
+  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.25');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
   for(const k of ['rngSeed','season','slot','points','reputation','playerUniversity','facilities','trainingFocus','recruits'])assert.deepEqual(r.state[k],before[k]);
   for(const group of ['players','world'])for(let i=0;i<before[group].length;i++){
     const a=r.state[group][i],b=before[group][i];assert.equal(a.id,b.id);for(const k of ['stats','imAptitude','accolades','raceHistory','potentialType'])assert.deepEqual(a[k],b[k],a.id+' '+k);
@@ -78,7 +78,7 @@ test('fresh generation, reset and international generation keep specialty PBs re
   assert.deepEqual(r.ownCounts,Array(32).fill(1));assert.deepEqual(r.missing,[]);assert.deepEqual(r.invalid,[]);assert.ok(r.foreign>0&&r.reset&&r.foreignRng);assert.equal(r.restored,r.expected);
 });
 
-test('current v2.02 and v2.24 generate identical abilities, race bases and random sequence; new own specialty PBs also reach the records',()=>{
+test('current v2.02 and v2.25 generate identical abilities, race bases and random sequence; new own specialty PBs also reach the records',()=>{
   const oldHtml=cp.execFileSync('git',['show','244c8aaf:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000});
   const snapshot=`(()=>{state=createState();migrateState();return{seed:state.rngSeed,profiles:[...state.players,...state.world].map(a=>[a.id,a.stats,a.imAptitude,EVENTS.map(e=>expectedTime(a,e))]),own:state.players.map(p=>({id:p.id,event:p.specialty,time:p.bestTimes[p.specialty],record:(state.teamTop10[p.specialty]||[]).find(r=>r.athleteId===p.id)?.time??null}))}})()`;
   const before=game(oldHtml)(snapshot),after=game()(snapshot);

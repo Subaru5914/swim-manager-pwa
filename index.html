@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.24</title>
+<title>大学競泳監督シミュレーション PWA版 v2.25</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1350,6 +1350,33 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   #entryMatrix th:first-child,#entryMatrix td:first-child{width:150px;min-width:150px!important}
   #entryMatrix th:nth-child(n+3),#entryMatrix td:nth-child(n+3){width:104px;min-width:104px!important}
 }
+#nav>button{flex:0 0 auto;white-space:nowrap}
+@media(min-width:1000px) and (pointer:fine){#nav>button{padding-left:9px;padding-right:9px}}
+.rival-controls .row{gap:8px}
+.rival-university-label{min-width:0}.rival-university-label select{min-width:190px;max-width:100%}
+.rival-summary{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:13px}
+.rival-summary>strong{font-size:16px}.rival-views{margin-top:10px}.rival-views>label{margin-left:auto}.rival-views>label[hidden]{display:none}
+.rival-note{margin:0 0 10px}.rival-table{width:100%;min-width:560px!important;table-layout:auto}
+.rival-table th,.rival-table td{padding:6px 7px;vertical-align:middle}
+.rival-player-link{border:0;background:transparent;color:var(--accent2);font-weight:750;padding:4px 2px;min-height:32px;white-space:nowrap;text-decoration:underline;text-underline-offset:3px;box-shadow:none}
+.rival-player-link:hover:not(:disabled){box-shadow:none;background:#eaf3ff;transform:none}
+.rival-stat{white-space:nowrap}.rival-stat .stat-number{margin-left:4px}
+.rival-standard{display:block;font-size:10px;color:var(--good);margin-top:2px}
+.rival-event-table{min-width:620px!important}.rival-event-table th{white-space:nowrap}.rival-event-table td>b{margin-left:2px}
+.rival-relays{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.rival-relay-card{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);min-width:0}
+.rival-relay-card h3{font-size:14px;margin:0 0 8px}.rival-relay-total{margin:0 0 8px}.rival-relay-total b{font-size:20px;color:var(--accent2)}
+.rival-relay-card ol{margin:0;padding-left:20px}.rival-relay-card li{padding:5px 0;border-top:1px solid var(--line)}
+.rival-relay-card li>b{margin-right:5px;font-variant-numeric:tabular-nums}.rival-relay-card .rival-player-link{font-size:12px}
+.rival-detail-meta{gap:8px;margin:8px 0 12px}.modal-rival-player{display:flex;flex-direction:column;overflow:hidden}
+.modal-rival-player>.row{flex-shrink:0}.modal-rival-player>.detail-stats-pb{min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:3px}
+@media(pointer:coarse) and (max-width:600px),(pointer:coarse) and (max-height:600px){
+  .rival-summary{font-size:11px;gap:4px 8px;margin-top:6px;padding-top:6px}.rival-summary>strong{font-size:13px}
+  .rival-views{margin-top:6px}.rival-views button{padding:5px 8px;min-height:34px;font-size:11px}
+  .rival-controls select{font-size:11px;min-height:34px}.rival-table{font-size:11px}.rival-table th,.rival-table td{padding:4px 5px}
+  .rival-relays{gap:8px}.rival-relay-card{padding:9px}.rival-relay-card h3{font-size:12px}
+  .rival-relay-total{font-size:11px}.rival-relay-total b{font-size:17px}.rival-note{font-size:10px}
+}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1769cf">
@@ -1365,7 +1392,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.24</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.25</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1389,6 +1416,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   <button data-page="home" class="active" aria-current="page">ホーム</button>
   <button data-page="training">練習指示</button>
   <button data-page="roster">選手一覧</button>
+  <button data-page="rivals">他大学戦力</button>
   <button data-page="rankings">全選手ランキング</button>
   <button data-page="records">記録</button>
   <button id="showTeamTop10Btn" data-page="team-top10">自チーム歴代10傑</button>
@@ -1487,6 +1515,16 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   </div>
 </section>
 
+<section id="page-rivals" class="page">
+  <div class="page-lead"><div><h1>他大学戦力</h1><p>大学ごとの所属選手・種目別の選手層・リレーの主力候補を確認できます。</p></div></div>
+  <div class="card rival-controls">
+    <div class="row"><label>地域 <select id="rivalRegion"><option value="all">すべて</option><option value="kansai">関西</option><option value="national">関西以外</option></select></label><label class="rival-university-label">大学 <select id="rivalUniversity"></select></label></div>
+    <div id="rivalSummary" class="rival-summary" aria-live="polite"></div>
+    <div class="row rival-views" aria-label="戦力の表示切替"><button type="button" data-rival-view="roster" class="primary" aria-pressed="true">選手一覧</button><button type="button" data-rival-view="events" aria-pressed="false">種目別上位3名</button><button type="button" data-rival-view="relays" aria-pressed="false">リレー</button><label id="rivalEventControl">並び順 <select id="rivalEvent"><option value="">学年・専門種目順</option></select></label></div>
+  </div>
+  <div class="card"><div id="rivalContent"></div></div>
+</section>
+
 <section id="page-rankings" class="page">
   <div class="page-lead"><div><h1>全選手ランキング</h1><p>種目と区分を切り替えて、各区分の上位50位まで確認できます。</p></div></div>
   <div class="card">
@@ -1582,9 +1620,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.24"></script>
-<script src="./save-history.js?version=v2.24"></script>
-<script src="./cloud-sync.js?version=v2.24"></script>
+<script src="./local-save.js?version=v2.25"></script>
+<script src="./save-history.js?version=v2.25"></script>
+<script src="./cloud-sync.js?version=v2.25"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1814,7 +1852,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.24";
+  state.version="pwa-v2.25";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -4107,7 +4145,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.24",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.25",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4149,6 +4187,7 @@ function createState(nameSettings=null){
 }
 let state;
 let selectedTrainingId=null;
+let selectedRivalUniversityId=null,selectedRivalRegion="all",selectedRivalView="roster",selectedRivalEvent="";
 let selectedTeamTop10Event="fr100";
 let selectedTeamRecordView="top10";
 let selectedTeamPodiumYear=null;
@@ -7301,6 +7340,7 @@ function playRaceCanvas(event,rows,options={}){
 }
 function renderAll(){
   renderStatus();renderHome();renderTrainingPlayers();renderRoster();renderRankings();renderRecords();renderTeamTop10();renderJapanTeam();renderScout();renderFacilities();renderSettings();
+  if(document.getElementById("page-rivals")?.classList.contains("active"))renderRivals();
   scheduleAutoSave();
 }
 function renderStatus(){
@@ -7429,6 +7469,62 @@ function renderRoster(){
   document.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>showPlayerDetail(b.dataset.detail));
   document.querySelectorAll("[data-specialty]").forEach(b=>b.onclick=()=>showSpecialtyPicker(b.dataset.specialty));
   document.querySelectorAll("[data-rename]").forEach(b=>b.onclick=()=>renamePlayer(b.dataset.rename));
+}
+function rivalUniversities(region="all"){
+  return (state.universities||[]).filter(u=>region==="all"||u.region===region)
+    .slice().sort((a,b)=>(b.reputation??0)-(a.reputation??0)||a.name.localeCompare(b.name,"ja"));
+}
+function rivalUniversityRoster(id,event=null){
+  const university=state.universities.find(u=>u.id===id);if(!university)return [];
+  return sortedEntryRoster(state.world.filter(a=>!a.retired&&a.category==="university"&&a.organization===university.name),event);
+}
+function rivalRelayCandidates(roster,kind){
+  const members=bestRelayMembers(roster,kind);
+  if(members.length!==4)return{kind,members:[],legs:[],total:null,estimated:false};
+  const legs=members.map((a,i)=>({athlete:a,event:relayLegEvent(kind,i),time:round2(relayMemberSeedTime(a,relayLegEvent(kind,i))),estimated:!validRaceTime(a.bestTimes?.[relayLegEvent(kind,i)])}));
+  return{kind,members,legs,total:round2(legs.reduce((sum,l)=>sum+l.time,0)),estimated:legs.some(l=>l.estimated)};
+}
+function rivalAthleteButton(a){return `<button type="button" class="rival-player-link" data-rival-athlete="${esc(a.id)}">${esc(a.name)}</button> ${gradeBadge(a.grade,`大${a.grade||"—"}`)}`}
+function renderRivals(){
+  const universities=rivalUniversities(selectedRivalRegion),select=document.getElementById("rivalUniversity");
+  if(!universities.some(u=>u.id===selectedRivalUniversityId))selectedRivalUniversityId=universities[0]?.id||null;
+  document.getElementById("rivalRegion").value=selectedRivalRegion;
+  select.innerHTML=universities.map(u=>`<option value="${esc(u.id)}"${u.id===selectedRivalUniversityId?" selected":""}>${esc(u.name)}（${reputationLabel(u.reputation??0)}）</option>`).join("");select.disabled=!universities.length;
+  const eventSelect=document.getElementById("rivalEvent");
+  eventSelect.innerHTML='<option value="">学年・専門種目順</option>'+EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]} PB順</option>`).join("");eventSelect.value=selectedRivalEvent;
+  document.getElementById("rivalEventControl").hidden=selectedRivalView!=="roster";
+  document.querySelectorAll("[data-rival-view]").forEach(b=>{const active=b.dataset.rivalView===selectedRivalView;b.classList.toggle("primary",active);b.setAttribute("aria-pressed",String(active));b.onclick=()=>{selectedRivalView=b.dataset.rivalView;renderRivals()}});
+  document.getElementById("rivalRegion").onchange=e=>{selectedRivalRegion=e.target.value;renderRivals()};
+  select.onchange=()=>{selectedRivalUniversityId=select.value;renderRivals()};
+  eventSelect.onchange=()=>{selectedRivalEvent=eventSelect.value;renderRivals()};
+  const summary=document.getElementById("rivalSummary"),content=document.getElementById("rivalContent"),university=universities.find(u=>u.id===selectedRivalUniversityId);
+  if(!university){summary.textContent="該当する大学はありません。";content.innerHTML='<div class="empty-state">地域を切り替えてください。</div>';return}
+  const roster=rivalUniversityRoster(university.id,selectedRivalEvent),qualifiedCount=roster.filter(a=>SPECIALTY_EVENTS.some(e=>qualified(a,"intercollege",e))).length;
+  summary.innerHTML=`<strong>${esc(university.name)}</strong><span class="tag">${university.region==="kansai"?"関西":"関西以外"}</span><span class="tag">${reputationLabel(university.reputation??0)} ${(university.reputation??0).toFixed(1)}</span><span>所属 <b>${roster.length}</b>名</span><span>インカレ標準突破 <b>${qualifiedCount}</b>名</span><span class="muted small">${[1,2,3,4].map(g=>`大${g} ${roster.filter(a=>a.grade===g).length}名`).join(" / ")}</span>`;
+  if(selectedRivalView==="events"){
+    content.innerHTML=`<p class="small muted rival-note">種目ごとのPB上位3名です。参加標準や1人3種目の制限により、実際の出場者は異なる場合があります。</p><div class="table-wrap"><table class="rival-table rival-event-table"><thead><tr><th>種目</th><th>1番手</th><th>2番手</th><th>3番手</th></tr></thead><tbody>${EVENTS.map(event=>{
+      const leaders=sortedRelayRoster(roster.filter(a=>validRaceTime(a.bestTimes?.[event])),event).slice(0,3);
+      return `<tr data-rival-event="${event}"><th>${EVENT_LABEL[event]}</th>${[0,1,2].map(i=>`<td>${leaders[i]?`${rivalAthleteButton(leaders[i])}<br><b>${fmt(leaders[i].bestTimes[event])}</b>`:'<span class="muted">記録なし</span>'}</td>`).join("")}</tr>`;
+    }).join("")}</tbody></table></div>`;
+  }else if(selectedRivalView==="relays"){
+    content.innerHTML=`<p class="small muted rival-note">PB順の主力候補（決勝想定）です。予選では主力を温存する場合があります。合計は引継ぎ短縮・当日の調子を含みません。PBがない泳者の「参考」は能力から算出しています。</p><div class="rival-relays">${RELAYS.map(kind=>{
+      const relay=rivalRelayCandidates(roster,kind);
+      return `<section class="rival-relay-card" data-rival-relay="${kind}"><h3>${RELAY_LABEL[kind]}</h3>${relay.members.length?`<p class="rival-relay-total">${relay.estimated?"参考合計":"PB合計"} <b>${fmt(relay.total)}</b></p><ol>${relay.legs.map((leg,i)=>`<li data-rival-leg="${i}"><span class="small muted">${EVENT_LABEL[leg.event]}</span><div>${rivalAthleteButton(leg.athlete)}</div><b>${fmt(leg.time)}</b>${leg.estimated?'<span class="small muted">参考</span>':""}</li>`).join("")}</ol>`:'<p class="muted">4名そろっていません。</p>'}</section>`;
+    }).join("")}</div>`;
+  }else{
+    content.innerHTML=`<p class="small muted rival-note">選手名を押すと全ステータスとPBを確認できます。スピード・スタミナは${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]:"専門種目"}の泳法を表示します。</p><div class="table-wrap rival-roster-wrap"><table class="rival-table"><thead><tr><th>選手・学年</th><th>専門種目</th><th>${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]+" PB":"専門PB"}</th><th>総合</th><th>スピード</th><th>スタミナ</th></tr></thead><tbody>${roster.map(a=>{
+      const event=selectedRivalEvent||a.specialty,stroke=EVENTS.includes(event)?strokeForEvent(event):null,overall=overallStatValue(a);
+      return `<tr data-rival-row="${esc(a.id)}"><td>${rivalAthleteButton(a)}</td><td>${specialtyTag(a.specialty)}</td><td><b>${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b>${EVENTS.includes(event)&&qualified(a,"intercollege",event)?'<span class="rival-standard">インカレ標準</span>':""}</td><td class="rival-stat">${statRankLabel(overall)}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_speed")):"—"}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_stamina")):"—"}</td></tr>`;
+    }).join("")||'<tr><td colspan="6">現在、所属選手はいません。</td></tr>'}</tbody></table></div>`;
+  }
+  content.querySelectorAll("[data-rival-athlete]").forEach(b=>b.onclick=()=>showRivalPlayerDetail(b.dataset.rivalAthlete));
+}
+function showRivalPlayerDetail(id){
+  const p=state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));if(!p)return;
+  const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${gradeBadge(p.grade,`大${p.grade||"—"}`)}</h2><button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
+    const value=Math.round(displayStatValue(p,k));return `<div class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></div>`;
+  }).join("")}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未計測"}</b></div>`).join("")}</div></section></div>`);
+  m.classList.add("modal-player-detail","modal-rival-player");m.querySelector("#x").onclick=()=>closeModal();
 }
 function renderRankings(){
   let table=document.getElementById("rankingTable");if(!table)return;
