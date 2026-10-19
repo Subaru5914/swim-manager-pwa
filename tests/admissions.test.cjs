@@ -25,8 +25,9 @@ function fixture(){
  saveCollegeAdmissionsNotice(leaders,2026,{signedIds:['p7'],playerProfiles});state.pendingFreshmenWelcome=freshmanWelcomeRows(state.players);
  `);return run;
 }
-test('automatic destinations, ability, PB, career processing and random sequence match the previous release exactly',()=>{
- const snapshot=`(()=>{state=createState();migrateState();newSeason();const notice=deepClone(state.pendingCollegeAdmissions),copy=deepClone(state);delete copy.version;delete copy.pendingCollegeAdmissions;delete copy.pendingSeasonRetirements;return{state:copy,rows:notice.rows,fromSeason:notice.fromSeason,toSeason:notice.toSeason}})()`;
+test('automatic destinations and career draws match the previous selection method for the same ranked-specialty cohort',()=>{
+ const initial=game()('(state=createState(),migrateState(),deepClone(state))');
+ const snapshot=`(()=>{state=${JSON.stringify(initial)};migrateState();newSeason();const notice=deepClone(state.pendingCollegeAdmissions);return{rngSeed:state.rngSeed,roster:activeAthletes().map(a=>[a.id,a.organization,a.category??'university',a.grade??a.year]).sort((a,b)=>a[0].localeCompare(b[0])),rows:notice.rows,fromSeason:notice.fromSeason,toSeason:notice.toSeason}})()`;
  const old=game(cp.execFileSync('git',['show','c060de9:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}))(snapshot);
  const run=game(),current=run(snapshot);assert.deepEqual(current,old);
  const moved=run(`(()=>{
@@ -61,15 +62,16 @@ test('confirming CPU choices reallocates ordinary freshmen without changing swim
 });
 test('own-team arrivals and departures keep eight freshmen, signed places, stats, PBs, training setup and valid CPU profiles',()=>{
  const run=fixture(),r=run(`(()=>{
+  state.players[0].bestTimes.fr100+=1;state.players[0].bestTimes.ba100=coherentCpuPB(state.players[0],'ba100');
   const before=JSON.stringify(identities()),seed=state.rngSeed;setCollegeAdmissionChoice('p0','U3');setCollegeAdmissionChoice('a0','player');
   const result=applyCollegeAdmissionChoices(),own=state.players.map(a=>a.id),cpu=state.world.find(a=>a.id==='p0'),after=JSON.stringify(identities());
   maintainWorldPopulation();
-  return{result,own,cpu:{organization:cpu.organization,category:cpu.category,grade:cpu.grade,year:cpu.year??null,profile:cpu.cpuUniversityRosterProfileVersion},
+  return{result,own,cpu:{organization:cpu.organization,category:cpu.category,grade:cpu.grade,year:cpu.year??null,profile:cpu.cpuUniversityRosterProfileVersion,specialty:cpu.specialty},
    preserved:before===after,afterPracticeSetup:before===JSON.stringify(identities()),seed:seed===state.rngSeed,
    plans:!!state.trainingPlans.a0&&!state.trainingPlans.p0,focus:state.trainingFocus.a0,departedFocus:state.trainingFocus.p0??null,
    sizes:state.universities.map(u=>state.world.filter(a=>a.organization===u.name).length),welcome:state.pendingFreshmenWelcome.map(a=>a.id)};
  })()`);
- assert.ok(r.result.ok&&r.preserved&&r.afterPracticeSetup&&r.seed&&r.plans);assert.equal(r.own.length,8);assert.ok(r.own.includes('a0')&&!r.own.includes('p0')&&r.own.includes('p7'));assert.deepEqual(r.cpu,{organization:'丙大学',category:'university',grade:1,year:null,profile:2});assert.deepEqual(r.focus,['fr_speed']);assert.equal(r.departedFocus,null);assert.deepEqual(r.sizes,[8,8,8]);assert.deepEqual([...r.welcome].sort(),[...r.own].sort());
+ assert.ok(r.result.ok&&r.preserved&&r.afterPracticeSetup&&r.seed&&r.plans);assert.equal(r.own.length,8);assert.ok(r.own.includes('a0')&&!r.own.includes('p0')&&r.own.includes('p7'));assert.deepEqual(r.cpu,{organization:'丙大学',category:'university',grade:1,year:null,profile:2,specialty:'ba100'});assert.deepEqual(r.focus,['fr_speed']);assert.equal(r.departedFocus,null);assert.deepEqual(r.sizes,[8,8,8]);assert.deepEqual([...r.welcome].sort(),[...r.own].sort());
 });
 test('invalid or over-capacity saved choices are rejected atomically; signed own places also count toward eight',()=>{
  const run=fixture(),r=run(`(()=>{

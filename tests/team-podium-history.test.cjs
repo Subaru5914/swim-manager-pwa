@@ -74,11 +74,18 @@ test('team medals survive actual senior deletion, capacity cleanup and save relo
   })()`);
   assert.equal(r.retired.length,1);assert.ok(r.removed>0&&r.sourceGone&&r.stable);assert.deepEqual(r.rows,r.first);assert.equal(r.rows[0].gradeAtRecord,4);
 });
-test('v2.10 generated save migration and fresh generation preserve all existing fields and the next race draw',()=>{
+test('v2.10 migration and reset preserve medals, abilities, own settings and the next race draw while allowing ranked CPU specialties',()=>{
   const old=game(cp.execFileSync('git',['show','2c26cd4:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
   const before=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(before)+';migrateState();true');
-  const after=run('deepClone(state)');for(const [key,value]of Object.entries(before))if(key!=='version')assert.deepEqual(after[key],value,key);
+  const after=run('deepClone(state)');for(const [key,value]of Object.entries(before))if(!['version','world'].includes(key))assert.deepEqual(after[key],value,key);
+  for(let i=0;i<before.world.length;i++){
+    const a=after.world[i],b=before.world[i];assert.equal(a.id,b.id);
+    for(const key of ['stats','imAptitude','name','category','grade','age','organization','raceHistory','accolades'])assert.deepEqual(a[key],b[key],a.id+' '+key);
+    for(const [event,time]of Object.entries(a.bestTimes))assert.equal(time,b.bestTimes[event],a.id+' '+event+' PB');
+    if(a.category!=='high')assert.deepEqual(a.bestTimes,b.bestTimes,a.id+' all PBs');
+  }
   assert.equal(after.teamPodiumHistoryVersion,1);assert.deepEqual(after.teamPodiumHistory,[]);
-  const generated=run('(state=createState(),migrateState(),deepClone(state))');for(const key of ['players','world','rngSeed','teamTop10','recordRankings','facilities','trainingFocus'])assert.deepEqual(generated[key],before[key],key);
+  const generated=run('(state=createState(),migrateState(),deepClone(state))');for(const key of ['players','rngSeed','teamTop10','facilities','trainingFocus'])assert.deepEqual(generated[key],before[key],key);
+  assert.deepEqual(generated.world.map(a=>[a.id,a.stats,a.imAptitude]),before.world.map(a=>[a.id,a.stats,a.imAptitude]));
   const saved=run('JSON.stringify(state)');run('migrateState();true');assert.equal(run('JSON.stringify(state)'),saved);
 });

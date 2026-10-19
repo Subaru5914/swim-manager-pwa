@@ -8,19 +8,25 @@ function game(input=current,seed=5914){
  return code=>JSON.parse(JSON.stringify(eval(code)))`,['globalThis'])({crypto:{getRandomValues:a=>{a[0]=seed;return a}}});
 }
 function minimal(){const run=game();run(`state={season:2026,slot:1,rngSeed:5914,cpuCompetitionSeed:5914,cpuDevelopmentVersion:1,playerUniversity:'自大学',players:[],world:[],recruits:[],recordRankings:{},recordBook:{},teamTop10:{},retiredArchive:[],japanTeamHistory:[],universities:[{name:'検証大学',region:'kansai',reputation:150}],facilities:{}};true`);return run}
-test('current v2.03 migration and reset preserve every existing ability, IM aptitude, PB and the next random draw',()=>{
+test('current v2.03 migration and reset preserve abilities, IM aptitude, retained PBs and the next random draw while updating CPU specialties',()=>{
  const oldHtml=cp.execFileSync('git',['show','88e8311:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
  const before=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run(`state=${JSON.stringify(before)};migrateState();true`);
  const migrated=run(`(()=>{const first=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed}})()`);
- assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.23');
+ assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.24');
  for(const k of ['season','slot','points','reputation','playerUniversity','rngSeed','trainingFocus','facilities','recruits'])assert.deepEqual(migrated.state[k],before[k],k);
  const reset=game();const generated=reset('(state=createState(),migrateState(),deepClone(state))');
  for(const after of [migrated.state,generated])for(const group of ['world','players']){
   assert.equal(after[group].length,before[group].length);
-  after[group].forEach((a,i)=>{const b=before[group][i];assert.equal(a.id,b.id);for(const k of ['stats','imAptitude','bestTimes','specialty'])assert.deepEqual(a[k],b[k],a.id+' '+k)});
+  after[group].forEach((a,i)=>{
+   const b=before[group][i];assert.equal(a.id,b.id);for(const k of ['stats','imAptitude'])assert.deepEqual(a[k],b[k],a.id+' '+k);
+   if(group==='players'||a.category!=='high')assert.deepEqual(a.bestTimes,b.bestTimes,a.id+' PBs');
+   else for(const[e,t]of Object.entries(a.bestTimes))if(validClock(b.bestTimes[e]))assert.equal(t,b.bestTimes[e],a.id+' '+e+' PB');
+   if(group==='players')assert.equal(a.specialty,b.specialty);
+  });
  }
  assert.equal(generated.rngSeed,before.rngSeed);
 });
+function validClock(t){return Number.isFinite(t)&&t>0}
 test('daily practice accumulates fractional gains, slows at high abilities and gives stronger universities better efficiency',()=>{
  const run=minimal(),r=run(`(()=>{
   const swimmers=[80,125,155,175].map(v=>trainingAthlete('level-'+v,v));
