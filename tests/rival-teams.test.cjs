@@ -7,6 +7,14 @@ function game(){
  return code=>JSON.parse(JSON.stringify(eval(code)))`,[] )();
  run(`state={season:2026,rngSeed:5914,players:[],world:[],universities:[{id:'a',name:'甲大学',region:'kansai',reputation:200},{id:'b',name:'乙大学',region:'national',reputation:300},{id:'empty',name:'空大学',region:'kansai',reputation:20}]};true`);return run;
 }
+test('event depth uses only recorded current PBs, resolves ties by grade and name, and returns five or three without changing data',()=>{
+ const run=game(),r=run(`(()=>{
+  const own=Array.from({length:8},(_,i)=>({...swimmer('own-'+i,1+i%4,{fr100:50+i*.2,ba50:27+i*.1}),year:1+i%4}));
+  own[0].retired=true;delete own[1].bestTimes.ba50;own[2].bestTimes.ba50=0;own[3].bestTimes.ba50=NaN;own[6].bestTimes.fr100=own[5].bestTimes.fr100;own[6].year=1;state.players=own;
+  const before=JSON.stringify(state),five=eventPBLeaders(state.players,'fr100',5).map(a=>a.id),three=eventPBLeaders(state.players,'fr100',3).map(a=>a.id),sprint=eventPBLeaders(state.players,'ba50',5).map(a=>a.id);
+  return{five,three,sprint,empty:eventPBLeaders(state.players,'im400',5),stable:before===JSON.stringify(state)};
+ })()`);assert.deepEqual(r.five,['own-1','own-2','own-3','own-4','own-6']);assert.deepEqual(r.three,r.five.slice(0,3));assert.deepEqual(r.sprint,['own-4','own-5','own-6','own-7']);assert.deepEqual(r.empty,[]);assert.ok(r.stable);
+});
 test('rival rosters use current university membership, exclude retirees and other ages, and sort PBs without changing athletes or RNG',()=>{
  const run=game(),r=run(`(()=>{
   const a=swimmer('one',1,{fr100:53}),b=swimmer('two',2,{fr100:50}),c=swimmer('no-pb',1,{}),retired={...swimmer('retired',1,{fr100:40}),retired:true},high={...swimmer('high',1,{fr100:41}),category:'high'},other={...swimmer('other',1,{fr100:42}),organization:'乙大学'};

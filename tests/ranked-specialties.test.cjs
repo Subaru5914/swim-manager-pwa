@@ -84,11 +84,12 @@ test('high-school pruning settles against the remaining PBs and retains every sp
  assert.deepEqual(r.errors,[]);assert.ok(r.stable&&!r.unranked);assert.equal(r.missing,0);
 });
 
-test('v2.23 saves migrate specialties once, preserving all abilities, retained PBs, histories, own settings and RNG',()=>{
+test('v2.23 saves migrate specialties once, preserving balanced abilities, retained PBs, histories, own settings and RNG',()=>{
  const previous=game(cp.execFileSync('git',['show','34c1871:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
- const before=previous('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(before)+';migrateState();true');
+ const legacy=previous('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(legacy)+';migrateStartAbilities();true');
+ const before=run('deepClone(state)');run('migrateState();true');
  const result=run(`(()=>{const saved=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:saved===JSON.stringify(state)&&seed===state.rngSeed,errors:specialtyErrors()}})()`);
- assert.deepEqual(result.errors,[]);assert.ok(result.stable);assert.equal(result.state.version,'pwa-v2.25');
+ assert.deepEqual(result.errors,[]);assert.ok(result.stable);assert.equal(result.state.version,'pwa-v2.26');
  for(const key of ['season','slot','rngSeed','points','facilities','players','trainingFocus','trainingPlans','teamTop10','recordRankings','pendingCollegeAdmissions','pendingSeasonRetirements'])assert.deepEqual(result.state[key],before[key],key);
  for(let i=0;i<before.world.length;i++){
   const a=result.state.world[i],b=before.world[i];assert.equal(a.id,b.id);

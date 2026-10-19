@@ -3,10 +3,8 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(seed=5914){
-  const c=vm.createContext({crypto:{getRandomValues:a=>{a[0]=seed;return a}}});
-  vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),c);
-  vm.runInContext('state=createState()',c);
-  return code=>JSON.parse(vm.runInContext('JSON.stringify('+code+')',c));
+  const run=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+'\nreturn code=>JSON.parse(JSON.stringify(eval(code)))',['globalThis'])({crypto:{getRandomValues:a=>{a[0]=seed;return a}}});
+  run('(state=createState(),true)');return run;
 }
 test('CPU calibration uses the current race weights at all four distances',()=>{
   const run=game(),rows=run(`EVENTS.filter(e=>strokeForEvent(e)!=='im').map(event=>{
@@ -60,19 +58,22 @@ test('legacy NPC PB corrections also correct record sources once, while preservi
 });
 test('every corrected NPC event has a reachable PB, independent stroke variation and bounded derived IM aptitude',()=>{
   const run=game(),r=run(`(()=>{
-    const bad=[],bias=[],schools={};
+    const bad=[],bias=[],schools={};let badCount=0;
+    const fail=row=>{badCount++;if(bad.length<20)bad.push(row)};
     for(const a of state.world.filter(adjustableCpu))for(const e of EVENTS){
       const d=distanceOf(e),base=expectedTime(a,e),pb=a.bestTimes[e],ranges=MEET_FORM_TIME_RANGES[d],radius=RACE_EXECUTION_RANGE[d];
       const low=base+Math.min(...ranges.map(r=>r[0]))-radius,high=base+Math.max(...ranges.map(r=>r[1]))+radius+PRELIMINARY_TIME_DELAY[d][1];
-      if(!validRaceTime(pb)||pb<low-.025||pb>high+.025)bad.push({id:a.id,e,pb,base});
+      // Current school rosters deliberately have no PB for unranked/non-main events.
+      if(pb==null&&e!==a.specialty)continue;
+      if(!validRaceTime(pb)||pb<low-.025||pb>high+.025)fail({id:a.id,e,pb,base});
     }
     for(const a of state.world){
       for(const c of ['speed','stamina']){const mean=MEDLEY_STROKES.reduce((sum,s)=>sum+a.stats[s+'_'+c],0)/4;bias.push(Math.abs(medleyStatValue(a,c)-mean))}
       if(['middle','high','adult'].includes(a.category))schools[a.category]=(schools[a.category]||0)+1;
     }
-    return{bad,maxBias:Math.max(...bias),schools};
+    return{bad,badCount,maxBias:Math.max(...bias),schools};
   })()`);
-  assert.deepEqual(r.bad,[]);assert.ok(r.maxBias<=20.006);assert.ok(r.schools.middle>=1000&&r.schools.high>=990&&r.schools.adult>=288);
+  assert.equal(r.badCount,0,JSON.stringify(r.bad));assert.ok(r.maxBias<=20.006);assert.ok(r.schools.middle>=1000&&r.schools.high>=990&&r.schools.adult>=288);
 });
 test('an incoming class cannot accumulate an unrealistically fast relay and never weakens returning or owned swimmers',()=>{
   const run=game(),r=run(`(()=>{
