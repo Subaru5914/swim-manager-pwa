@@ -286,28 +286,49 @@ test('national meets retain selected qualifiers from all CPU ages and strokes, a
   }
 });
 
-test('national entries prioritize specialty, every qualified distance of that stroke, then the strongest distance-weighted abilities up to five',()=>{
+test('national entries choose the five best overall PB ranks beyond 50 for every age, regardless of specialty, stroke or ability',()=>{
   const run=game(),rows=run(`(()=>{
     const rows=[];
-    for(const meet of ['japan_open','japan_championship'])for(const specialty of ['fr100','ba100','br100','fly100','im200']){
-      const a={id:'selection-'+specialty,category:'adult',specialty,stats:Object.fromEntries(STATS.map(k=>[k,80])),imAptitude:{speed:0,stamina:0},bestTimes:Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.99]))};
-      a.stats.start=100;a.stats.fr_speed=190;a.stats.fr_stamina=100;a.stats.fr_turn=100;
-      if(specialty==='fr100'){a.stats.fr_speed=60;a.stats.fr_stamina=60;a.stats.fr_turn=60;a.stats.br_speed=190;a.stats.br_stamina=100;a.stats.br_turn=100;a.bestTimes.fly50=standardFor(meet,'fly50')*.8}
-      const before=JSON.stringify(a),seed=state.rngSeed,selected=cpuEntryEvents(a,meet),sameStroke=EVENTS.filter(e=>strokeForEvent(e)===strokeForEvent(specialty));
-      rows.push({meet,specialty,selected,sameStroke,unchanged:before===JSON.stringify(a)&&seed===state.rngSeed});
+    for(const meet of ['japan_open','japan_championship'])for(const category of ['middle','high','university','adult']){
+      const a={id:'selection',category,specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,80])),bestTimes:Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.98]))};
+      a.stats.fr_speed=200;a.stats.fr_stamina=200;
+      state.world=[a,...EVENTS.flatMap((e,i)=>Array.from({length:100-3*i},(_,n)=>({id:e+n,category:['middle','high','university','adult'][n%4],bestTimes:{[e]:a.bestTimes[e]-.01-n*.001}})))];
+      state.players=[];
+      const before=JSON.stringify(state),selected=cpuEntryEvents(a,meet),fields=categoryPersonalBestRankings('all');
+      rows.push({meet,category,selected,ranks:selected.map(e=>fields.get(e).byId.get(a.id)),unchanged:before===JSON.stringify(state)});
     }return rows;
   })()`);
   for(const row of rows){
-    assert.equal(row.selected.length,5);assert.equal(new Set(row.selected).size,5);assert.equal(row.selected[0],row.specialty);assert.ok(row.unchanged);
-    assert.deepEqual([...row.selected.slice(0,row.sameStroke.length)].sort(),[...row.sameStroke].sort(),JSON.stringify(row));
-    assert.deepEqual(row.selected.slice(row.sameStroke.length),row.specialty==='fr100'?['br50']:row.specialty==='im200'?['fr50','fr100','fr200']:['fr50','fr100'],JSON.stringify(row));
+    assert.deepEqual(row.selected,['im400','im200','fly200','fly100','fly50'],JSON.stringify(row));
+    assert.deepEqual(row.ranks,[59,62,65,68,71]);assert.ok(row.unchanged);
   }
+});
+
+test('overall ranks include own swimmers and every age, exclude retired swimmers, and break tied places by specialty then event order',()=>{
+  const run=game(),r=run(`(()=>{
+    const meet='japan_open',events=['fr50','fr100','fr200','fr400','ba50','ba100'];
+    const a={id:'target',category:'high',specialty:'fr100',bestTimes:Object.fromEntries(events.map(e=>[e,standardFor(meet,e)*.97]))};
+    state.world=[a,{id:'retired',category:'adult',retired:true,bestTimes:{fr100:a.bestTimes.fr100-1}}];state.players=[];
+    const initial=cpuEntryEvents(a,meet);
+    state.players=[{id:'own',year:1,bestTimes:{fr100:a.bestTimes.fr100-1}}];
+    const withOwn=cpuEntryEvents(a,meet);
+    state.world.push(...['middle','high','university','adult'].map((category,i)=>({id:'peer'+i,category,bestTimes:{fr100:a.bestTimes.fr100-1}})));
+    const fields=categoryPersonalBestRankings('all'),firstRanks=events.map(e=>fields.get(e).byId.get(a.id));
+    // Equal PBs share a place; the target follows all five tied faster swimmers.
+    const tiedRanks=fields.get('fr100').rows.filter(p=>p.id!=='target').map(p=>fields.get('fr100').byId.get(p.id));
+    const before=JSON.stringify(state),plan=buildCpuNationalEntries(meet),repeat=buildCpuNationalEntries(meet);
+    return{initial,withOwn,firstRanks,tiedRanks,selected:events.filter(e=>plan[e].includes(a.id)),unchanged:before===JSON.stringify(state),stable:JSON.stringify(plan)===JSON.stringify(repeat)};
+  })()`);
+  assert.deepEqual(r.initial,['fr100','fr50','fr200','fr400','ba50']);
+  assert.deepEqual(r.withOwn,['fr50','fr200','fr400','ba50','ba100']);
+  assert.deepEqual(r.firstRanks,[1,6,1,1,1,1]);assert.deepEqual(r.tiedRanks,[1,1,1,1,1]);
+  assert.deepEqual(r.selected,['fr50','fr200','fr400','ba50','ba100']);assert.ok(r.unchanged&&r.stable);
 });
 
 test('national selections respect each meet standard, missing or invalid PBs, and allow fewer than five entries or an unqualified specialty',()=>{
   const run=game(),r=run(`(()=>{
     const a={id:'qualifying',category:'adult',specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,140])),bestTimes:{fr100:50.1,fr50:22.7,fr200:Infinity,fr400:0,ba100:NaN,br100:999}};
-    const open=cpuEntryEvents(a,'japan_open'),championship=cpuEntryEvents(a,'japan_championship');
+    state.world=[a];const open=cpuEntryEvents(a,'japan_open'),championship=cpuEntryEvents(a,'japan_championship');
     a.bestTimes={};const none=cpuEntryEvents(a,'japan_open');a.bestTimes.fr100=standardFor('japan_open','fr100');const exact=cpuEntryEvents(a,'japan_open');
     return{open,championship,none,exact};
   })()`);
@@ -338,8 +359,8 @@ test('actual national execution freezes five CPU events before new PBs qualify f
       const stats=Object.fromEntries(STATS.map(k=>[k,100])),bestTimes=Object.fromEntries(EVENTS.map(e=>[e,standardFor(meet,e)*.99]));
       const cpu={id:'cpu',category:'adult',specialty:'fr100',organization:'CPU',stats:{...stats,ba_speed:180,fly_speed:200},bestTimes:Object.fromEntries(['fr50','fr100','fr200','fr400','ba50'].map(e=>[e,bestTimes[e]]))};
       const own={id:'own',year:1,organization:state.playerUniversity,specialty:'fr100',stats,bestTimes};
-      state.world=[cpu];state.players=[own];state.points=0;state.pointLog=[];state.meetHistory=[];
-      updateResultHistory=(a,e,t,m,stage,rank)=>{if(a===cpu&&e==='ba50')a.bestTimes.fly50=standardFor(meet,'fly50')-.01;return{rank,pb:false,newlyCleared:[]}};
+      state.world=[cpu,{id:'faster-backstroker',category:'high',organization:'高校',specialty:'ba100',stats,bestTimes:{ba50:cpu.bestTimes.ba50-.1}}];state.players=[own];state.points=0;state.pointLog=[];state.meetHistory=[];
+      updateResultHistory=(a,e,t,m,stage,rank)=>{if(a===cpu&&e==='ba50')a.bestTimes.fly50=standardFor(meet,'fly50')*.97;return{rank,pb:false,newlyCleared:[]}};
       const plan=buildCpuNationalEntries(meet),result=executeMeetWithForm(meet,Object.fromEntries(EVENTS.map(e=>[e,['own']])),{});
       const cpuEvents=EVENTS.filter(e=>result.events[e].prelim.some(row=>row.athlete.id==='cpu'));
       const ownEvents=EVENTS.filter(e=>result.events[e].prelim.some(row=>row.athlete.id==='own'));

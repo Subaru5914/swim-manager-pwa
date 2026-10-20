@@ -6,9 +6,9 @@ function game(input=html){
  return vm.compileFunction(code.slice(0,code.indexOf('document.getElementById("nav").addEventListener'))+`
  let testFixture;
  function resetFixture(){if(!testFixture){state=createState();migrateState();testFixture=deepClone(state)}state=deepClone(testFixture);for(const a of activeAthletes())attachMedleyStats(a)}
- function otherEntryPlans(){return ['teijimayama_championship','japan_open','japan_championship','joint_record'].map(meet=>{
+ function otherEntryPlans(){return ['kansai_college','intercollege','teijimayama_championship','joint_record'].map(meet=>{
   state.rngSeed=5914;
-  const entries=meet==='teijimayama_championship'?buildCpuCollegeEntries(meet):meet==='joint_record'?Object.fromEntries(EVENTS.map(e=>[e,selectJointCpuEntries(state.world.filter(a=>allowedCpu(a,meet)&&cpuEntryEvents(a,meet).includes(e)&&qualified(a,meet,e)),preliminaryHeatCount(meet,e)*8,e).map(a=>a.id)])):buildCpuNationalEntries(meet);
+  const entries=COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?buildCpuCollegeEntries(meet):meet==='joint_record'?Object.fromEntries(EVENTS.map(e=>[e,selectJointCpuEntries(state.world.filter(a=>allowedCpu(a,meet)&&cpuEntryEvents(a,meet).includes(e)&&qualified(a,meet,e)),preliminaryHeatCount(meet,e)*8,e).map(a=>a.id)])):buildCpuNationalEntries(meet);
   return{meet,entries,rngSeed:state.rngSeed};
  })}
  return code=>JSON.parse(JSON.stringify(eval(code)))`,['globalThis'])({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
@@ -47,11 +47,11 @@ test('college rank allocation is deterministic, PB-ordered and has no eligible f
   return errors;
  })()`);assert.deepEqual(r,[]);
 });
-test('v2.29 saves and reset generation retain all game data except the version; November, winter and national entry plans stay unchanged',()=>{
- const previous=game(cp.execFileSync('git',['show','cfa159a:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
+test('v2.30 saves and reset generation retain all game data except the version; college, November and winter entry plans stay unchanged',()=>{
+ const previous=game(cp.execFileSync('git',['show','0f73a19:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
  const legacy=previous('(resetFixture(),deepClone(state))');
  run('state='+JSON.stringify(legacy)+';migrateState();true');const migrated=run('deepClone(state)');
- assert.equal(migrated.version,'pwa-v2.30');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
+ assert.equal(migrated.version,'pwa-v2.31');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
  run('resetFixture();true');const fresh=run('deepClone(state)');fresh.version=legacy.version;assert.equal(digest(fresh),digest(legacy));
  assert.deepEqual(run('otherEntryPlans()'),previous('otherEntryPlans()'));
 });
