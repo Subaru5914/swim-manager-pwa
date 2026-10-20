@@ -47,11 +47,11 @@ test('college rank allocation is deterministic, PB-ordered and has no eligible f
   return errors;
  })()`);assert.deepEqual(r,[]);
 });
-test('v2.30 saves and reset generation retain all game data except the version; college, November and winter entry plans stay unchanged',()=>{
- const previous=game(cp.execFileSync('git',['show','0f73a19:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
+test('v2.31 saves and reset generation retain all game data except the version; college, November and winter entry plans stay unchanged',()=>{
+ const previous=game(cp.execFileSync('git',['show','6309e4d:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
  const legacy=previous('(resetFixture(),deepClone(state))');
  run('state='+JSON.stringify(legacy)+';migrateState();true');const migrated=run('deepClone(state)');
- assert.equal(migrated.version,'pwa-v2.31');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
+ assert.equal(migrated.version,'pwa-v2.32');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
  run('resetFixture();true');const fresh=run('deepClone(state)');fresh.version=legacy.version;assert.equal(digest(fresh),digest(legacy));
  assert.deepEqual(run('otherEntryPlans()'),previous('otherEntryPlans()'));
 });
