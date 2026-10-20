@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.36</title>
+<title>大学競泳監督シミュレーション PWA版 v2.37</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1411,7 +1411,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.36</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.37</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1643,9 +1643,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.36"></script>
-<script src="./save-history.js?version=v2.36"></script>
-<script src="./cloud-sync.js?version=v2.36"></script>
+<script src="./local-save.js?version=v2.37"></script>
+<script src="./save-history.js?version=v2.37"></script>
+<script src="./cloud-sync.js?version=v2.37"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1967,7 +1967,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.36";
+  state.version="pwa-v2.37";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -2611,11 +2611,17 @@ function retimeRace(race,target,sections=null){
 const PRELIMINARY_TIME_DELAY={50:[.08,.22],100:[.18,.45],200:[.9,2.2],400:[2,4.5]};
 const PRELIMINARY_DELAY_RATE={50:.25,100:.35,200:.60,400:.75};
 const PRELIMINARY_FORM_RATE_MULTIPLIER={"-2":1,"-1":1,0:1,1:.7,2:.4};
+function preliminaryDelayCandidates(rows,event){
+  const pb=row=>Object.hasOwn(row,"entryPB")?row.entryPB:row.athlete.bestTimes?.[event];
+  return rows.filter(row=>validRaceTime(pb(row))).slice()
+    .sort((a,b)=>Math.round(pb(a)*100)-Math.round(pb(b)*100)||String(a.athlete.id??a.athlete.name??"").localeCompare(String(b.athlete.id??b.athlete.name??"")))
+    .slice(0,5);
+}
 let activePreliminaryDelayField=null;
 function withPreliminaryDelayField(rows,event,run){
   const previous=activePreliminaryDelayField;
-  // Every actual individual entrant can ease off, irrespective of PB or team.
-  activePreliminaryDelayField={event,athletes:new Set(rows.map(row=>row.athlete.id??row.athlete))};
+  // Freeze the five fastest entry PBs across every heat, counting own swimmers.
+  activePreliminaryDelayField={event,athletes:new Set(preliminaryDelayCandidates(rows,event).map(row=>row.athlete.id??row.athlete))};
   try{return run()}finally{activePreliminaryDelayField=previous}
 }
 function athletePreliminaryProbability(p,event){
@@ -4300,7 +4306,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.36",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.37",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -6609,6 +6615,39 @@ function scoutingNeed(a,school){
   const relayNeed=relayEvent?Math.max(0,(stroke==="fr"?4:1)-remaining.filter(p=>validRaceTime(p.bestTimes?.[relayEvent])&&p.bestTimes[relayEvent]<(a.bestTimes?.[relayEvent]??expectedTime(a,relayEvent))).length):0;
   return (1+leaving*.45+Math.max(0,3-ahead)*.35+relayNeed*.2)/(1+same*.7);
 }
+function scoutingTalentQuality(a,rankings){
+  const rank=Math.min(...EVENTS.map(e=>rankings.get(e)?.byId.get(a.id)??Infinity));
+  const pb=rank<=8?1-(rank-1)/70:rank<=16?.9-(rank-8)*.15/8:rank<=50?.75-(rank-16)*.4/34:rank<=200?.35*(200-rank)/150:0;
+  const ability=clamp((recruitAbility(a)-80)/90,0,1);
+  return clamp(.65*pb+.35*ability,0,1);
+}
+function scoutingTargetCount(a,rankings){
+  const quality=scoutingTalentQuality(a,rankings),roll=scoutingFixed(a.id,"competitor-count-v2");
+  return Math.min(10,state.universities.length,Math.floor(9*Math.pow(quality,1.5)+roll*(1.5+.5*quality)));
+}
+function scoutingInitialInterest(a,schoolId,rankings){
+  return round2(clamp(30*scoutingAffinity(a,schoolId,rankings)+(scoutingFixed(a.id,schoolId+":interest")-.5)*6,0,100));
+}
+function refreshScoutingTargets(rankings=highSchoolScoutRankings()){
+  const c=state.scoutingCompetition;if(!c||c.season!==state.season)return;
+  if(c.finalized){c.targetingVersion=2;return}
+  for(const a of state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired)){
+    const r=c.candidates[a.id];if(!r||r.destination)continue;
+    const count=scoutingTargetCount(a,rankings);if(r.cpuTargets.length>=count)continue;
+    // Add rivals without rerolling existing negotiations or either saved RNG.
+    // Exponential priorities give a fixed weighted sample without replacement.
+    const pool=state.universities.filter(u=>!r.cpuTargets.includes(u.id)).map(u=>{
+      const weight=(.3+scoutingAffinity(a,u.id,rankings))*scoutingNeed(a,u)*universityTalentPreference(a,u.reputation)*(.6+scoutingFixed(a.id,u.id));
+      const roll=Math.max(1e-9,scoutingFixed(a.id,"target-v2:"+u.id));
+      return{id:u.id,priority:-Math.log(roll)/weight};
+    }).sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id));
+    for(const {id}of pool.slice(0,count-r.cpuTargets.length)){
+      r.cpuTargets.push(id);
+      if(!Object.hasOwn(r.interests,id))r.interests[id]=scoutingInitialInterest(a,id,rankings);
+    }
+  }
+  c.targetingVersion=2;
+}
 function purgeAthleteData(ids){
   if(!ids.size)return;
   const names=new Set(state.world.filter(a=>ids.has(a.id)).map(a=>a.name));
@@ -6655,6 +6694,7 @@ function initializeScoutingCompetition(){
     for(const a of state.world.filter(a=>a.category==="high"&&a.grade===3&&(a.scouted||state.recruits.includes(a.id)))){
       const r=scoutingRecord(a.id);if(r&&!r.destination){r.destination="player";r.offers=[];r.decision="既存内定"}
     }
+    if(state.scoutingCompetition.targetingVersion!==2)refreshScoutingTargets();
     return state.scoutingCompetition;
   }
   trimGraduatingCohort();
@@ -6662,19 +6702,11 @@ function initializeScoutingCompetition(){
     processedMonths:[],schools:Object.fromEntries(state.universities.map(u=>[u.id,{budget:scoutingBudget(u.reputation),remaining:scoutingBudget(u.reputation)}])),candidates:{},notices:[]};
   const rankings=highSchoolScoutRankings();
   for(const a of state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired)){
-    const rank=scoutHighSchoolRank(a,a.specialty,rankings),roll=scoutingFixed(a.id,"competitor-count");
-    const count=rank!=null&&rank<=8?2+(roll<.6?1:0):rank!=null&&rank<=50?Math.floor(roll*3):(roll<.35?1:0);
     const r=c.candidates[a.id]={interests:{},contacts:{},offers:[],cpuTargets:[],destination:null,decision:null};
-    const pool=[...state.universities];
-    while(r.cpuTargets.length<Math.min(count,state.universities.length)){
-      const weights=pool.map(u=>(.3+scoutingAffinity(a,u.id,rankings))*scoutingNeed(a,u)*universityTalentPreference(a,u.reputation)*(.6+scoutingFixed(a.id,u.id)));
-      let draw=scoutingRoll()*weights.reduce((s,x)=>s+x,0),i=0;
-      while(i<weights.length-1&&(draw-=weights[i])>0)i++;
-      r.cpuTargets.push(pool.splice(i,1)[0].id);
-    }
-    for(const schoolId of ["player",...r.cpuTargets])r.interests[schoolId]=round2(clamp(30*scoutingAffinity(a,schoolId,rankings)+(scoutingFixed(a.id,schoolId+":interest")-.5)*6,0,100));
+    r.interests.player=scoutingInitialInterest(a,"player",rankings);
     if(a.scouted||state.recruits.includes(a.id)){r.destination="player";r.decision="既存内定"}
   }
+  refreshScoutingTargets(rankings);
   return c;
 }
 function scoutingCompetitionRows(id){
@@ -6741,12 +6773,13 @@ function processScoutingDecisions(final=false){
 }
 function processScoutingMonth(slot=state.slot){
   const c=initializeScoutingCompetition(),month=slotDate(slot).month;if(c.processedMonths.includes(month))return false;
+  const rankings=highSchoolScoutRankings();refreshScoutingTargets(rankings);
   const watched=new Map(Object.entries(c.candidates).filter(([,r])=>!r.destination&&r.contacts.player!=null).map(([id,r])=>[id,scoutingCompetitionRows(id)]));
   const athletes=new Map(state.world.filter(a=>a.category==="high"&&a.grade===3&&!a.retired).map(a=>[a.id,a]));
   for(const school of state.universities){
     const budget=c.schools[school.id];if(!budget||budget.remaining<SCOUT_COST)continue;
     const targets=Object.entries(c.candidates).filter(([id,r])=>athletes.has(id)&&!r.destination&&r.cpuTargets.includes(school.id)&&r.contacts[school.id]!==month&&(r.offers.includes(school.id)||scoutingPlaces(school.id)<8));
-    const priorities=targets.map(([id,r])=>({id,r,weight:scoutingNeed(athletes.get(id),school)*(1+(r.interests[school.id]??0)/22)*(r.offers.includes(school.id)?1.5:1)*(.65+scoutingRoll()*.7)})).sort((a,b)=>b.weight-a.weight);
+    const priorities=targets.map(([id,r])=>({id,r,weight:scoutingNeed(athletes.get(id),school)*(1+5*Math.pow(scoutingTalentQuality(athletes.get(id),rankings),2))*(1+(r.interests[school.id]??0)/22)*(r.offers.includes(school.id)?1.5:1)*(.65+scoutingRoll()*.7)})).sort((a,b)=>b.weight-a.weight);
     const actions=Math.min(2,Math.ceil(budget.remaining/SCOUT_COST/Math.max(1,12-c.processedMonths.length)));
     for(const {id} of priorities.slice(0,actions)){
       const result=scoutingContact(id,school.id,month);
@@ -6971,7 +7004,7 @@ function showMeetFormRanges(){
     <div class="row" role="group" aria-label="補正を表示する種目"><button id="individualFormRanges" class="primary" aria-pressed="true">個人種目・第1泳者</button><button id="relayFormRanges" aria-pressed="false">第2〜4泳者</button></div>
     <div class="table-wrap" id="formRangesTable">${formTable(false)}</div>
     <p id="relayFormInfo" class="small muted" hidden>この表は第2〜4泳者専用です。個人種目より速いラップが出やすい調子補正に、引き継ぎによる短縮が加わります。第1泳者は「個人種目・第1泳者」の表を使う通常スタートです。自チーム・CPU共通で、予選・決勝とも泳者・レースごとに抽選します。第1泳者が個人PBを上回った場合はPB・ランキング・該当する10傑を更新します。第2〜4泳者のラップは個人PBとして登録しません。</p>
-    <p class="small muted">レース乱数：${[50,100,200,400].map(d=>`${d}m ±${RACE_EXECUTION_RANGE[d].toFixed(2)}秒`).join(" ／ ")}。<br>個人種目の予選補正は、自チーム・CPUを問わず、予選に実際に出場する全選手が対象です。PBの順位や計測の有無による制限はありません。各選手について、距離別の基準発生率（${[50,100,200,400].map(d=>`${d}m ${Math.round(PRELIMINARY_DELAY_RATE[d]*100)}％`).join(" ／ ")}）に選手固有の±15ポイントの傾向を加え、調子が普通・不調・絶不調ならそのまま、好調なら0.7倍、絶好調なら0.4倍の発生率で、レースごとに抽選します。発生しない場合もあります。発生時の加算秒数は${[50,100,200,400].map(d=>`${d}m ${PRELIMINARY_TIME_DELAY[d].map(signed).join("〜")}秒`).join(" ／ ")}の範囲から中央寄りで抽選します。世界大会の自チーム代表も同じ条件です。決勝・スイムオフ・全リレーには予選補正を加えません。</p>`);
+    <p class="small muted">レース乱数：${[50,100,200,400].map(d=>`${d}m ±${RACE_EXECUTION_RANGE[d].toFixed(2)}秒`).join(" ／ ")}。<br>個人種目の予選補正は、大会・種目ごとの実際の出場PB上位5名だけが、自チーム・CPU共通で対象です。6番手以下とPB未計測の選手は対象外です。同PBは選手ID順で5名までとし、エントリー時点のPBから全組共通で固定します。対象選手について、距離別の基準発生率（${[50,100,200,400].map(d=>`${d}m ${Math.round(PRELIMINARY_DELAY_RATE[d]*100)}％`).join(" ／ ")}）に選手固有の±15ポイントの傾向を加え、調子が普通・不調・絶不調ならそのまま、好調なら0.7倍、絶好調なら0.4倍の発生率で、レースごとに抽選します。発生しない場合もあります。発生時の加算秒数は${[50,100,200,400].map(d=>`${d}m ${PRELIMINARY_TIME_DELAY[d].map(signed).join("〜")}秒`).join(" ／ ")}の範囲から中央寄りで抽選します。世界大会の自チーム代表も同じ条件です。決勝・スイムオフ・全リレーには予選補正を加えません。</p>`);
   m.classList.add("modal-form-boost","modal-form-ranges");
   const switchTable=relay=>{
     m.querySelector("#formRangesTable").innerHTML=formTable(relay);m.querySelector("#relayFormInfo").hidden=!relay;

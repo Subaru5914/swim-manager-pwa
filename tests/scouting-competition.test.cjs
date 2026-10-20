@@ -13,7 +13,7 @@ test('fresh cohorts contain exactly 320 per grade, CPU competition is capped and
   const before=JSON.stringify(state);for(const id of Object.keys(state.scoutingCompetition.candidates))scoutingCompetitionRows(id);initializeScoutingCompetition();
   return{counts:['middle','high'].flatMap(category=>[1,2,3].map(grade=>state.world.filter(a=>a.category===category&&a.grade===grade).length)),
    stable:before===JSON.stringify(state),mode:state.scoutingAdmissionsMode,size:Object.keys(state.scoutingCompetition.candidates).length,
-   targets:Object.values(state.scoutingCompetition.candidates).every(r=>r.cpuTargets.length<=3&&new Set(r.cpuTargets).size===r.cpuTargets.length),
+   targets:Object.values(state.scoutingCompetition.candidates).every(r=>r.cpuTargets.length<=10&&new Set(r.cpuTargets).size===r.cpuTargets.length),
    budgets:Object.entries(state.scoutingCompetition.schools).every(([id,b])=>b.budget===scoutingBudget(state.universities.find(u=>u.id===id).reputation)&&b.remaining===b.budget)};
  })()`);
  assert.deepEqual(r.counts,[320,320,320,320,320,320]);assert.equal(r.size,320);assert.equal(r.mode,'competition');assert.ok(r.stable&&r.targets&&r.budgets);

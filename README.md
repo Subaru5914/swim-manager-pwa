@@ -1,6 +1,14 @@
-# 大学競泳監督シミュレーション PWA v2.36
+# 大学競泳監督シミュレーション PWA v2.37
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v2.37 の変更
+
+- 個人予選の補正対象を、大会・種目ごとの実際の出場PB上位5名に限定しました。自チーム・CPU・世界大会で共通とし、6番手以下・PB未計測・不出場の選手には発生しません。エントリー時点のPBから全組共通で固定し、同PBは選手ID順で5名までとします。好調は従来の発生率の0.7倍、絶好調は0.4倍、普通・不調・絶不調は従来率を維持します。加算幅と通常のタイム計算は維持し、決勝・スイムオフ・全リレー・自チーム記録会には加えません。「補正幅」の説明も更新します。
+- スカウトでは、計測済みPBの高校順位と専門種目の能力を併せて評価し、有力選手を勧誘するCPU大学を最大3校から最大10校へ拡大しました。CPUが月末に接触する際の優先度にも評価を反映し、候補校の数と実際の接触・内定打診の両方が増えやすくします。大学の評判・補強需要・選手の進学希望も継続して考慮します。
+- 既存セーブでは未確定の選手に候補校を追加します。接触済みの大学、志望度、打診、確定内定、予算と保存済み乱数は維持し、再読込で再抽選しません。能力・PBが伸びた選手は月末にも再評価します。各大学の年間予算、月末0〜2回の接触、5ptの接触費用、内定と打診の合計8名、進路自由編集は維持します。
+
+検証：関連ロジック54件で全15種目の上位5名・未計測・同PB・全組共通判定、国内大会・世界大会、調子別の発生率、決勝・スイムオフ・リレーの無補正、スカウトの競合増加・既存交渉保持・予算と8名枠・8年度の進学を確認しました。画面6件ではPC／iPhone相当で全国大会の実際の出場者判定、レース映像と結果、調子調整、競合一覧、オフライン復元とv2.36からのPWA更新を確認しました。
 
 ## v2.36 の変更
 
@@ -1055,7 +1063,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/preliminary-fields.test.cjs tests/player-growth.test.cjs tests/college-ranking-entries.test.cjs tests/scouting-competition.test.cjs tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/preliminary-fields.test.cjs tests/scout-talent.test.cjs tests/player-growth.test.cjs tests/college-ranking-entries.test.cjs tests/scouting-competition.test.cjs tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。

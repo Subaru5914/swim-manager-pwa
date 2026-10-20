@@ -47,12 +47,16 @@ test('college rank allocation is deterministic, PB-ordered and has no eligible f
   return errors;
  })()`);assert.deepEqual(r,[]);
 });
-test('v2.35 saves and reset generation retain all game data except the version; college, November and winter entry plans stay unchanged',()=>{
- const previous=game(cp.execFileSync('git',['show','b60889d:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
+test('v2.36 saves and reset generation preserve non-scouting data, existing negotiations and all meet entry plans',()=>{
+ const previous=game(cp.execFileSync('git',['show','6ca86e7:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
  const legacy=previous('(resetFixture(),deepClone(state))');
  run('state='+JSON.stringify(legacy)+';migrateState();true');const migrated=run('deepClone(state)');
- assert.equal(migrated.version,'pwa-v2.36');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
- run('resetFixture();true');const fresh=run('deepClone(state)');fresh.version=legacy.version;assert.equal(digest(fresh),digest(legacy));
+ assert.equal(migrated.version,'pwa-v2.37');
+ const comparable=s=>{s=JSON.parse(JSON.stringify(s));delete s.version;delete s.scoutingCompetition;return s};
+ assert.equal(digest(comparable(migrated)),digest(comparable(legacy)));
+ for(const key of ['randomState','processedMonths','schools','notices'])assert.deepEqual(migrated.scoutingCompetition[key],legacy.scoutingCompetition[key]);
+ for(const [id,before]of Object.entries(legacy.scoutingCompetition.candidates)){const after=migrated.scoutingCompetition.candidates[id];for(const key of ['contacts','offers','destination','decision'])assert.deepEqual(after[key],before[key]);for(const school of before.cpuTargets)assert.ok(after.cpuTargets.includes(school));for(const [school,interest]of Object.entries(before.interests))assert.equal(after.interests[school],interest)}
+ run('resetFixture();true');const fresh=run('deepClone(state)');assert.equal(digest(comparable(fresh)),digest(comparable(legacy)));
  assert.deepEqual(run('otherEntryPlans()'),previous('otherEntryPlans()'));
 });
 test('real Kansai and Intercollege races freeze rank-based entries and retain limits, qualification, relay choices and owned race playback',()=>{
