@@ -49,7 +49,7 @@ test('secondary practice uses the reduced own curve and untrained IM abilities r
  assert.deepEqual(r.after,r.derived);assert.ok(r.after.every((v,i)=>v>r.before[i]));
 });
 
-test('CPU practice, carry, decline and random draws stay identical to v2.33 across all categories and ranks',()=>{
+test('school and university practice, older adult decline and random draws stay identical to v2.33; young adult growth is reduced',()=>{
  const exercise=`(()=>{
   state.world=['middle','high','university','adult'].flatMap(category=>[60,80,100,125,150,175].map((value,i)=>{
    const a=swimmer(value);delete a.year;Object.assign(a,{id:category+value,category,grade:i%3+1,age:category==='adult'?23+i:category==='middle'?13+i%3:category==='high'?16+i%3:19+i%3,organization:'検証大学',specialty:i%2?'im200':'fr100',growthProfile:[1,.72,.9,1.18,1.32],cpuStatCeilings:Object.fromEntries(STATS.map(k=>[k,200]))});
@@ -58,6 +58,8 @@ test('CPU practice, carry, decline and random draws stay identical to v2.33 acro
   for(let turn=0;turn<96;turn++)for(const a of state.world)applyCpuTraining(a);
   return{world:state.world,seed:state.rngSeed};
  })()`;
- const old=game(previous)(exercise),actual=game()(exercise);assert.deepEqual(actual,old);
+ const old=game(previous)(exercise),actual=game()(exercise);assert.equal(actual.seed,old.seed);
+ const unchanged=a=>a.category!=='adult'||a.age>=26;assert.deepEqual(actual.world.filter(unchanged),old.world.filter(unchanged));
+ for(const a of actual.world.filter(a=>!unchanged(a))){const before=old.world.find(b=>b.id===a.id);assert.deepEqual(a.bestTimes,before.bestTimes);for(const k of Object.keys(a.stats))assert.ok(a.stats[k]<=before.stats[k],a.id+' '+k)}
  assert.ok(actual.world.some(a=>a.category==='high'&&a.stats.fr_speed>125));
 });

@@ -51,7 +51,7 @@ test('v2.36 saves and reset generation preserve non-scouting data, existing nego
  const previous=game(cp.execFileSync('git',['show','6ca86e7:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
  const legacy=previous('(resetFixture(),deepClone(state))');
  run('state='+JSON.stringify(legacy)+';migrateState();true');const migrated=run('deepClone(state)');
- assert.equal(migrated.version,'pwa-v2.37');
+ assert.equal(migrated.version,'pwa-v2.38');
  const comparable=s=>{s=JSON.parse(JSON.stringify(s));delete s.version;delete s.scoutingCompetition;return s};
  assert.equal(digest(comparable(migrated)),digest(comparable(legacy)));
  for(const key of ['randomState','processedMonths','schools','notices'])assert.deepEqual(migrated.scoutingCompetition[key],legacy.scoutingCompetition[key]);
