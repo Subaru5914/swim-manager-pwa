@@ -11,11 +11,9 @@ const initialization = source.indexOf('document.getElementById("nav").addEventLi
 assert.ok(initialization > 0);
 
 function game(seed = 12345) {
-  const context = vm.createContext({
+  const run = vm.compileFunction(source.slice(0, initialization) + '\nreturn code => eval(code);', ['globalThis'])({
     crypto: { getRandomValues: array => { array[0] = seed; return array; } },
   });
-  vm.runInContext(source.slice(0, initialization), context);
-  const run = code => vm.runInContext(code, context);
   run('state=createState()');
   return run;
 }
@@ -285,9 +283,9 @@ test('prodigy stats are random and capped at low A, including already strong arr
   assert.ok(maxima.size > 100);
 });
 
-test('max facilities yield about 26 from D80 per eight focused turns and C/B/A/S progressively slow down', () => {
+test('eight focused turns at max facilities add about 8 from C125 and 3 from B150, with E through S progressively slower', () => {
   const run = game();
-  const rows = JSON.parse(run(`JSON.stringify([80,113,138,163,188].map(value=>{
+  const rows = JSON.parse(run(`JSON.stringify([60,80,100,125,150,175,188].map(value=>{
     let gains=[];
     for(let sample=0;sample<500;sample++){
       let p={id:'test',name:'test',year:1,stats:Object.fromEntries(STATS.map(k=>[k,value])),growthProfile:{1:1}};
@@ -297,11 +295,13 @@ test('max facilities yield about 26 from D80 per eight focused turns and C/B/A/S
     }
     return {value,mean:gains.reduce((a,b)=>a+b,0)/gains.length};
   }))`));
-  assert.ok(rows[0].mean >= 24 && rows[0].mean <= 27, JSON.stringify(rows));
+  assert.ok(rows[0].mean >= 21 && rows[0].mean <= 23, JSON.stringify(rows));
   for (let i = 1; i < rows.length; i++) assert.ok(rows[i].mean < rows[i - 1].mean);
-  assert.ok(rows[2].mean < 15);
-  assert.ok(rows[3].mean < 6);
-  assert.ok(rows[4].mean < 1);
+  assert.ok(rows[1].mean >= 16 && rows[1].mean <= 17, JSON.stringify(rows));
+  assert.ok(rows[2].mean >= 11 && rows[2].mean <= 13, JSON.stringify(rows));
+  assert.ok(rows[3].mean >= 7.8 && rows[3].mean <= 8.2, JSON.stringify(rows));
+  assert.ok(rows[4].mean >= 2.9 && rows[4].mean <= 3.1, JSON.stringify(rows));
+  assert.ok(rows[5].mean < 1.1 && rows[6].mean < .1);
   console.log('8-turn growth:', rows.map(row => `${row.value}: +${row.mean.toFixed(2)}`).join(', '));
 });
 
@@ -479,7 +479,7 @@ test('new seasons preserve eight real candidates including prodigy abilities and
   assert.equal(result.pbs,15);assert.ok(result.stats&&result.pb);
 });
 
-test('facility upgrades progressively improve eight-turn gains while level 100 stays near +26 from D80', () => {
+test('facility upgrades progressively improve eight-turn gains while level 100 stays near +16 from D80', () => {
   const run=game();
   const rows=JSON.parse(run(`JSON.stringify([0,25,50,75,100].map(level=>{
     let sum=0;
@@ -491,9 +491,9 @@ test('facility upgrades progressively improve eight-turn gains while level 100 s
     }
     return {level,gain:sum/300};
   }))`));
-  assert.ok(rows[0].gain<10);
-  assert.ok(rows[4].gain>=24&&rows[4].gain<=27);
-  for(let i=1;i<rows.length;i++)assert.ok(rows[i].gain>rows[i-1].gain+3,JSON.stringify(rows));
+  assert.ok(rows[0].gain>=4.9&&rows[0].gain<=5.1);
+  assert.ok(rows[4].gain>=16&&rows[4].gain<=17);
+  for(let i=1;i<rows.length;i++)assert.ok(rows[i].gain>rows[i-1].gain+2,JSON.stringify(rows));
   console.log('Facility growth:',rows.map(r=>`Lv.${r.level}: +${r.gain.toFixed(2)}`).join(', '));
 });
 

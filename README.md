@@ -1,6 +1,14 @@
-# 大学競泳監督シミュレーション PWA v2.33
+# 大学競泳監督シミュレーション PWA v2.34
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
+
+## v2.34 の変更
+
+- 自チーム専用の成長曲線を設け、E〜B帯の成長を抑えました。施設Lv.100・成長係数1・合宿外の重点練習8ターンでは、能力125（C）から平均約＋8、能力150（B）から平均約＋3となります。能力が高いほど上がりにくい曲線を保ち、A帯への境界も滑らかにつなぎます。
+- 同じ泳法の副次成長と大会出場ボーナスにも自チーム用の成長率を適用します。副次成長の発生率30％、施設・成長タイプ・合宿の倍率、大会出場時の通常練習2倍という扱いは維持します。
+- CPUの成長率、獲得済みの能力・PB、選手生成、練習指示やセーブ内容は保持します。新しい成長率は更新後の自チームの練習から適用します。
+
+検証：関連17件で全14能力の月間目安、施設・成長タイプ・合宿の倍率、副次成長、大会出場ボーナス、能力上限、CPUの96ターンの成長が旧版と一致すること、既存セーブと新規生成の保持を確認しました。画面の関連3件ではPC／iPhone相当の練習結果・ランク上昇表示、大会ボーナスの一度だけの反映、v2.33からのPWA更新とオフライン読込を確認済みです。
 
 ## v2.33 の変更
 
@@ -999,15 +1007,20 @@ Bの基準は既存のインカレA決勝参照記録を使用しています。
 
 | 開始能力 | 8ターンの平均上昇 |
 | --- | --- |
-| 80（D） | 約25.6 |
-| 113（C） | 約18.8 |
-| 138（B） | 約10.6 |
-| 163（A） | 約3.8 |
+| 60（E） | 約22.0 |
+| 80（D） | 約16.4 |
+| 100（D） | 約12.0 |
+| 113（C） | 約10.1 |
+| 125（C） | 約8.0 |
+| 138（B） | 約5.3 |
+| 150（B） | 約3.0 |
+| 163（A） | 約2.0 |
+| 175（A） | 約1.0 |
 | 188（S） | 約0.08 |
 
-必ず1項目だけを指定して練習します。成長型・学年・合宿・施設レベル・乱数によって実際の上昇量は変動します。Dの成長補正は能力76の100％から能力100の75％へ、Cは能力101の75％から能力125の60％へ徐々に低下し、B以降も能力が高いほど上がりにくくなります。
+必ず1項目だけを指定して練習します。成長型・学年・合宿・施設レベル・乱数によって実際の上昇量は変動します。「Cで＋8、Bで＋3」は開始能力125・150の目安で、ランク内でも能力が高いほど上がりにくくなります。自チームの成長補正は能力50の100％、75の65％、100の42％、125の29.1％、150の10.2％、175の3.5％、188の0.3％、200の0％を直線でつなぎます。CPUは従来の成長曲線を用います。
 
-開始能力80の施設別の8ターン平均は、Lv.0で約7.9、Lv.25で約13.7、Lv.50で約18.1、Lv.75で約22.0、Lv.100で約25.6です。
+開始能力80の施設別の8ターン平均は、Lv.0で約5.0、Lv.25で約8.7、Lv.50で約11.5、Lv.75で約14.1、Lv.100で約16.3です。
 
 ## セーブの互換性とPWA更新
 
@@ -1026,7 +1039,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 数値・ルール・レース計算・セーブ移行のテストはNode.jsだけで実行できます。
 
 ```bash
-node --test tests/college-ranking-entries.test.cjs tests/scouting-competition.test.cjs tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
+node --test tests/player-growth.test.cjs tests/college-ranking-entries.test.cjs tests/scouting-competition.test.cjs tests/start-balance.test.cjs tests/rival-teams.test.cjs tests/ranked-specialties.test.cjs tests/year-end-retirements.test.cjs tests/admissions.test.cjs tests/careers.test.cjs tests/relay-performance.test.cjs tests/cpu-development.test.cjs tests/school-pb-and-main-results.test.cjs tests/specialty-pb.test.cjs tests/cpu-national-fields.test.cjs tests/reset-pace.test.cjs tests/cpu-depth.test.cjs tests/race-form-ranges.test.cjs tests/meet-form-boost.test.cjs tests/cpu-pace.test.cjs tests/meet-growth.test.cjs tests/teijimayama.test.cjs tests/meet-form.test.cjs tests/reputation-baseline.test.cjs tests/university-rosters.test.cjs tests/cpu-entries.test.cjs tests/preliminaries.test.cjs tests/stamina.test.cjs tests/medley.test.cjs tests/balance.test.cjs tests/meets.test.cjs tests/cloud.test.cjs tests/saves.test.cjs tests/scouting.test.cjs tests/season.test.cjs tests/records.test.cjs tests/sprints.test.cjs tests/history.test.cjs tests/japan-team.test.cjs tests/cpu-records.test.cjs tests/entries.test.cjs tests/cpu-fields.test.cjs
 ```
 
 表示間隔・右揃え・1項目限定の練習・参加標準の判定、国内大会・世界大会・代表選考の画面操作、旧PWAキャッシュからの更新・オフライン再起動のテストは、PlaywrightとChromiumが利用可能な開発環境で実行します。クラウド環境には両方が導入済みです。
