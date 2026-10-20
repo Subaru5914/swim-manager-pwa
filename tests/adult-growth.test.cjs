@@ -46,7 +46,7 @@ test('a distant adult target cannot accelerate training, and alumni use exactly 
 test('v2.37 saves and newly generated rosters keep every field except the application version',()=>{
  const old=game(previous),run=game(),legacy=old('(state=createState(),migrateState(),deepClone(state))');
  run('state='+JSON.stringify(legacy)+';migrateState();true');const migrated=run('deepClone(state)');
- assert.equal(migrated.version,'pwa-v2.38');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
+ assert.equal(migrated.version,'pwa-v2.39');migrated.version=legacy.version;assert.equal(digest(migrated),digest(legacy));
  run('state=createState();migrateState();true');const fresh=run('deepClone(state)');fresh.version=legacy.version;assert.equal(digest(fresh),digest(legacy));
  const first=run('JSON.stringify(state)');run('migrateState();true');assert.equal(run('JSON.stringify(state)'),first);
 });

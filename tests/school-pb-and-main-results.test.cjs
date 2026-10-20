@@ -56,7 +56,7 @@ test('current middle-school PB rules keep strong secondary strokes and earned we
   })()`);
   for(const e of ['fr50','fr100','fr200','fr400','ba50','ba100','ba200','br100'])assert.ok(r.keys.includes(e));for(const e of ['br50','br200','fly50','fly100','fly200','im200','im400'])assert.ok(!r.keys.includes(e));assert.ok(r.protected&&r.rng&&r.recorded);
 });
-test('current v2.01 generation migrates school PBs and medals once, preserving own players, adult/college PBs, stats, progress and the next draw',()=>{
+test('v2.01 school PB and medal migration preserves the normalized start profile, own players, adult/college PBs, progress and the next draw',()=>{
   const oldHtml=cp.execFileSync('git',['show','1082c4d:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}),old=game(oldHtml);
   const before=old(`(()=>{
     state=createState();migrateState();
@@ -64,7 +64,8 @@ test('current v2.01 generation migrates school PBs and medals once, preserving o
     state.players[0].raceHistory=[{season:2026,slot:43,meet:'intercollege',event:'fr100',stage:'A決勝',rank:1,time:52}];
     migrateState();
     return{state:deepClone(state),promoted:a.id};
-  })()`),run=game();run(`state=${JSON.stringify(before.state)};migrateState();true`);
+  })()`),run=game();run(`state=${JSON.stringify(before.state)};migrateStartAbilities();trimGraduatingCohort();true`);
+  before.state=run('deepClone(state)');run('migrateState();true');
   const result=run(`(()=>{
     const a=state.world.find(a=>a.id===${JSON.stringify(before.promoted)}),fields=highSchoolScoutRankings(),first=JSON.stringify(state),seed=state.rngSeed;
     migrateState();return{state:deepClone(state),rank:fields.get('ba100').byId.get(a.id),pb:a.bestTimes.ba100,clock:coherentCpuPB(a,'ba100'),stable:first===JSON.stringify(state)&&seed===state.rngSeed,main:playerMainResults(state.players[0])};

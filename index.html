@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.38</title>
+<title>大学競泳監督シミュレーション PWA版 v2.39</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -176,8 +176,30 @@ button,.utility-summary{min-height:40px}
 .modal-actions{position:sticky;bottom:-16px;z-index:4;background:linear-gradient(rgba(255,255,255,.92),#fff 24%);padding:13px 0 2px;margin-top:14px;border-top:1px solid #edf1f5}
 .modal-actions .primary{margin-left:auto}
 .entry-table-wrap{max-height:calc(var(--game-vh) * 58)}
-.modal-world-additional{max-width:780px}
-#worldAdditionalTable{min-width:540px}
+.modal-world-additional{width:min(1320px,calc(var(--game-vw) * 96));max-width:1320px;height:calc(var(--game-vh) * 94);display:flex;flex-direction:column;overflow:hidden}
+.modal-world-additional>.row,.modal-world-additional>.notice,.modal-world-additional>.entry-mobile-guide,.modal-world-additional>.entry-form-roster,.modal-world-additional>#worldAdditionalSummary,.modal-world-additional>#worldSelectionMessage{flex-shrink:0}
+.world-selection-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(330px,1fr);gap:12px;min-height:0;flex:1}
+.world-selection-list{display:flex;min-height:0;min-width:0;flex-direction:column}
+.world-selection-list .entry-table-wrap{min-height:0;max-height:none;flex:1;overscroll-behavior:contain}
+.world-profile-panel{min-height:0;min-width:0;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#f8fbff;padding:10px;overscroll-behavior:contain}
+.world-profile-controls{display:grid;gap:6px;margin-bottom:9px}
+.world-profile-controls label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.world-profile-controls select{min-width:0;flex:1;width:0}
+.world-profile-heading{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.world-profile-heading>strong{font-size:18px}
+.world-profile-qualification{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:7px 0}
+.world-profile-panel h3{font-size:14px;margin:9px 0 5px}
+.world-profile-common{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-bottom:4px}
+.world-profile-stats,.world-profile-pbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.world-profile-panel .entry-stat-row{grid-template-columns:minmax(0,1fr) 18px 3ch;background:white;border:1px solid var(--line);border-radius:5px;padding:4px;gap:3px;font-size:11px}
+.world-profile-panel .entry-stat-row .stat-rank-badge{width:18px;min-width:18px;height:20px;font-size:11px}
+.world-profile-panel .entry-stat-label{font-size:11px;min-width:0;white-space:nowrap}.world-profile-panel .entry-stat-value{font-size:12px}
+.world-profile-pbs>div{display:flex;justify-content:space-between;gap:4px;padding:5px 4px;background:white;border:1px solid var(--line);border-radius:5px;font-size:11px;white-space:nowrap}
+.world-profile-pbs>div.selected{background:#e4f0ff;border-color:#91b9eb}.world-profile-pbs b{font-variant-numeric:tabular-nums}
+.world-athlete-link{display:block;padding:2px 0;border:0;background:transparent;color:var(--accent);min-height:24px;font-weight:750;text-align:left}
+.world-athlete-link+span{display:block;margin-bottom:4px}
+.world-vacancy{display:block;font-size:11px;color:#176530;margin:3px 0}.world-vacancy.full{color:var(--muted)}
+.world-compare-button{font-size:11px;padding:3px 6px;min-height:27px}.world-selection-tabs{display:none}
+#worldAdditionalTable{min-width:600px}
 #worldAdditionalTable th:first-child{width:110px}
 #worldAdditionalTable th:nth-child(2){width:150px}
 .world-additional-slot{display:flex;gap:6px;align-items:center;margin:4px 0;white-space:nowrap}
@@ -962,7 +984,7 @@ nav .nav-action:hover{background:#edf6ff}
   .modal-entry-confirm .entry-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
   .modal-entry-confirm .entry-summary-card{padding:4px}
   .modal-entry-confirm h3{margin:5px 0 3px!important}
-  .modal-world-additional{width:88%!important;max-width:780px!important;max-height:calc(var(--game-vh) * 94)!important;padding:5px!important}
+  .modal-world-additional{width:96%!important;max-width:1320px!important;max-height:calc(var(--game-vh) * 94)!important;padding:5px!important}
   .modal-world-additional .notice{padding:4px 6px}
   .modal-world-additional .entry-table-wrap{max-height:calc(var(--game-vh) * 53)}
   .modal-world-additional th,.modal-world-additional td{padding:3px 5px!important}
@@ -1078,6 +1100,8 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .modal-college-admissions{display:flex;flex-direction:column;overflow:hidden;max-height:calc(var(--game-vh) * 94)}
 .modal-college-admissions>.row,.modal-college-admissions>.notice,.modal-college-admissions>.small{flex-shrink:0}
 .modal-college-admissions>.table-wrap{min-height:0;overflow:auto}
+.admissions-sort-control{display:flex;gap:5px;align-items:center;font-size:12px;white-space:nowrap}
+.admissions-sort-control select{min-height:30px;max-width:220px;padding:3px 5px;font-size:12px}
 .admission-destination select{display:block;min-width:190px;max-width:270px;width:100%;font-size:13px;padding:5px}
 .admission-original{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 #admissionsError{color:var(--bad);font-weight:700;margin:4px 0}
@@ -1335,6 +1359,15 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
   .modal-world-additional .entry-form-roster{flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;min-height:28px;max-height:34px;margin:3px 0}
   .modal-world-additional .entry-form-roster .entry-summary-athlete{flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;margin-top:0}
   .modal-world-additional #worldAdditionalSummary{flex-shrink:0;font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal-world-additional .world-selection-tabs{display:flex;gap:4px;flex-shrink:0;margin:3px 0}
+  .world-selection-tabs button{flex:1;min-height:30px;padding:3px 6px;font-size:12px}
+  .world-selection-layout{display:flex;gap:0}
+  .world-selection-list,.world-profile-panel{width:100%;flex:1}
+  [data-world-view="selection"] .world-profile-panel,[data-world-view="profile"] .world-selection-list{display:none}
+  .world-profile-panel{padding:7px}
+  .world-profile-controls{grid-template-columns:1fr 1.7fr;gap:8px}
+  .world-profile-panel .entry-stat-label,.world-profile-panel .entry-stat-value,.world-profile-pbs>div{font-size:12px}
+  .modal-world-additional .entry-form-roster:empty{display:none}
   #entryMatrix{font-size:11px}
   #entryMatrix th{font-size:11px}
   #entryMatrix th,#entryMatrix td{padding:2px 1px!important}
@@ -1411,7 +1444,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.38</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.39</div>
     <div class="header-primary-actions">
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
@@ -1593,7 +1626,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <section id="page-japan-team" class="page">
   <div class="page-lead"><div><h1>日本代表</h1><p>世界大会の出場選手と予選・決勝の成績を大会年ごとに確認できます。</p></div></div>
   <div class="card">
-    <div class="row"><h2 id="japanTeamTitle" style="margin-right:auto">日本代表</h2><label>大会年 <select id="japanTeamYear"></select></label></div>
+    <div class="row"><h2 id="japanTeamTitle" style="margin-right:auto">日本代表</h2><button id="editJapanTeamSelection" class="primary" hidden>代表を追加選考</button><label>大会年 <select id="japanTeamYear"></select></label></div>
     <p id="japanTeamNote" class="muted small"></p>
     <div id="japanTeamIndividuals" class="table-wrap"></div>
   </div>
@@ -1643,9 +1676,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.38"></script>
-<script src="./save-history.js?version=v2.38"></script>
-<script src="./cloud-sync.js?version=v2.38"></script>
+<script src="./local-save.js?version=v2.39"></script>
+<script src="./save-history.js?version=v2.39"></script>
+<script src="./cloud-sync.js?version=v2.39"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1684,6 +1717,7 @@ const BALANCE_MODEL_VERSION=1;
 const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
 const MEETS={"4-4-後半":"team_trial","5-4-後半":"team_trial","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-2-後半":"world_championship","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","11-2-後半":"teijimayama_championship","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
 const MEET_LABEL={team_trial:"自チーム記録会",kansai_college:"関西カレッジ",intercollege:"インカレ",teijimayama_championship:"帝嶋山選手権",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",world_championship:"世界大会",initial_pb:"初期PB",cpu_training:"練習記録会"};
+const RIVAL_PODIUM_MEETS=["kansai_college","intercollege","japan_open","japan_championship"];
 const TEAM_PODIUM_MEETS=["kansai_college","world_championship","intercollege","teijimayama_championship","japan_open","japan_championship"];
 const TEAM_PODIUM_DISPLAY_MEETS=["world_championship","japan_championship","japan_open","intercollege","kansai_college"];
 const JOINT_RECORD_NAMES={1:"Higashikata CUP",2:"ダイナミオープン"};
@@ -1903,7 +1937,7 @@ function assignRaceRanks(rows,property="rank"){
 }
 function racePodiums(rows){
   const ranks=racePlacings(rows);
-  return rows.flatMap((row,i)=>ranks[i]<=3?[{rank:ranks[i],name:row.athlete.name,organization:row.nationality||row.athlete.organization,time:row.race.total}]:[]);
+  return rows.flatMap((row,i)=>ranks[i]<=3?[{rank:ranks[i],athleteId:row.athlete.id,name:row.athlete.name,organization:row.nationality||row.athlete.organization,time:row.race.total,...recordSchoolInfo(row.athlete)}]:[]);
 }
 function fmt(sec){
   if(sec==null||!Number.isFinite(+sec)||+sec<0)return "-";
@@ -1967,7 +2001,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.38";
+  state.version="pwa-v2.39";
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -2044,7 +2078,7 @@ function migrateState(){
     }
   }
 
-  for(const a of [...(state.internationalWorld?.athletes||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)])attachMedleyStats(a);
+  for(const a of [...(state.internationalWorld?.athletes||[]),...[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].map(m=>m.snapshot).filter(Boolean)])attachMedleyStats(a);
 
   // Rebalance previously generated CPU swimmers once; earned player/alumni
   // abilities and historical meet results remain intact.
@@ -2099,6 +2133,7 @@ function migrateState(){
   }
   initializeJapanTeamHistory();
   initializeMainResults();
+  restoreRivalMainResults();
   migrateInitialCollegeReputation();
   initializeCpuDevelopment();
   initializeScoutingCompetition();
@@ -2463,7 +2498,7 @@ function meetFormBoostAthlete(id,meet,slot,season){
   if(meet!=="world_championship")return own;
   const team=state.japanTeam;
   if(team?.year!==calendarYear(season,slot))return null;
-  const registered=[...Object.values(team.individual||{}).flat(),...Object.values(team.relays||{}).flat()].includes(id);
+  const registered=[...Object.values(team.individual||{}).flat(),...Object.values(team.relays||{}).flat(),...Object.values(worldAutoEntries(team.year).individual).flat()].includes(id);
   if(!registered||(!own&&!team.athletes?.some(a=>a.id===id&&a.ownAtSelection)))return null;
   return own||japanTeamAthlete(id);
 }
@@ -4306,7 +4341,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.38",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.39",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:1,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -4499,7 +4534,7 @@ function refreshRecordRankings(){
       sources.push({category,record});
     }
   }
-  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)]){
+  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].map(m=>m.snapshot).filter(Boolean)]){
     if(!athleteRecordCategory(a))continue;
     for(const history of a.raceHistory||[]){
       if(!EVENTS.includes(history.event)||!Number.isInteger(history.season))continue;
@@ -4597,10 +4632,10 @@ function reconcilePersonalBests(){
 function renameRecordOrganization(oldName,newName){
   for(const layer of state.cpuUniversityDepthMaps||[])if(layer.teams?.[oldName]){layer.teams[newName]=layer.teams[oldName];delete layer.teams[oldName]}
   for(let book of Object.values(state.recordRankings||{}))for(let rows of Object.values(book))for(let r of rows)if(r.organization===oldName)r.organization=newName;
-  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)]){
+  for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].map(m=>m.snapshot).filter(Boolean)]){
     for(const record of [...(a.raceHistory||[]),...(a.accolades||[])])if(record.organization===oldName)record.organization=newName;
     if(a.almaMater===oldName)a.almaMater=newName;
-    if(state.japanTeam?.athletes.some(member=>member.snapshot===a)&&a.organization===oldName)a.organization=newName;
+    if([...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].some(member=>member.snapshot===a)&&a.organization===oldName)a.organization=newName;
   }
   for(const entry of state.japanTeamHistory||[])for(const member of [...(entry.athletes||[]),...Object.values(entry.results?.relays||{}).flatMap(relay=>[...(relay.prelim?.members||[]),...(relay.final?.members||[])])])if(member.organization===oldName)member.organization=newName;
 }
@@ -4702,8 +4737,9 @@ function recordAthleteMainResult(a,history){
   const record=mainResultRecord(history);if(!record)return;
   const school=mainResultSchoolInfo(a,record);
   const targets=new Set();
-  if(state.players.includes(a)||a.alumni)targets.add(a);
-  const live=state.players.find(p=>p.id===a.id)||state.world.find(p=>p.id===a.id&&p.alumni);
+  const rival=RIVAL_PODIUM_MEETS.includes(record.meet)&&EVENTS.includes(record.event);
+  if(state.players.includes(a)||a.alumni||rival)targets.add(a);
+  const live=state.players.find(p=>p.id===a.id)||state.world.find(p=>p.id===a.id&&(p.alumni||rival));
   if(live)targets.add(live);
   const representative=state.japanTeam?.athletes?.find(p=>p.id===a.id&&p.ownAtSelection);
   if(representative?.snapshot)targets.add(representative.snapshot);
@@ -4821,6 +4857,33 @@ function playerMainResults(p){
   }
   return [...rows.values()].sort((a,b)=>(b.season||0)-(a.season||0)||(b.slot||0)-(a.slot||0)||a.rank-b.rank||EVENTS.indexOf(a.event)-EVENTS.indexOf(b.event));
 }
+function rivalMainResults(a){
+  return playerMainResults(a).filter(row=>RIVAL_PODIUM_MEETS.includes(row.meet)&&EVENTS.includes(row.event));
+}
+function restoreRivalMainResults(){
+  const athletes=(state.world||[]).filter(a=>a.category==="university"&&!a.retired),byId=new Map(athletes.map(a=>[a.id,a])),byName=new Map();
+  for(const a of athletes){const key=JSON.stringify([a.name,a.organization]);if(!byName.has(key))byName.set(key,[]);byName.get(key).push(a)}
+  for(const meet of state.meetHistory||[])if(RIVAL_PODIUM_MEETS.includes(meet.meet)&&Number.isInteger(meet.season)){
+    for(const [event,rows]of Object.entries(meet.podiums||{}))if(EVENTS.includes(event))for(const row of rows||[]){
+      if(row.rank<1||row.rank>3||!validRaceTime(row.time)||(row.stage&&raceHistoryPhaseOrder(row)!==0))continue;
+      let a=row.athleteId?byId.get(row.athleteId):null;
+      if(!row.athleteId){
+        const matches=byName.get(JSON.stringify([row.name,row.organization]))||[];
+        // A later freshman with the same name must not inherit an older medal.
+        const candidates=matches.filter(p=>Number.isInteger(p.grade)&&meet.season<=state.season&&meet.season>=state.season-p.grade+1);
+        if(candidates.length===1)a=candidates[0];
+      }
+      if(a)upsertMainResult(a,{...row,meet:meet.meet,event,season:meet.season,slot:meet.slot??null,stage:"決勝"});
+    }
+  }
+}
+function rivalMainResultsHtml(a){
+  const rows=rivalMainResults(a);
+  return `<section class="detail-major-results rival-major-results"><h3>主な実績</h3><div class="major-result-list">${rows.map(h=>{
+    const award=h.rank===1?"first":h.rank===2?"second":"third";
+    return `<div class="major-result" data-rival-podium-event="${h.event}" data-rival-podium-meet="${h.meet}" data-rival-podium-rank="${h.rank}">${gradeBadge(h.gradeAtRecord,recordSchoolLabel(h),"major-result-grade")}<span>${MEET_LABEL[h.meet]} ${EVENT_LABEL[h.event]}</span><span class="history-rank history-rank-${award}">${h.rank===1?"優勝":`${h.rank}位`}</span><b class="major-result-time">${fmt(h.time)}</b></div>`;
+  }).join("")||'<span class="small muted">対象4大会の個人種目での表彰台歴はまだありません。</span>'}</div></section>`;
+}
 function initializeMainResults(){
   if(state.mainResultsVersion>=2)return;
   const athletes=[...state.players,...state.world.filter(a=>a.alumni),...state.retiredArchive,
@@ -4892,12 +4955,14 @@ function selectMedleyRelay(results){
 function selectJapanTeam(results,year){
   if(!isWorldChampionshipYear(year)||!dispatchStandardsReady())return null;
   archiveJapanTeam();
-  let individual={},relays={},selectionTimes={},selected=new Map();
+  let individual={},relays={},selectionTimes={},selectionFinalists={},candidates=new Map(),selected=new Map();
   const remember=row=>{selected.set(row.athlete.id,row.athlete);return row.athlete.id};
   for(let e of EVENTS){
     let rows=[...(results[e]?.final||[])].sort((a,b)=>a.race.total-b.race.total);
     individual[e]=rows.filter(x=>x.race.total<=dispatchStandard(e)).slice(0,2).map(remember);
     selectionTimes[e]=Object.fromEntries(rows.map(x=>[x.athlete.id,x.race.total]));
+    const places=racePlacings(rows);
+    selectionFinalists[e]=rows.flatMap((row,i)=>{if(places[i]>8)return [];candidates.set(row.athlete.id,row.athlete);return [{id:row.athlete.id,rank:places[i],time:row.race.total}]});
   }
   for(let [kind,event] of [["4x100fr","fr100"],["4x200fr","fr200"]]){
     let top=[...(results[event]?.final||[])].sort((a,b)=>a.race.total-b.race.total).slice(0,4);
@@ -4905,15 +4970,17 @@ function selectJapanTeam(results,year){
   }
   relays["4x100medley"]=selectMedleyRelay(results).map(remember);
   let athletes=[...selected.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
-  state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,athletes,additionalIndividual:{},announced:false};
+  const selectionCandidates=[...candidates.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
+  state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,selectionFinalists,selectionCandidates,athletes,additionalIndividual:{},announced:false};
   archiveJapanTeam();return state.japanTeam;
 }
 function japanTeamCelebrationDue(season,slot){return slot===1&&state.japanTeam?.year===season&&!state.japanTeam.announced}
 function showJapanTeamCelebration(onClose){
   let team=state.japanTeam;if(!team)return false;
+  const registered=worldAutoEntries(team.year);
   let rows=team.athletes.map(member=>{
     let a=japanTeamAthlete(member.id)||member.snapshot;
-    let events=[...EVENTS,...RELAYS].filter(e=>(team.individual[e]||team.relays[e]||[]).includes(member.id));
+    let events=[...EVENTS,...RELAYS].filter(e=>(registered.individual[e]||registered.relays[e]||[]).includes(member.id));
     return{a,own:member.ownAtSelection,events};
   });
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">祝・${team.year}年 日本代表決定！</h2><button id="representativeClose" class="primary">応援して次へ</button></div>
@@ -4924,7 +4991,7 @@ function showJapanTeamCelebration(onClose){
   return true;
 }
 function japanTeamAthlete(id){
-  return state.players.find(a=>a.id===id)||state.world.find(a=>a.id===id)||state.japanTeam?.athletes.find(x=>x.id===id)?.snapshot||null;
+  return state.players.find(a=>a.id===id)||state.world.find(a=>a.id===id)||state.japanTeam?.athletes?.find(x=>x.id===id)?.snapshot||state.japanTeam?.selectionCandidates?.find(x=>x.id===id)?.snapshot||(state.retiredArchive||[]).find(a=>a.id===id&&a.stats)||null;
 }
 function japanRepresentativeMember(a,id,own=false){
   const category=a?.category||((a?.year||a?.grade)?"university":"unknown");
@@ -5036,40 +5103,68 @@ function initializeJapanTeamHistory(){
   }
   state.japanTeamHistoryVersion=1;
 }
-function ownJapanAthlete(id){return state.players.some(p=>p.id===id)||!!state.japanTeam?.athletes.find(x=>x.id===id)?.ownAtSelection}
+function ownJapanAthlete(id){return state.players.some(p=>p.id===id)||!![...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].find(x=>x.id===id)?.ownAtSelection}
 function ownsRelayTeam(team){return team.organization===state.playerUniversity||(team.organization==="日本"&&team.members.some(p=>ownJapanAthlete(p.id)))}
-function worldAdditionalEntryOptions(year){
+function japanChampionshipFinalists(team,event){
+  if(Array.isArray(team.selectionFinalists?.[event]))return team.selectionFinalists[event].filter(row=>row.rank>=1&&row.rank<=8&&validRaceTime(row.time));
+  // Old saves retain the actual final clocks, so recover places from those
+  // clocks rather than today's PB or ranking. Missing profiles are not invented.
+  const rows=Object.entries(team.selectionTimes?.[event]||{}).filter(([,time])=>validRaceTime(time)).map(([id,time])=>({id,race:{total:time}})).sort((a,b)=>a.race.total-b.race.total||a.id.localeCompare(b.id));
+  const places=racePlacings(rows);return rows.flatMap((row,i)=>places[i]<=8?[{id:row.id,rank:places[i],time:row.race.total}]:[]);
+}
+function canEditWorldSelection(year){
+  if(state.japanTeam?.year!==year)return false;
+  if(calendarYear(state.season,state.slot)>year||(state.season>=year&&state.slot>37))return false;
+  const match=row=>row?.meet==="world_championship"&&calendarYear(row.season,row.slot||36)===year;
+  return !(state.meetHistory||[]).some(match)&&!match(state.pendingMeetCompletion)&&
+    !(state.japanTeamHistory||[]).some(row=>row.year===year&&["in_progress","complete"].includes(row.worldStatus));
+}
+function worldAdditionalEntryOptions(year,entries=null){
   const team=state.japanTeam?.year===year?state.japanTeam:null;
   const registered=new Set([...Object.values(team?.individual||{}).flat(),...Object.values(team?.relays||{}).flat()]);
-  const athletes=[...registered].filter(ownJapanAthlete).map(japanTeamAthlete).filter(Boolean);
+  const finalists=Object.fromEntries(EVENTS.map(e=>[e,team?japanChampionshipFinalists(team,e):[]]));
   const vacancies=Object.fromEntries(EVENTS.map(e=>[e,team?Math.max(0,2-new Set(team.individual?.[e]||[]).size):0]));
-  return {athletes,vacancies};
+  const ids=new Set([...registered,...Object.values(finalists).flat().map(row=>row.id)]);
+  const athletes=[...ids].map(japanTeamAthlete).filter(Boolean),known=new Set(athletes.map(a=>a.id));
+  const requested=entries??team?.additionalIndividual??{},valid=Object.fromEntries(EVENTS.map(e=>[e,[]]));
+  // Add entrants only from an established qualification. A finalist selected
+  // for one event may then fill another; circular, unqualified claims cannot.
+  let changed=true;
+  while(changed){changed=false;for(const e of EVENTS){
+    for(const id of Array.isArray(requested[e])?requested[e]:[]){
+      if(!known.has(id)||valid[e].includes(id)||(team?.individual?.[e]||[]).includes(id)||valid[e].length>=vacancies[e])continue;
+      if(!registered.has(id)&&!finalists[e].some(row=>row.id===id))continue;
+      valid[e].push(id);if(!registered.has(id)){registered.add(id);changed=true}
+    }
+  }}
+  const byEvent=Object.fromEntries(EVENTS.map(e=>[e,athletes.filter(a=>!(team?.individual?.[e]||[]).includes(a.id)&&(registered.has(a.id)||finalists[e].some(row=>row.id===a.id)))]));
+  return {athletes,byEvent,finalists,vacancies,valid,registered};
 }
 function worldAutoEntries(year){
   const team=state.japanTeam?.year===year?state.japanTeam:null;
   const individual=Object.fromEntries(EVENTS.map(e=>[e,[...new Set(team?.individual?.[e]||[])].slice(0,2)]));
-  if(team?.additionalIndividual){
-    const eligible=new Set(worldAdditionalEntryOptions(year).athletes.map(a=>a.id));
-    for(const e of EVENTS)for(const id of Array.isArray(team.additionalIndividual[e])?team.additionalIndividual[e]:[]){
-      if(individual[e].length<2&&eligible.has(id)&&!individual[e].includes(id))individual[e].push(id);
-    }
-  }
+  const {valid}=worldAdditionalEntryOptions(year);
+  for(const e of EVENTS)individual[e].push(...valid[e]);
   return {individual,relays:Object.fromEntries(RELAYS.map(k=>[k,[...(team?.relays?.[k]||[])]]))};
 }
 function setWorldAdditionalEntries(year,entries){
   const team=state.japanTeam?.year===year?state.japanTeam:null;
   if(!team)throw new Error("この年の日本代表選考データがありません。");
-  const {athletes,vacancies}=worldAdditionalEntryOptions(year),eligible=new Set(athletes.map(a=>a.id));
-  const next={};
+  if(!canEditWorldSelection(year))throw new Error("世界大会の開幕後は代表選考を変更できません。");
+  const {vacancies,valid}=worldAdditionalEntryOptions(year,entries),next={};
   for(const e of EVENTS){
     const ids=entries[e]||[];
-    if(!Array.isArray(ids)||ids.length>vacancies[e]||new Set(ids).size!==ids.length||
-      ids.some(id=>!eligible.has(id)||(team.individual?.[e]||[]).includes(id)))throw new Error(`${EVENT_LABEL[e]}の追加エントリーが正しくありません。`);
+    if(!Array.isArray(ids)||ids.length>vacancies[e]||new Set(ids).size!==ids.length||ids.some(id=>!valid[e].includes(id)))throw new Error(`${EVENT_LABEL[e]}の追加エントリーが正しくありません。`);
     next[e]=[...ids];
   }
-  team.additionalIndividual=next;
-  archiveJapanTeam();
-  return worldAutoEntries(year);
+  const roster=new Set([...Object.values(team.individual||{}).flat(),...Object.values(team.relays||{}).flat(),...Object.values(next).flat()]);
+  const athletes=(team.athletes||[]).filter(member=>roster.has(member.id));
+  for(const id of roster)if(!athletes.some(member=>member.id===id)){
+    const a=japanTeamAthlete(id),candidate=team.selectionCandidates?.find(member=>member.id===id);
+    if(a)athletes.push({id,snapshot:deepClone(candidate?.snapshot||a),ownAtSelection:ownJapanAthlete(id)});
+  }
+  team.additionalIndividual=next;team.athletes=athletes;
+  archiveJapanTeam();return worldAutoEntries(year);
 }
 function worldOwnEntries(year){
   let automatic=worldAutoEntries(year);
@@ -6172,15 +6267,26 @@ function applyCollegeAdmissionChoices(){
   state.pendingCollegeAdmissions=null;
   return{ok:true,changed};
 }
+function sortedCollegeAdmissionRows(rows,mode,context=collegeAdmissionContext()){
+  if(mode!=="university")return [...rows];
+  const names=new Map((context?.universities||[]).map(u=>[u.id,u.name])),position=new Map(rows.map((a,i)=>[a.id,i]));
+  const destination=a=>names.get(context?.choices.get(a.id))||a.to||"";
+  return [...rows].sort((a,b)=>Number(destination(b)===state.playerUniversity)-Number(destination(a)===state.playerUniversity)||destination(a).localeCompare(destination(b),"ja")||position.get(a.id)-position.get(b.id));
+}
+function bindCollegeAdmissionSort(m,notice){
+  const select=m.querySelector("#admissionsSort"),body=m.querySelector("tbody");
+  const reorder=()=>{const nodes=new Map([...body.querySelectorAll("[data-admission-id]")].map(row=>[row.dataset.admissionId,row]));for(const a of sortedCollegeAdmissionRows(notice.rows,select.value))if(nodes.has(a.id))body.append(nodes.get(a.id))};
+  select.onchange=reorder;reorder();return reorder;
+}
 function showCollegeAdmissions(onClose){
   const notice=state.pendingCollegeAdmissions;
   if(!notice?.rows?.length)return false;
-  const context=collegeAdmissionContext();
+  const context=collegeAdmissionContext(),sortControl='<label class="admissions-sort-control">表示順 <select id="admissionsSort"><option value="ranking">高校順位順</option><option value="university">進学先大学順（自チーム先頭）</option></select></label>';
   if(state.scoutingAdmissionsMode==="competition"){
-    const m=showModal(`<div class="row"><h2 style="margin-right:auto">有力高校生の進学先</h2><button id="admissionsClose" class="primary">確認して次へ</button></div><div class="notice"><b>${notice.fromSeason}年度末</b>　スカウト内定を優先し、全大学の新入生は各8名です。</div><div class="table-wrap"><table><thead><tr><th>選手</th><th>専門種目・PB</th><th>進学先</th><th>選考</th></tr></thead><tbody>${notice.rows.map(a=>`<tr class="${a.own?"result-own":""}"><td>${esc(a.name)}</td><td>${specialtyTag(a.specialty)} ${fmt(a.specialtyPB)}</td><td>${esc(a.to)}</td><td>${notice.confirmed?.[a.id]?"スカウト内定":"一般進学"}</td></tr>`).join("")}</tbody></table></div>`);
-    m.classList.add("modal-college-admissions");m.querySelector("#admissionsClose").onclick=()=>{state.pendingCollegeAdmissions=null;autoSaveNow();closeModal();renderAll();onClose?.()};return true;
+    const m=showModal(`<div class="row"><h2 style="margin-right:auto">有力高校生の進学先</h2>${sortControl}<button id="admissionsClose" class="primary">確認して次へ</button></div><div class="notice"><b>${notice.fromSeason}年度末</b>　スカウト内定を優先し、全大学の新入生は各8名です。</div><div class="table-wrap"><table><thead><tr><th>選手</th><th>専門種目・PB</th><th>進学先</th><th>選考</th></tr></thead><tbody>${notice.rows.map(a=>`<tr data-admission-id="${esc(a.id)}" class="${a.own?"result-own":""}"><td>${esc(a.name)}</td><td>${specialtyTag(a.specialty)} ${fmt(a.specialtyPB)}</td><td>${esc(a.to)}</td><td>${notice.confirmed?.[a.id]?"スカウト内定":"一般進学"}</td></tr>`).join("")}</tbody></table></div>`);
+    m.classList.add("modal-college-admissions");bindCollegeAdmissionSort(m,notice);m.querySelector("#admissionsClose").onclick=()=>{state.pendingCollegeAdmissions=null;autoSaveNow();closeModal();renderAll();onClose?.()};return true;
   }
-  const m=showModal(`<div class="row"><h2 style="margin-right:auto">有力高校生の進学先</h2><button id="admissionsReset">当初に戻す</button><button id="admissionsClose" class="primary">進学先を確定して次へ</button></div>
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">有力高校生の進学先</h2>${sortControl}<button id="admissionsReset">当初に戻す</button><button id="admissionsClose" class="primary">進学先を確定して次へ</button></div>
     <div class="notice"><b>${notice.fromSeason}年度末 ／ ${notice.toSeason}年度の進学先</b><br>最初の進学先は従来の自動選考です。有力選手は1大学8名まで選択できます。${context.fixed.size?`自チームの一覧外のスカウト内定${context.fixed.size}名も枠に含みます。`:""}</div>
     <div id="admissionsError" class="small" role="alert" hidden></div>
     <div class="table-wrap"><table><thead><tr><th>選手</th><th>出身高校</th><th>専門種目・高校時PB</th><th>高校最高順位</th><th>進学先</th></tr></thead><tbody>${notice.rows.map(a=>{
@@ -6189,6 +6295,7 @@ function showCollegeAdmissions(onClose){
     }).join("")}</tbody></table></div>
     <p class="small muted">変更案は保存されます。確定時に所属と一般入学者の枠を調整し、自チームの新入生は計8名を維持します。大会でも確定した大学でエントリーします。</p>`);
   m.classList.add("modal-college-admissions");
+  const reorder=bindCollegeAdmissionSort(m,notice);
   const update=()=>{
     const current=collegeAdmissionContext(),error=collegeAdmissionError(current),errorBox=m.querySelector("#admissionsError");
     for(const select of m.querySelectorAll("[data-admission-choice]")){
@@ -6196,7 +6303,7 @@ function showCollegeAdmissions(onClose){
       select.innerHTML=current.universities.map(u=>`<option value="${esc(u.id)}" ${u.id===target?"selected":""} ${u.id!==target&&current.counts.get(u.id)>=8?"disabled":""}>${esc(u.name)}（${current.counts.get(u.id)||0}/8）</option>`).join("");
       const own=target==="player",row=select.closest("tr");row.classList.toggle("result-own",own);row.querySelector(".admission-own-mark").textContent=own?"★ ":"";
     }
-    errorBox.textContent=error;errorBox.hidden=!error;m.querySelector("#admissionsClose").disabled=!!error;
+    errorBox.textContent=error;errorBox.hidden=!error;m.querySelector("#admissionsClose").disabled=!!error;reorder();
   };
   for(const select of m.querySelectorAll("[data-admission-choice]"))select.onchange=()=>{
     const result=setCollegeAdmissionChoice(select.dataset.admissionChoice,select.value);update();
@@ -6687,7 +6794,7 @@ function trimGraduatingCohort(){
   if(extra<=0)return 0;
   const protectedIds=new Set([...(state.recruits||[]),...seniors.filter(a=>a.scouted).map(a=>a.id),
     ...Object.entries(state.scoutingCompetition?.candidates||{}).filter(([,r])=>r.destination).map(([id])=>id),
-    ...(state.japanTeam?.athletes||[]).map(a=>a.id)]);
+    ...[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].map(a=>a.id)]);
   const eligible=seniors.filter(a=>!protectedIds.has(a.id)).sort((a,b)=>recruitAbility(a)-recruitAbility(b)||a.id.localeCompare(b.id));
   if(eligible.length<extra)throw new Error("確定内定者を保護したまま進学人数を調整できません。");
   purgeAthleteData(new Set(eligible.slice(0,extra).map(a=>a.id)));
@@ -6840,7 +6947,7 @@ function showStandards(){
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">大会参加・派遣標準記録</h2><button id="x">閉じる</button></div><div class="table-wrap compact-modal-table standards-table-wrap"><table class="standards-table"><thead><tr><th>種目</th><th>関西カレッジ</th><th>インカレ</th><th>ジャパンオープン</th><th>日本選手権</th><th>世界大会</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small">帝嶋山選手権には参加標準記録がありません。50mBa・Br・Flyを含む個人15種目とリレー3種目を実施します。</p>
     <p class="small">男子・長水路。世界大会は2027年から隔年、8月第2週後半。その年の3月日本選手権A決勝で派遣標準を突破した上位2名を自動選出します（標準と同タイムを含む）。</p>
-    <p class="small">日本代表が2名に満たない個人種目は、世界大会の開幕前に代表登録済みの自チーム選手を追加できます。リレーのみの代表選手も対象で、追加種目の派遣標準突破は不要、1人の出場種目数に上限はありません。</p>
+    <p class="small">日本代表が2名に満たない個人種目は、世界大会の開幕前に、その種目の日本選手権8位以内の入賞者、または他種目・リレーで代表内定済みの選手から自由に追加選出できます。自チーム・他チームとも対象で、追加種目の派遣標準突破は不要、1人の出場種目数に上限はありません。</p>
     <p class="small">フリーリレーは100mFr・200mFrの決勝上位4名。メドレーは100mBa・Br・Fly・Frの各優勝者。優勝者が重複する場合は専門泳法を優先し、他の泳法は2位の選手を選出します。</p>
     <p class="small">従来12種目は2026パンパシ派遣標準。50mBa・Br・Flyはパンパシで実施されないため、<a href="${SPRINT_SOURCES.worldStandard}" target="_blank" rel="noopener">世界水泳2025 A標準</a>を世界大会の選考基準に使います。追加3種目の国内標準：<a href="${SPRINT_SOURCES.japanOpen}" target="_blank" rel="noopener">ジャパンオープン2026</a> ／ <a href="${SPRINT_SOURCES.japanChampionship}" target="_blank" rel="noopener">日本選手権2026</a></p>`);
   m.classList.add("modal-standards");m.querySelector("#x").onclick=()=>closeModal(()=>{
@@ -6947,6 +7054,7 @@ function renderJapanTeam(){
   selector.value=selectedJapanTeamYear==null?"":String(selectedJapanTeamYear);selector.disabled=!entries.length;
   selector.onchange=()=>{selectedJapanTeamYear=Number(selector.value);renderJapanTeam()};
   const entry=entries.find(entry=>entry.year===selectedJapanTeamYear);
+  const edit=document.getElementById("editJapanTeamSelection");edit.hidden=!entry||!canEditWorldSelection(entry.year);edit.onclick=()=>openWorldAdditionalEntry(36,entry.year,{manageOnly:true});
   document.getElementById("japanTeamTitle").textContent=entry?`${entry.year}年 世界大会 日本代表`:"日本代表";
   document.getElementById("japanTeamNote").textContent=entry?
     `${entry.worldStatus==="complete"?"大会終了":entry.worldStatus==="in_progress"?"大会進行中":entry.legacy?"過去の大会": "代表選出済み・世界大会開幕前"}。★は自チームの選手。学年・所属は代表選出時、リレーの学年は出場時です。${entry.legacy?" 旧セーブの成績は残っている戦績から復元し、確認できない結果は「記録なし」と表示します。":""}`:
@@ -7036,47 +7144,82 @@ function showMeetFormBoostEditor(athletes,context){
     for(const {el,top,left} of scrollPositions){el.scrollTop=top;el.scrollLeft=left}
   });
 }
-function openWorldAdditionalEntry(competitionSlot,competitionSeason){
-  const year=calendarYear(competitionSeason,competitionSlot),{athletes,vacancies}=worldAdditionalEntryOptions(year);
-  const events=EVENTS.filter(e=>vacancies[e]>0);
-  if(!athletes.length||!events.length)return false;
-  const original=state.japanTeam.individual,automatic=worldAutoEntries(year);
-  const selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
-  const sortedEvents=new Set();
-  const formContext={meet:"world_championship",slot:competitionSlot,season:competitionSeason};
-  const m=showModal(`<div class="row"><h2 style="margin-right:auto">世界大会 追加エントリー</h2>${entryFormPointsHtml()}<button id="std">参加・派遣標準</button></div>
-    <div class="notice small">代表登録済みの自チーム選手を、空きのある個人種目へ追加できます。<b>各種目は日本代表合計2名まで。1人の出場種目数は無制限です。</b><br>追加種目の派遣標準突破は不要です。「追加しない」を選ぶと、その枠は空けたまま進みます。種目名を押すと追加候補をPBの速い順に並べ替えます。<br>${MEET_FORM_BOOST_COST}ptで調子＋1段階（この大会中・絶好調まで）。</div>
-    <div class="entry-mobile-guide muted">日本代表2人まで／種目数自由／調子＋1 ${MEET_FORM_BOOST_COST}pt</div>
-    <div class="entry-form-roster small">${sortedEntryRoster(athletes).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${athleteGradeHtml(a)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)} ${meetFormBoostButtonHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`).join("")}</div>
-    <div class="table-wrap entry-table-wrap"><table id="worldAdditionalTable"><thead><tr><th>種目</th><th>選考済み代表</th><th>追加選手</th></tr></thead><tbody></tbody></table></div>
-    <div id="worldAdditionalSummary" class="small muted"></div>
-    <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">エントリー確認へ</button></div>`);
-  m.classList.add("modal-world-additional");
-  const render=()=>{
-    const candidates=sortedEntryRoster(athletes);
-    m.querySelector("tbody").innerHTML=events.map(e=>`<tr data-world-event="${e}"><td><button type="button" class="entry-sort-button" data-world-sort="${e}" aria-pressed="${sortedEvents.has(e)}" title="${EVENT_LABEL[e]}の追加候補をPBが速い順に並べ替え"><b>${EVENT_LABEL[e]}</b><span class="entry-sort-indicator" aria-hidden="true">▲</span></button><br><span class="small muted">空き ${vacancies[e]}枠</span></td>
-      <td class="small">${(original[e]||[]).map(id=>{const a=japanTeamAthlete(id);return a?`<span class="entry-summary-athlete">${esc(a.name)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`:"不明"}).join("")||"なし"}</td>
-      <td>${Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1} <select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${(sortedEvents.has(e)?sortedEntryRoster(athletes,e):candidates).filter(a=>!(original[e]||[]).includes(a.id)).map(a=>`<option value="${a.id}" data-form-option="${esc(a.id)}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${esc(a.name)} ${athleteGradeLabel(a)} / PB ${fmt(a.bestTimes?.[e])} / ${athleteMeetForm(a,"world_championship",competitionSlot,competitionSeason).label}</option>`).join("")}</select>${selections[e][i]?meetFormHtml(candidates.find(a=>a.id===selections[e][i]),"world_championship",competitionSlot,competitionSeason):""}</label>`).join("")}</td></tr>`).join("");
-    m.querySelectorAll("[data-world-sort]").forEach(button=>button.onclick=()=>{
-      const wrap=m.querySelector(".entry-table-wrap"),top=wrap.scrollTop,left=wrap.scrollLeft,event=button.dataset.worldSort;
-      sortedEvents.add(event);render();wrap.scrollTop=top;wrap.scrollLeft=left;
-      m.querySelector(`[data-world-sort="${event}"]`).focus({preventScroll:true});
-    });
-    m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
-      selections[select.dataset.worldEvent][Number(select.dataset.worldSlot)]=select.value;
-      render();
-    });
-    const total=EVENTS.reduce((n,e)=>n+selections[e].filter(Boolean).length,0);
-    m.querySelector("#worldAdditionalSummary").textContent=`追加エントリー ${total}件`;
-    bindEntryMeetForm(m,formContext);
+function worldCandidateProfileHtml(a,event,options){
+  if(!a)return '<div class="empty-state">比較する選手を選んでください。</div>';
+  const team=state.japanTeam,finalist=options.finalists[event].find(row=>row.id===a.id),automatic=(team.individual?.[event]||[]).includes(a.id),snapshot=![...state.players,...state.world].some(p=>p.id===a.id);
+  const stat=k=>entryStatHtml(STAT_LABEL[k],displayStatValue(a,k),k);
+  return `<div class="world-profile-heading"><strong>${ownJapanAthlete(a.id)?"★ ":""}${esc(a.name)}</strong>${athleteGradeHtml(a)}${specialtyTag(a.specialty,"専門 ")}</div>
+    <div class="small muted">${esc(a.organization||"所属不明")}${snapshot?" ／ 選考時の情報":""}</div>
+    <div class="world-profile-qualification">${automatic?'<span class="tag good">派遣標準突破・自動選出</span>':options.registered.has(a.id)?'<span class="tag">代表内定済み</span>':''}${finalist?`<span class="tag">日本選手権 ${finalist.rank}位 ${fmt(finalist.time)}</span>`:""}<b>${EVENT_LABEL[event]} PB ${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b></div>
+    <h3>ステータス</h3><div class="world-profile-common">${["start","mental"].map(stat).join("")}</div>
+    <div class="world-profile-stats">${MEDLEY_STROKES.flatMap(s=>[s+"_speed",s+"_stamina",s+"_turn"]).concat(["im_speed","im_stamina"]).map(stat).join("")}</div>
+    <h3>PB <span class="small muted">${snapshot?"選考時の自己ベスト":"現在の自己ベスト"}</span></h3><div class="world-profile-pbs">${EVENTS.map(e=>`<div data-world-profile-pb="${e}" class="${e===event?"selected":""}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(a.bestTimes?.[e])?fmt(a.bestTimes[e]):"未計測"}</b></div>`).join("")}</div>`;
+}
+function openWorldAdditionalEntry(competitionSlot,competitionSeason,settings={}){
+  const year=calendarYear(competitionSeason,competitionSlot),initial=worldAdditionalEntryOptions(year);
+  if(!canEditWorldSelection(year)||!initial.athletes.length||(!settings.manageOnly&&!Object.values(initial.vacancies).some(n=>n>0)))return false;
+  const original=state.japanTeam.individual,automatic=worldAutoEntries(year),selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
+  const sortedEvents=new Set(),formContext={meet:"world_championship",slot:competitionSlot,season:competitionSeason};
+  let compareEvent=EVENTS.find(e=>initial.vacancies[e]>0)||EVENTS[0],compareId=null;
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">${year}年 世界大会 日本代表選考</h2>${entryFormPointsHtml()}<button id="std">参加・派遣標準</button>${settings.manageOnly?'<button id="cancelWorldSelection">戻る</button>':""}</div>
+    <div class="notice small"><b>派遣標準突破者の自動選出は固定。各種目、日本代表は合計2名までです。</b><br>空き枠は、その種目の日本選手権8位以内、または別種目・リレーで代表内定済みの選手から自由に選べます。自チーム・他チームとも対象で、追加種目の派遣標準突破は不要です。1人の出場種目数に上限はありません。<br>種目名でPB順に並べ替え。「比較」や選手名を押すと全ステータス・PBを確認できます。</div>
+    <div class="entry-mobile-guide muted">自動選出は固定／各種目2名まで／日本選手権入賞者・他種目内定者</div>
+    <div class="world-selection-tabs" role="group" aria-label="選考画面の表示"><button id="worldSelectionListTab" class="primary" aria-pressed="true">種目・選手を選ぶ</button><button id="worldSelectionProfileTab" aria-pressed="false">選手の能力・PB</button></div>
+    <div class="entry-form-roster small"></div>
+    <div class="world-selection-layout"><section class="world-selection-list"><div class="table-wrap entry-table-wrap"><table id="worldAdditionalTable"><thead><tr><th>種目</th><th>自動選出・固定</th><th>追加選手</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="world-profile-panel" aria-label="候補選手のステータスとPB"><div class="world-profile-controls"><label>比較する種目<select id="worldCompareEvent">${EVENTS.map(e=>`<option value="${e}">${EVENT_LABEL[e]}</option>`).join("")}</select></label><label>比較する選手<select id="worldCompareAthlete"></select></label></div><div id="worldCandidateProfile"></div></section></div>
+    <div id="worldAdditionalSummary" class="small muted"></div><div id="worldSelectionMessage" class="small" role="status"></div>
+    <div class="row modal-actions"><button id="clearWorldAdditional">追加を全解除</button><button id="confirmWorldAdditional" class="primary">${settings.manageOnly?"選考を保存して戻る":"エントリー確認へ"}</button></div>`);
+  m.classList.add("modal-world-additional");m.dataset.worldView="selection";
+  const showView=view=>{
+    m.dataset.worldView=view;
+    for(const [id,pressed]of [["worldSelectionListTab",view==="selection"],["worldSelectionProfileTab",view==="profile"]]){const b=m.querySelector("#"+id);b.classList.toggle("primary",pressed);b.setAttribute("aria-pressed",String(pressed))}
   };
+  let current=initial;
+  const renderProfile=()=>{
+    const ids=new Set([...(original[compareEvent]||[]),...current.byEvent[compareEvent].map(a=>a.id)]),pool=sortedEntryRoster(current.athletes.filter(a=>ids.has(a.id)),compareEvent);
+    if(!pool.some(a=>a.id===compareId))compareId=pool[0]?.id??null;
+    m.querySelector("#worldCompareEvent").value=compareEvent;
+    m.querySelector("#worldCompareAthlete").innerHTML=pool.map(a=>`<option value="${esc(a.id)}" ${a.id===compareId?"selected":""}>${ownJapanAthlete(a.id)?"★ ":""}${esc(a.name)}（${esc(a.organization||"所属不明")}） / PB ${fmt(a.bestTimes?.[compareEvent])}</option>`).join("")||'<option value="">この種目の候補なし</option>';
+    m.querySelector("#worldCandidateProfile").innerHTML=worldCandidateProfileHtml(pool.find(a=>a.id===compareId),compareEvent,current);
+  };
+  const inspect=(event,id=null)=>{compareEvent=event;compareId=id;renderProfile();showView("profile")};
+  const render=()=>{
+    const wrap=m.querySelector(".entry-table-wrap"),top=wrap.scrollTop,left=wrap.scrollLeft;
+    current=worldAdditionalEntryOptions(year,selections);
+    let removed=0;
+    for(const e of EVENTS)selections[e]=selections[e].map(id=>{if(id&&!current.valid[e].includes(id)){removed++;return ""}return id});
+    if(removed){current=worldAdditionalEntryOptions(year,selections);m.querySelector("#worldSelectionMessage").textContent="他種目の内定を解除したため、資格を失った追加選出を解除しました。"}
+    const {vacancies}=current;
+    m.querySelector("#worldAdditionalTable tbody").innerHTML=EVENTS.map(e=>{
+      const pool=sortedEntryRoster(current.byEvent[e],sortedEvents.has(e)?e:null),automaticNames=(original[e]||[]).map(id=>{const a=japanTeamAthlete(id);return a?`<button class="world-athlete-link" data-world-inspect="${esc(id)}" data-world-inspect-event="${e}">${ownJapanAthlete(id)?"★ ":""}${esc(a.name)}</button><span class="small muted">${esc(a.organization||"")}</span>`:"不明"}).join("");
+      return `<tr data-world-event="${e}"><td><button type="button" class="entry-sort-button" data-world-sort="${e}" aria-pressed="${sortedEvents.has(e)}" title="${EVENT_LABEL[e]}の追加候補をPBが速い順に並べ替え"><b>${EVENT_LABEL[e]}</b><span class="entry-sort-indicator" aria-hidden="true">▲</span></button><span class="world-vacancy ${vacancies[e]?"":"full"}">${vacancies[e]?`空き ${vacancies[e]}枠`:"2名確定"}</span><button class="world-compare-button" data-world-compare="${e}">候補を比較</button></td>
+      <td class="small">${automaticNames||'<span class="muted">なし</span>'}</td><td>${vacancies[e]?Array.from({length:vacancies[e]},(_,i)=>`<label class="world-additional-slot">追加${i+1}<select data-world-event="${e}" data-world-slot="${i}" aria-label="${EVENT_LABEL[e]} 追加${i+1}"><option value="">追加しない</option>${pool.map(a=>{const finalist=current.finalists[e].find(row=>row.id===a.id);return `<option value="${esc(a.id)}" data-form-option="${esc(a.id)}" ${selections[e][i]===a.id?"selected":""} ${selections[e].some((id,j)=>j!==i&&id===a.id)?"disabled":""}>${ownJapanAthlete(a.id)?"★ ":""}${esc(a.name)} ${athleteGradeLabel(a)} / ${esc(a.organization||"")} / PB ${fmt(a.bestTimes?.[e])} / ${finalist?`日本選手権${finalist.rank}位`:"他種目内定"} / ${athleteMeetForm(a,"world_championship",competitionSlot,competitionSeason).label}</option>`}).join("")}</select>${selections[e][i]?meetFormHtml(japanTeamAthlete(selections[e][i]),"world_championship",competitionSlot,competitionSeason):""}</label>`).join(""):'<span class="small muted">自動選出の2名で登録済み</span>'}</td></tr>`;
+    }).join("");
+    m.querySelector(".entry-form-roster").innerHTML=sortedEntryRoster(current.athletes.filter(a=>ownJapanAthlete(a.id)&&current.registered.has(a.id))).map(a=>`<span class="entry-summary-athlete">${esc(a.name)} ${athleteGradeHtml(a)} ${meetFormHtml(a,"world_championship",competitionSlot,competitionSeason)} ${meetFormBoostButtonHtml(a,"world_championship",competitionSlot,competitionSeason)}</span>`).join("");
+    m.querySelectorAll("[data-world-sort]").forEach(button=>button.onclick=()=>{sortedEvents.add(button.dataset.worldSort);render();m.querySelector(`[data-world-sort="${button.dataset.worldSort}"]`).focus({preventScroll:true})});
+    m.querySelectorAll("[data-world-compare]").forEach(button=>button.onclick=()=>inspect(button.dataset.worldCompare));
+    m.querySelectorAll("[data-world-inspect]").forEach(button=>button.onclick=()=>inspect(button.dataset.worldInspectEvent,button.dataset.worldInspect));
+    m.querySelectorAll("select[data-world-event]").forEach(select=>select.onchange=()=>{
+      const event=select.dataset.worldEvent,id=select.value;selections[event][Number(select.dataset.worldSlot)]=id;
+      compareEvent=event;compareId=id;render();
+    });
+    const total=EVENTS.reduce((n,e)=>n+selections[e].filter(Boolean).length,0),roster=new Set([...Object.values(original).flat(),...Object.values(state.japanTeam.relays||{}).flat(),...Object.values(selections).flat().filter(Boolean)]);
+    m.querySelector("#worldAdditionalSummary").textContent=`追加エントリー ${total}件 ／ 日本代表 ${roster.size}名 ／ ★ 自チーム`;
+    bindEntryMeetForm(m,formContext);renderProfile();wrap.scrollTop=top;wrap.scrollLeft=left;
+  };
+  m.querySelector("#worldSelectionListTab").onclick=()=>showView("selection");m.querySelector("#worldSelectionProfileTab").onclick=()=>showView("profile");
+  m.querySelector("#worldCompareEvent").onchange=e=>{compareEvent=e.target.value;compareId=null;renderProfile()};
+  m.querySelector("#worldCompareAthlete").onchange=e=>{compareId=e.target.value;renderProfile()};
   m.querySelector("#std").onclick=showStandards;
+  if(settings.manageOnly)m.querySelector("#cancelWorldSelection").onclick=()=>{closeModal();renderJapanTeam()};
   m.querySelector("#clearWorldAdditional").onclick=()=>{for(const e of EVENTS)selections[e]=[];render()};
   m.querySelector("#confirmWorldAdditional").onclick=()=>{
-    const entries=Object.fromEntries(EVENTS.map(e=>[e,selections[e].filter(Boolean)]));
-    const combined=setWorldAdditionalEntries(year,entries);
-    autoSaveNow();closeModal();
-    showEntryConfirmation("world_championship",combined.individual,combined.relays,competitionSlot,competitionSeason);
+    try{
+      const combined=setWorldAdditionalEntries(year,Object.fromEntries(EVENTS.map(e=>[e,selections[e].filter(Boolean)])));
+      autoSaveNow();closeModal();renderAll();
+      if(!settings.manageOnly)showEntryConfirmation("world_championship",combined.individual,combined.relays,competitionSlot,competitionSeason);
+    }catch(error){m.querySelector("#worldSelectionMessage").textContent=error.message}
   };
   render();return true;
 }
@@ -8090,7 +8233,7 @@ function showRivalPlayerDetail(id){
   const p=state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));if(!p)return;
   const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${gradeBadge(p.grade,`大${p.grade||"—"}`)}</h2><button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
     const value=Math.round(displayStatValue(p,k));return `<div class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></div>`;
-  }).join("")}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未計測"}</b></div>`).join("")}</div></section></div>`);
+  }).join("")}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未計測"}</b></div>`).join("")}</div>${rivalMainResultsHtml(p)}</section></div>`);
   m.classList.add("modal-player-detail","modal-rival-player");m.querySelector("#x").onclick=()=>closeModal();
 }
 function renderRankings(){
@@ -8334,7 +8477,7 @@ function applyPlayerRename(id,newName){
   if(n===old)return{ok:true,msg:"変更なし"};
   if(activeAthletes().some(a=>a!==p&&a.name===n)||state.retiredArchive.some(a=>a.name===n))return{ok:false,msg:"その名前は既に使用されています"};
   p.name=n;
-  for(const member of state.japanTeam?.athletes||[])if(member.id===id&&member.snapshot)member.snapshot.name=n;
+  for(const member of [...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])])if(member.id===id&&member.snapshot)member.snapshot.name=n;
   for(const entry of state.japanTeamHistory||[])for(const member of [...(entry.athletes||[]),...Object.values(entry.results?.relays||{}).flatMap(relay=>[...(relay.prelim?.members||[]),...(relay.final?.members||[])])])if(member.id===id)member.name=n;
   for(let book of Object.values(state.recordRankings||{}))for(let rows of Object.values(book))for(let r of rows){
     if(r.athleteId===id)r.name=n;

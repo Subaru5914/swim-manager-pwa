@@ -544,34 +544,34 @@ const additionalFixture=`
     athletes:[...additionalOwn.slice(0,2),...additionalCpu.slice(0,3)].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:additionalOwn.includes(a)}))};
 `;
 
-test('registered individuals and relay-only own representatives can add every vacant individual event without a swimmer limit',()=>{
+test('registered individual and relay representatives from both teams can add vacant individual events without a swimmer limit',()=>{
   const run=game();run(additionalFixture);
   const r=json(run,`(()=>{
     const selected=JSON.stringify([state.japanTeam.individual,state.japanTeam.relays,state.japanTeam.athletes]),seed=state.rngSeed;
     const options=worldAdditionalEntryOptions(2027),entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?[]:e==='fr200'?[additionalOwn[1].id]:additionalOwn.slice(0,2).map(a=>a.id)]));
     const combined=setWorldAdditionalEntries(2027,entries),own=worldOwnEntries(2027);
-    return {eligible:options.athletes.map(a=>a.id),expected:additionalOwn.slice(0,2).map(a=>a.id),vacancies:options.vacancies,combined,entries,own,
+    return {eligible:options.athletes.map(a=>a.id),expected:additionalOwn.slice(0,2).map(a=>a.id),expectedCpu:additionalCpu.slice(0,3).map(a=>a.id),vacancies:options.vacancies,combined,entries,own,
       unchanged:selected===JSON.stringify([state.japanTeam.individual,state.japanTeam.relays,state.japanTeam.athletes]),rng:seed===state.rngSeed,
       tooSlow:additionalOwn[1].bestTimes.fr200>dispatchStandard('fr200'),wrong:worldAutoEntries(2029)};
   })()`);
-  assert.deepEqual(r.eligible,r.expected);assert.equal(r.vacancies.fr100,0);assert.equal(r.vacancies.fr200,1);assert.equal(r.vacancies.fr50,2);
+  assert.deepEqual([...r.eligible].sort(),[...r.expected,...r.expectedCpu].sort());assert.equal(r.vacancies.fr100,0);assert.equal(r.vacancies.fr200,1);assert.equal(r.vacancies.fr50,2);
   assert.equal(r.combined.individual.fr200.length,2);assert.ok(r.combined.individual.fr200.includes(r.expected[1]));
   for(const event of Object.keys(r.entries))assert.deepEqual(r.own.individual[event],event==='fr100'?[r.expected[0]]:r.entries[event]);
   assert.ok(Object.values(r.own.individual).filter(ids=>ids.includes(r.expected[1])).length>3);
   assert.ok(r.unchanged&&r.rng&&r.tooSlow,JSON.stringify(r));assert.ok(Object.values(r.wrong.individual).every(ids=>ids.length===0));
 });
 
-test('additional entries reject full events, duplicates, unselected own swimmers and CPU entrants without replacing a valid choice',()=>{
+test('additional entries reject full events, duplicates and unqualified own or CPU swimmers without replacing a valid choice',()=>{
   const run=game();run(additionalFixture);
   const r=json(run,`(()=>{
     setWorldAdditionalEntries(2027,{fr50:[additionalOwn[0].id]});const saved=JSON.stringify(state.japanTeam);
     const invalid=[{fr100:[additionalOwn[1].id]},{fr200:additionalOwn.slice(0,2).map(a=>a.id)},
-      {fr50:[additionalOwn[0].id,additionalOwn[0].id]},{fr50:[additionalOwn[2].id]},{fr50:[additionalCpu[0].id]},{fr50:'bad'}];
+      {fr50:[additionalOwn[0].id,additionalOwn[0].id]},{fr50:[additionalOwn[2].id]},{fr50:[additionalCpu[3].id]},{fr50:'bad'}];
     const rejected=invalid.map(entries=>{try{setWorldAdditionalEntries(2027,entries);return false}catch(error){return saved===JSON.stringify(state.japanTeam)}});
     state.japanTeam.additionalIndividual={fr100:[additionalOwn[1].id],fr200:additionalOwn.slice(0,2).map(a=>a.id),
       fr50:[additionalOwn[2].id,additionalCpu[0].id,additionalOwn[0].id,additionalOwn[0].id,additionalOwn[1].id],ba100:'bad'};
     const sanitized=worldAutoEntries(2027);setWorldAdditionalEntries(2027,{});
-    return {rejected,sanitized,expected:additionalOwn.slice(0,2).map(a=>a.id),cleared:Object.values(state.japanTeam.additionalIndividual).every(ids=>!ids.length)};
+    return {rejected,sanitized,expected:[additionalCpu[0].id,additionalOwn[0].id],cleared:Object.values(state.japanTeam.additionalIndividual).every(ids=>!ids.length)};
   })()`);
   assert.ok(r.rejected.every(Boolean));assert.equal(r.sanitized.individual.fr100.length,2);assert.equal(r.sanitized.individual.fr200.length,2);
   assert.deepEqual(r.sanitized.individual.fr50,r.expected);assert.deepEqual(r.sanitized.individual.ba100,[]);assert.ok(r.cleared);
