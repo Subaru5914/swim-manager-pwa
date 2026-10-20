@@ -52,29 +52,30 @@ test('all own and CPU relay prelims omit the delay and keep laps, totals and pla
   }
 });
 
-test('owned swimmers and owned Japan snapshots never receive or draw prelim delays, while CPU and alumni remain eligible',()=>{
+test('owned swimmers, owned Japan snapshots, CPU and alumni share probabilistic prelim delays with identical official clocks',()=>{
   const run=game(),r=run(`(()=>{
     const make=id=>({id,name:id,stats:Object.fromEntries(STATS.map(k=>[k,138])),bestTimes:{}}),own=make('own'),graduate=make('graduate'),cpu=make('cpu'),alumni=make('graduate');
     state.players=[own];state.world=[cpu,alumni];
     state.japanTeam={year:2027,athletes:[{id:graduate.id,ownAtSelection:true,snapshot:graduate},{id:cpu.id,ownAtSelection:false,snapshot:cpu}]};
     const originalRng=rng;
-    const rows=EVENTS.map(event=>{
-      rng=originalRng;
+    return EVENTS.map(event=>{
       const races=[own,graduate].map(p=>{
-        state.rngSeed=5914;const final=simulateRace(p,event,true,true);state.rngSeed=5914;const prelim=simulateRace(p,event,true,true,false,true);
-        return{id:p.id,event,prelim:prelim.total,final:final.total,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,
+        rng=()=>.5;const final=simulateRace(p,event,true,true);
+        forcePreliminaryRng();const prelim=simulateRace(p,event,true,true,false,true);
+        forcePreliminaryRng([.99]);const no=simulateRace(p,event,true,true,false,true);
+        return{id:p.id,event,prelim:prelim.total,final:final.total,zero:no.total,zeroDelay:no.physics.preliminaryDelay,delay:prelim.physics.preliminaryDelay,probability:prelim.physics.preliminaryProbability,
           form:prelim.physics.formCorrection,finalForm:final.physics.formCorrection,execution:prelim.physics.raceCorrection,finalExecution:final.physics.raceCorrection,last:prelim.cumulative.at(-1),finish:prelim.trajectory.at(-1).t};
       });
-      const seed=state.rngSeed,zero=samplePreliminaryDelay(own,event),unchanged=seed===state.rngSeed;
+      rng=originalRng;const seed=state.rngSeed;samplePreliminaryDelay(own,event);const consumed=seed!==state.rngSeed;
       forcePreliminaryRng();const cpuRace=simulateRace(cpu,event,true,true,false,true);
-      const graduateWorld=withMeetRaceContext('world_championship',36,2027,()=>athletePreliminaryProbability({...alumni},event));
-      return{races,zero,unchanged,cpuDelay:cpuRace.physics.preliminaryDelay,cpuProbability:cpuRace.physics.preliminaryProbability,
-        alumni:withMeetRaceContext('japan_open',67,2027,()=>athletePreliminaryProbability(alumni,event)),graduateWorld};
-    });return rows;
+      return{races,consumed,cpuDelay:cpuRace.physics.preliminaryDelay,cpuProbability:cpuRace.physics.preliminaryProbability,
+        alumni:withMeetRaceContext('japan_open',67,2027,()=>athletePreliminaryProbability(alumni,event)),
+        graduateWorld:withMeetRaceContext('world_championship',36,2027,()=>athletePreliminaryProbability({...alumni},event))};
+    });
   })()`);
   for(const row of r){
-    assert.equal(row.zero,0);assert.ok(row.unchanged);assert.ok(row.cpuDelay>0&&row.cpuProbability>0&&row.alumni>0);assert.equal(row.graduateWorld,0);
-    for(const race of row.races){assert.equal(race.delay,0);assert.equal(race.probability,0);assert.equal(race.prelim,race.final);assert.equal(race.form,race.finalForm);assert.equal(race.execution,race.finalExecution);assert.equal(race.last,race.prelim);assert.ok(Math.abs(race.finish-race.prelim)<1e-8)}
+    assert.ok(row.consumed&&row.cpuDelay>0&&row.cpuProbability>0&&row.alumni>0&&row.graduateWorld>0);
+    for(const race of row.races){assert.ok(race.delay>0&&race.probability>0&&race.probability<1);assert.equal(race.prelim,Math.round((race.final+race.delay)*100)/100);assert.equal(race.zeroDelay,0);assert.equal(race.zero,race.final);assert.equal(race.form,race.finalForm);assert.equal(race.execution,race.finalExecution);assert.equal(race.last,race.prelim);assert.ok(Math.abs(race.finish-race.prelim)<1e-8)}
   }
 });
 
