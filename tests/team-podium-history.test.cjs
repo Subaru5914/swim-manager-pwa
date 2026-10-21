@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),cp=require('node:child_process');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {test}=require('node:test'),SaveHistory=require('../save-history.js');
 const repo=path.join(__dirname,'..'),html=fs.readFileSync(path.join(repo,'index.html'),'utf8');
 function game(input=html){
@@ -74,17 +74,40 @@ test('team medals survive actual senior deletion, capacity cleanup and save relo
   })()`);
   assert.equal(r.retired.length,1);assert.ok(r.removed>0&&r.sourceGone&&r.stable);assert.deepEqual(r.rows,r.first);assert.equal(r.rows[0].gradeAtRecord,4);
 });
-test('v2.10 migration and reset preserve medals, abilities, own settings and the next race draw while allowing ranked CPU specialties',()=>{
-  const old=game(cp.execFileSync('git',['show','2c26cd4:index.html'],{cwd:repo,encoding:'utf8',maxBuffer:2000000}));
-  const before=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run('state='+JSON.stringify(before)+';migrateState();true');
-  const after=run('deepClone(state)');for(const [key,value]of Object.entries(before))if(!['version','world'].includes(key))assert.deepEqual(after[key],value,key);
-  for(let i=0;i<before.world.length;i++){
-    const a=after.world[i],b=before.world[i];assert.equal(a.id,b.id);
-    for(const key of ['stats','imAptitude','name','category','grade','age','organization','raceHistory','accolades'])assert.deepEqual(a[key],b[key],a.id+' '+key);
-    for(const [event,time]of Object.entries(a.bestTimes))assert.equal(time,b.bestTimes[event],a.id+' '+event+' PB');
-    if(a.category!=='high')assert.deepEqual(a.bestTimes,b.bestTimes,a.id+' all PBs');
+test('2030 rival medals remain on rival profiles without entering the own-team podium history',()=>{
+ const r=minimal()(`(()=>{
+  state.season=2030;const p=own(0),cpu={...own(1),id:'rival-2030',organization:'他大学',year:null,grade:2};state.players=[p];state.world=[cpu];
+  for(const [i,meet]of RIVAL_PODIUM_MEETS.entries()){
+   recordAthleteMainResult(p,{season:2030,slot:43,meet,event:EVENTS[i],stage:'A決勝',rank:2,time:55});
+   recordAthleteMainResult(cpu,{season:2030,slot:43,meet,event:EVENTS[i],stage:'A決勝',rank:1,time:54});
   }
-  assert.equal(after.teamPodiumHistoryVersion,1);assert.deepEqual(after.teamPodiumHistory,[]);
+  return{own:state.teamPodiumHistory,rival:rivalMainResults(cpu)};
+ })()`);
+ assert.equal(r.own.length,4);assert.ok(r.own.every(row=>row.athleteId==='own-0'));assert.equal(r.rival.length,4);
+});
+
+test('existing mixed 2030 podium saves remove identifiable rivals across careers while keeping deleted own medalists and all underlying results',()=>{
+ const r=minimal()(`(()=>{
+  state.season=2034;const p=own(0),namesake={...own(1),id:'rival-live',name:p.name,organization:'他大学'},adult={...own(2),id:'rival-adult',category:'adult',year:null,organization:'社会人',almaMater:'他大学'},alumni={...own(3),year:null,category:'adult',alumni:true,organization:'社会人'};
+  state.players=[p];state.world=[namesake,adult,alumni];state.retiredArchive=[{id:'own-retired',name:'引退済み自チーム',organization:'社会人'}];state.alumniCareer=[{id:'own-graduate',from:state.playerUniversity}];
+  const medal=(athleteId,name=athleteId,extra={})=>({kind:'individual',season:2030,slot:43,meet:'intercollege',event:'fr100',stage:'決勝',rank:2,time:55,schoolCategory:'university',gradeAtRecord:2,athleteId,name,...extra});
+  state.teamPodiumHistory=[medal(p.id,p.name),medal(namesake.id,namesake.name),medal(adult.id),medal(alumni.id),medal('rival-deleted'),medal('rival-record-book'),medal('own-retired'),medal('own-graduate'),medal('own-deleted-all-sources'),medal(null,'古い自チームの匿名成績'),medal('world-rival','他大学代表',{meet:'world_championship'}),medal('world-own','過去の自チーム代表',{meet:'world_championship'})];
+  state.meetHistory=[{season:2030,meet:'intercollege',podiums:{fr100:[{athleteId:'rival-deleted',name:'引退済み他大学',organization:'他大学',rank:2,time:55}]}}];
+  state.recordRankings={university:{fr100:[{athleteId:'rival-record-book',name:'他大学記録',organization:'他大学',season:2030,meet:'intercollege',event:'fr100',stage:'決勝',rank:2,time:55}]}};
+  state.japanTeamHistory=[{year:2030,worldSeason:2030,athletes:[{id:'world-rival',own:false},{id:'world-own',own:true}]}];
+  state.teamTop10={fr100:[{athleteId:namesake.id,meet:'initial_pb'}],'4x100fr':[{kind:'relay',meet:'world_championship',members:[{id:p.id},{id:namesake.id}]}]};
+  const protectedData=JSON.stringify([state.players,state.world,state.retiredArchive,state.meetHistory,state.recordRankings,state.alumniCareer,state.japanTeamHistory,state.rngSeed]);
+  initializeTeamPodiumHistory();const first=JSON.stringify(state);initializeTeamPodiumHistory();
+  return{ids:state.teamPodiumHistory.map(row=>row.athleteId),stable:first===JSON.stringify(state),version:state.teamPodiumHistoryVersion,protected:protectedData===JSON.stringify([state.players,state.world,state.retiredArchive,state.meetHistory,state.recordRankings,state.alumniCareer,state.japanTeamHistory,state.rngSeed])};
+ })()`);
+ assert.deepEqual(r.ids,['own-0','own-3','own-retired','own-graduate','own-deleted-all-sources',null,'world-own']);assert.ok(r.stable&&r.protected);assert.equal(r.version,2);
+});
+
+test('podium ownership migration and reset preserve current abilities, PBs, training settings and the next race draw',()=>{
+  const run=game(),before=run('(state=createState(),migrateState(),deepClone(state))');before.teamPodiumHistoryVersion=1;before.version='pwa-previous-release';
+  run('state='+JSON.stringify(before)+';migrateState();true');
+  const after=run('deepClone(state)');for(const [key,value]of Object.entries(before))if(!['version','teamPodiumHistoryVersion'].includes(key))assert.deepEqual(after[key],value,key);
+  assert.equal(after.teamPodiumHistoryVersion,2);assert.deepEqual(after.teamPodiumHistory,[]);
   const generated=run('(state=createState(),migrateState(),deepClone(state))');for(const key of ['players','rngSeed','teamTop10','facilities','trainingFocus'])assert.deepEqual(generated[key],before[key],key);
   assert.deepEqual(generated.world.map(a=>[a.id,a.stats,a.imAptitude]),before.world.map(a=>[a.id,a.stats,a.imAptitude]));
   const saved=run('JSON.stringify(state)');run('migrateState();true');assert.equal(run('JSON.stringify(state)'),saved);
