@@ -33,17 +33,18 @@ test('low endurance costs more time at 200m and 400m while balanced stroke bench
   const run=game(),rows=run(`(()=>{
     const rows=[];
     for(const e of ['fr200','ba200','br200','fly200','fr400']){
-      const p={stats:Object.fromEntries(STATS.map(k=>[k,163]))},weak=deepClone(p);
+      const p={stats:Object.fromEntries(STATS.map(k=>[k,163]))},weak=deepClone(p),slow=deepClone(p);
       weak.stats[strokeForEvent(e)+'_stamina']=88;
-      rows.push({e,base:expectedTime(p,e),oldBase:expectedTime(p,e,true),weak:expectedTime(weak,e),oldWeak:expectedTime(weak,e,true)});
+      slow.stats[strokeForEvent(e)+'_speed']=88;
+      rows.push({e,base:expectedTime(p,e),champion:Math.max(JAPAN_RECORD[e]*1.01,INTERCOLLEGE_A_FINAL_REFERENCE[e]*.985),weak:expectedTime(weak,e),slow:expectedTime(slow,e)});
     }
     const p={stats:Object.fromEntries(STATS.map(k=>[k,163])),bestTimes:{}};
     const race=replayRaceToOfficialTime(p,'im200',expectedTime(p,'im200'));
     return {rows,im200:{total:race.total,splits:race.splits}};
   })()`);
   for(const row of rows.rows){
-    assert.equal(row.base,row.oldBase,JSON.stringify(row));
-    assert.ok(row.weak-row.base>(row.oldWeak-row.oldBase)*1.5,JSON.stringify(row));
+    assert.equal(row.base,row.champion,JSON.stringify(row));
+    assert.ok(row.weak>row.slow&&row.slow>row.base,JSON.stringify(row));
   }
   assert.equal(rows.im200.total,116.58);
   assert.deepEqual(rows.im200.splits,[25.31,30.50,33.95,26.82]);

@@ -23,8 +23,8 @@ for(const seed of [12345,54321,5914,24680])test(`reset seed ${seed}: every fresh
       if(validRaceTime(pb)){
         pbs++;
         if(pb<low-.025||pb>high+.025)fail({category,id:a.id,event:e,pb,base,low,high});
-        const normal=ranges[2];
-        if(category!=='own'&&(pb<base+normal[0]-radius-.025||pb>base+normal[1]+radius+.025))fail({category,id:a.id,event:e,pb,base,reason:'fresh PB outside normal form'});
+        const initial=ranges[athleteMeetForm(a,'initial_pb',state.slot,state.season).level+2];
+        if(category!=='own'&&(pb<base+initial[0]-radius-.025||pb>base+initial[1]+radius+.025))fail({category,id:a.id,event:e,pb,base,reason:'fresh PB outside its initial meet form'});
       }else if(category!=='own'&&a.pbEventSelectionVersion!==1&&!(category==='high'&&state.highSchoolRankedPBVersion===1))fail({category,id:a.id,event:e,pb,reason:'unexpected missing CPU PB'});
       // Exercise production draws for every swimmer/event, with fresh independent
       // prelim/final draws and eight competition dates covering different forms.

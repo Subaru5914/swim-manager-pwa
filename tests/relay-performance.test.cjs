@@ -15,20 +15,21 @@ test('relay ranges retain each form\'s fastest limit and execution draws while f
  })()`);
  for(const r of rows){assert.equal(r.now[0],r.old[0]);assert.ok(r.now[1]<r.old[1]);assert.ok(r.sameBase&&r.sameExecution&&r.faster);assert.equal(r.strict,1000)}
 });
-test('ordinary flying legs beat PB less often than v2.08 while lead-off probabilities match individual races',()=>{
+test('current relay PB frequencies follow the form ranges and lead-offs match individual races',()=>{
  const run=game(),rows=run(`(()=>{
-  const previous={100:[-.2,.2],200:[-.5,.5]},p=relayAthlete('pb-frequency'),rows=[];athleteMeetForm=()=>MEET_FORMS[2];
+  const p=relayAthlete('pb-frequency'),rows=[];athleteMeetForm=()=>MEET_FORMS[2];
   withMeetRaceContext('intercollege',44,2026,()=>{for(const d of [100,200])for(const flying of [false,true]){
    const event='fr'+d,base=expectedTime(p,event),pb=round2(base-(d===100?.2:.3)),takeover=flying?reactionTime(p,event)-reactionTime(p,event,true):0,profiles=[];
    p.bestTimes[event]=pb;
-   for(const model of ['previous','current','individual']){state.rngSeed=5914;let beaten=0,near=0,sum=0;const count=20000;for(let i=0;i<count;i++){
-    const c=model==='previous'?{base,formCorrection:sampleRaceCorrection(...previous[d]),raceCorrection:sampleRaceCorrection(-RACE_EXECUTION_RANGE[d],RACE_EXECUTION_RANGE[d])}:raceTimeCorrections(p,event,model==='current'&&flying),time=round2(c.base+c.formCorrection+c.raceCorrection-takeover);
+   for(const model of ['current','individual']){state.rngSeed=5914;let beaten=0,near=0,sum=0;const count=20000;for(let i=0;i<count;i++){
+    const c=raceTimeCorrections(p,event,model==='current'&&flying),time=round2(c.base+c.formCorrection+c.raceCorrection-takeover);
     beaten+=time<pb;near+=time<=pb+(d===100?.5:1);sum+=time-pb
    }profiles.push({beaten:beaten/count,near:near/count,gap:sum/count})}
-   rows.push({d,flying,previous:profiles[0],current:profiles[1],individual:profiles[2]});
+   const range=(flying?RELAY_FORM_TIME_RANGES:MEET_FORM_TIME_RANGES)[d][2];
+   rows.push({d,flying,current:profiles[0],individual:profiles[1],meanGap:base-pb+(range[0]+range[1])/2-takeover});
   }});return rows;
  })()`);
- for(const r of rows){assert.ok(r.current.beaten<r.previous.beaten-.04,JSON.stringify(r));assert.ok(r.current.near<r.previous.near,JSON.stringify(r));assert.ok(r.current.gap>r.previous.gap+.08,JSON.stringify(r));if(r.flying)assert.ok(r.current.beaten>r.individual.beaten+.05);else assert.deepEqual(r.current,r.individual);assert.ok(r.current.beaten>0&&r.current.beaten<1)}
+ for(const r of rows){assert.ok(Math.abs(r.current.gap-r.meanGap)<.03,JSON.stringify(r));if(r.flying)assert.ok(r.current.beaten>r.individual.beaten+.05);else assert.deepEqual(r.current,r.individual);assert.ok(r.current.beaten>0&&r.current.beaten<1)}
 });
 test('all relay kinds use individual lead-offs and dedicated flying legs, retain takeover gains and share the own/CPU clock',()=>{
  const run=game(),r=run(`(()=>{

@@ -107,7 +107,7 @@ test('v2 CPU saves gain event differences once while player, alumni, awards and 
       delete a.cpuCompetitionProfileVersion;delete a.cpuCompetitionCategory;
       delete a.cpuIndividualProfileVersion;
       a.stats=Object.fromEntries(STATS.map(k=>[k,120]));a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,170]));
-      a.bestTimes=Object.fromEntries(EVENTS.map(e=>[e,round2(expectedTime(a,e,true))]));
+      a.bestTimes=Object.fromEntries(EVENTS.map(e=>[e,round2(expectedTime(a,e))]));
     }
     delete cpu[0].specialty;
     state.cpuDiversityVersion=2;migrateState();
@@ -172,23 +172,22 @@ test('all 15 events use C/B/A/S benchmarks and improve continuously with ability
   }
 });
 
-test('derived IM pacing uses real Intercollege references while save migration preserves earned stats, PBs and records',()=>{
+test('derived IM pacing uses current regional, Intercollege and champion anchors while current saves preserve earned data',()=>{
   const run=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const rows=[113,138,163].flatMap(value=>{
-      const p={stats:Object.fromEntries(STATS.map(k=>[k,value]))};
-      return ['im200','im400'].map(e=>({e,value,current:expectedTime(p,e),previous:expectedTime(p,e,true)}));
+      const p={stats:Object.fromEntries(STATS.map(k=>[k,value])),imAptitude:{speed:0,stamina:0}};
+      return ['im200','im400'].map(e=>({e,value,current:expectedTime(p,e),reference:value===113?KANSAI_COLLEGE_WIN_TARGET[e]*1.02:value===138?INTERCOLLEGE_A_FINAL_REFERENCE[e]:MEDLEY_RECORD_REFERENCES.champion[e]}));
     });
     const snapshot=()=>JSON.stringify([...state.players,...state.world].map(a=>({id:a.id,stats:a.stats,pb:a.bestTimes})));
-    const saved=snapshot(),records=JSON.stringify(state.recordRankings);state.version='pwa-v1.61';state=JSON.parse(JSON.stringify(state));migrateState();
+    migrateState();const saved=snapshot(),records=JSON.stringify(state.recordRankings);state=JSON.parse(JSON.stringify(state));migrateState();
     return {rows,preserved:saved===snapshot(),records:records===JSON.stringify(state.recordRankings),version:state.version};
   })())`));
   for(const row of result.rows){
-    if(row.value<163)assert.equal(row.current,row.previous,JSON.stringify(row));
-    else assert.equal(row.current,row.e==='im200'?116.58:247.21,JSON.stringify(row));
+    assert.ok(Math.abs(row.current-row.reference)<1e-8,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v1.91');
+  assert.equal(result.version,'pwa-v2.40');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -210,24 +209,25 @@ test('balanced A speed and stamina reach medley championship pace while weak str
     const swimming=['fr','ba','br','fly'].flatMap(s=>['speed','stamina'].map(k=>s+'_'+k));
     swimming.forEach(k=>p.stats[k]=163);
     return ['im200','im400'].map(e=>{
-      const base=expectedTime(p,e),champion=Math.max(JAPAN_RECORD[e]*1.01,INTERCOLLEGE_A_FINAL_REFERENCE[e]*.985);
+      const base=expectedTime(p,e),champion=MEDLEY_RECORD_REFERENCES.champion[e];
       const gains=swimming.map(k=>{const raised=deepClone(p);raised.stats[k]+=10;return base-expectedTime(raised,e)});
       const weak=deepClone(p);weak.stats.br_speed=80;weak.stats.br_stamina=80;
       const technique=deepClone(p);technique.stats.start=200;['fr','ba','br','fly'].forEach(s=>technique.stats[s+'_turn']=200);
       const zero=deepClone(p);swimming.forEach(k=>zero.stats[k]=0);
-      const oldAbility=(()=>{const [sp,st,tr,d]=eventProfile(p,e,true),sw={200:.28,400:.40}[d],vw=.72-sw*.35;return (vw*sp+sw*st+.11*tr+.07*p.stats.start)/(vw*200+sw*200+.11*200+.07*200)})();
-      return {e,base,champion,gains,weak:expectedTime(weak,e),technique:expectedTime(technique,e),zero:expectedTime(zero,e),legacyAbility:abilityValue(p,e,true),oldAbility,
-        nonMedley:EVENTS.filter(x=>!x.startsWith('im')).map(x=>({x,current:abilityValue(p,x),legacy:abilityValue(p,x,true)}))};
+      const surface=medleyStatValue(p,'speed')*MEDLEY_SPEED_WEIGHTS[distanceOf(e)]+medleyStatValue(p,'stamina')*(1-MEDLEY_SPEED_WEIGHTS[distanceOf(e)]),techniqueValue=80;
+      const weighted=(surface+clamp((techniqueValue-surface)*.02,-2,2))/200;
+      return {e,base,champion,gains,weak:expectedTime(weak,e),technique:expectedTime(technique,e),zero:expectedTime(zero,e),ability:abilityValue(p,e),weighted,
+        reference:INTERCOLLEGE_A_FINAL_REFERENCE[e]+(champion-INTERCOLLEGE_A_FINAL_REFERENCE[e])*(weighted*200-138)/25};
     });
   })())`));
   for(const row of rows){
-    assert.ok(row.base<=row.champion*1.002,JSON.stringify(row));
+    assert.ok(Math.abs(row.base-row.reference)<1e-8,JSON.stringify(row));
+    assert.ok(row.base>row.champion&&row.technique<row.champion,JSON.stringify(row));
     assert.ok(row.gains.every(g=>g>0),JSON.stringify(row));
     assert.ok(row.weak>row.base*1.01,JSON.stringify(row));
     assert.ok(row.technique<row.base&&row.base-row.technique<row.champion*.003,JSON.stringify(row));
     assert.ok(Number.isFinite(row.zero)&&row.zero>row.weak,JSON.stringify(row));
-    assert.ok(Math.abs(row.legacyAbility-row.oldAbility)<1e-12,row.e);
-    for(const event of row.nonMedley)assert.equal(event.current,event.legacy,event.x);
+    assert.ok(Math.abs(row.ability-row.weighted)<1e-12,row.e);
   }
 });
 
