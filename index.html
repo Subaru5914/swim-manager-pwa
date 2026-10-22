@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.46</title>
+<title>大学競泳監督シミュレーション PWA版 v2.47</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1462,7 +1462,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.46</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.47</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1696,9 +1696,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.46"></script>
-<script src="./save-history.js?version=v2.46"></script>
-<script src="./cloud-sync.js?version=v2.46"></script>
+<script src="./local-save.js?version=v2.47"></script>
+<script src="./save-history.js?version=v2.47"></script>
+<script src="./cloud-sync.js?version=v2.47"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -2021,7 +2021,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.46";
+  state.version="pwa-v2.47";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -4368,7 +4368,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.46",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.47",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -8373,10 +8373,12 @@ function setFavoriteRival(id,registered){
 }
 function favoriteRivalRows(){
   const live=new Map(state.world.filter(a=>!a.retired&&["university","adult"].includes(a.category)).map(a=>[a.id,a]));
+  const universities=new Map(rivalUniversities().map((u,i)=>[u.name,i]));
   const organization=row=>row.athlete?.organization||row.entry.organization;
+  const universityOrder=row=>universities.get(organization(row))??Number.MAX_SAFE_INTEGER;
   const grade=row=>row.athlete?.category==="university"&&Number.isInteger(row.athlete.grade)?row.athlete.grade:Infinity;
   return (state.favoriteRivals||[]).map(entry=>({entry,athlete:live.get(entry.id)||null})).sort((a,b)=>
-    organization(a).localeCompare(organization(b),"ja")||(grade(a)<grade(b)?-1:grade(a)>grade(b)?1:0)||
+    universityOrder(a)-universityOrder(b)||organization(a).localeCompare(organization(b),"ja")||(grade(a)<grade(b)?-1:grade(a)>grade(b)?1:0)||
     (a.athlete?.name||a.entry.name).localeCompare(b.athlete?.name||b.entry.name,"ja")||a.entry.id.localeCompare(b.entry.id));
 }
 function updateFavoriteRivalButtons(){
@@ -8396,7 +8398,7 @@ function toggleFavoriteRival(id){
 function showFavoriteRivals({scrollTop=0,focusId=null}={}){
   const rows=favoriteRivalRows();
   const m=showModal(`<div class="row"><h2 style="margin-right:auto">お気に入り選手 <span class="tag">${rows.length}人</span></h2><button id="favoriteRivalsClose">閉じる</button></div>
-    <p class="small muted">所属名順・同じ大学内は大1→大4の順で表示します。他大学戦力の名前の左の☆で登録し、選手名または「選手詳細」から現在の能力・PBを確認できます。</p>
+    <p class="small muted">大学の並びは他大学戦力と同じ評判順、同じ大学内は大1→大4の順です。他大学戦力の名前の左の☆で登録し、選手名または「選手詳細」から現在の能力・PBを確認できます。</p>
     <div class="favorite-rival-list">${rows.map(({entry,athlete:a})=>{
       const name=a?.name||entry.name,organization=a?.organization||entry.organization,event=a?.specialty;
       return `<div class="favorite-rival-row" data-favorite-row="${esc(entry.id)}"><div><div class="favorite-rival-name">${a?`<button type="button" class="rival-player-link" data-favorite-detail="${esc(entry.id)}">${esc(name)}</button> ${a.category==="university"?gradeBadge(a.grade,`大${a.grade||"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(a))}</span>`}`:`<b>${esc(name)}</b>`}</div><div class="small muted">${a?"":"登録時："}${esc(organization)}</div></div>

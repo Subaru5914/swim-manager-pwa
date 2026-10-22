@@ -65,3 +65,22 @@ test('full save loading and JSON round trips keep favorites and all athlete stat
  })()`);
  assert.ok(r.unchanged);assert.equal(r.favorites.length,1);assert.deepEqual(r.empty,[]);
 });
+test('favorite universities follow the dropdown reputation order, including ties, region filters, renames and later reputation changes',()=>{
+ const run=game(),r=run(`(()=>{
+  state.universities=[{id:'a',name:'A大学',region:'kansai',reputation:100},{id:'b',name:'B大学',region:'national',reputation:300},{id:'c',name:'C大学',region:'kansai',reputation:300}];
+  state.world=state.universities.flatMap(u=>[4,1,3,2].map(grade=>({id:u.id+grade,name:u.id+grade,organization:u.name,grade,category:'university'})));
+  state.world.push({id:'adult',name:'卒業生',organization:'A実業団',category:'adult',age:23});
+  state.favoriteRivals=state.world.map(a=>({id:a.id,name:a.name,organization:a.organization}));state.favoriteRivals.push({id:'gone',name:'情報なし',organization:'A大学'});
+  const before=JSON.stringify(state),first=favoriteRivalRows().map(row=>row.entry.id),stable=before===JSON.stringify(state);
+  const dropdown=rivalUniversities().map(u=>u.name),regional=rivalUniversities('kansai').map(u=>u.name);
+  state.universities[0].reputation=400;
+  const changed=favoriteRivalRows().map(row=>row.entry.id);
+  state.universities[1].name='Z大学';state.world.filter(a=>a.organization==='B大学').forEach(a=>a.organization='Z大学');
+  const renamed=favoriteRivalRows().map(row=>row.entry.id);
+  return{stable,first,dropdown,regional,changed,renamed};
+ })()`);
+ assert.ok(r.stable);assert.deepEqual(r.dropdown,['B大学','C大学','A大学']);assert.deepEqual(r.regional,['C大学','A大学']);
+ assert.deepEqual(r.first,['b1','b2','b3','b4','c1','c2','c3','c4','a1','a2','a3','a4','gone','adult']);
+ assert.deepEqual(r.changed,['a1','a2','a3','a4','gone','b1','b2','b3','b4','c1','c2','c3','c4','adult']);
+ assert.deepEqual(r.renamed,['a1','a2','a3','a4','gone','c1','c2','c3','c4','b1','b2','b3','b4','adult']);
+});
