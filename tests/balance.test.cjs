@@ -187,7 +187,7 @@ test('derived IM pacing uses current regional, Intercollege and champion anchors
     assert.ok(Math.abs(row.current-row.reference)<1e-8,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v2.47');
+  assert.equal(result.version,'pwa-v2.48');
 });
 
 test('distance still changes the speed/stamina balance', () => {
