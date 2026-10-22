@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.44</title>
+<title>大学競泳監督シミュレーション PWA版 v2.45</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1394,6 +1394,23 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .rival-table th,.rival-table td{padding:6px 7px;vertical-align:middle}
 .rival-player-link{border:0;background:transparent;color:var(--accent2);font-weight:750;padding:4px 2px;min-height:32px;white-space:nowrap;text-decoration:underline;text-underline-offset:3px;box-shadow:none}
 .rival-player-link:hover:not(:disabled){box-shadow:none;background:#eaf3ff;transform:none}
+.favorite-rivals-shortcut{color:var(--accent2);background:#edf5ff;font-weight:750}
+.rival-athlete-name{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.favorite-rival-toggle{display:inline-grid;place-items:center;flex-shrink:0;width:36px;min-height:36px;padding:0;font-size:23px;line-height:1;color:#718196;box-shadow:none}
+.favorite-rival-toggle[aria-pressed="true"]{color:#9a6a08;border-color:#e4c36f;background:#fff6d8}
+.favorite-rival-toggle:hover:not(:disabled){transform:none;box-shadow:none}
+.modal-favorite-rivals{width:min(960px,100%);display:flex;flex-direction:column;overflow:hidden}
+.modal-favorite-rivals>.row,.modal-favorite-rivals>p{flex-shrink:0}
+.favorite-rival-list{min-height:0;overflow:auto;overscroll-behavior:contain}
+.favorite-rival-row{display:grid;grid-template-columns:minmax(170px,1.2fr) minmax(180px,1fr) auto;align-items:center;gap:16px;padding:18px 4px;border-top:1px solid var(--line)}
+.favorite-rival-name{margin-bottom:4px}.favorite-rival-name .rival-player-link{font-size:17px}
+.favorite-rival-pb{font-size:23px;font-variant-numeric:tabular-nums}.favorite-rival-actions{flex-wrap:nowrap}
+@media(max-width:760px){.header-primary-actions{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto}}
+@media(pointer:coarse) and (max-width:600px),(pointer:coarse) and (max-height:600px){
+  .favorite-rival-row{gap:8px;padding:9px 2px;grid-template-columns:minmax(145px,1.2fr) minmax(150px,1fr) auto}
+  .favorite-rival-name .rival-player-link{font-size:13px}.favorite-rival-pb{font-size:18px}
+  .favorite-rival-actions button{font-size:11px;padding:5px 8px;min-height:34px}
+}
 .rival-stat{white-space:nowrap}.rival-stat .stat-number{margin-left:4px}
 .rival-standard{display:block;font-size:10px;color:var(--good);margin-top:2px}
 .rival-event-table{min-width:620px!important}.rival-event-table th{white-space:nowrap}.rival-event-table td>b{margin-left:2px}
@@ -1445,8 +1462,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.44</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.45</div>
     <div class="header-primary-actions">
+      <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
       <button id="loadBtn">ロード</button>
       <details class="utility-menu">
@@ -1678,9 +1696,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.44"></script>
-<script src="./save-history.js?version=v2.44"></script>
-<script src="./cloud-sync.js?version=v2.44"></script>
+<script src="./local-save.js?version=v2.45"></script>
+<script src="./save-history.js?version=v2.45"></script>
+<script src="./cloud-sync.js?version=v2.45"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -2003,7 +2021,8 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.44";
+  state.version="pwa-v2.45";
+  normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
   if(!state.trainingFocus)state.trainingFocus={};
@@ -4349,7 +4368,7 @@ function prepareCpuMeetPopulation(){
   state.cpuMeetPopulationVersion=2;state.cpuMeetPopulationSeason=state.season;
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.44",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.45",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:35,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -8174,6 +8193,7 @@ function playRaceCanvas(event,rows,options={}){
   raf=requestAnimationFrame(frame);
 }
 function renderAll(){
+  updateFavoriteRivalButtons();
   renderStatus();renderHome();renderTrainingPlayers();renderRoster();renderRankings();renderRecords();renderTeamTop10();renderJapanTeam();renderScout();renderFacilities();renderSettings();
   if(document.getElementById("page-rivals")?.classList.contains("active"))renderRivals();
   scheduleAutoSave();
@@ -8333,7 +8353,64 @@ function rivalRelayCandidates(roster,kind){
   const legs=members.map((a,i)=>({athlete:a,event:relayLegEvent(kind,i),time:round2(relayMemberSeedTime(a,relayLegEvent(kind,i))),estimated:!validRaceTime(a.bestTimes?.[relayLegEvent(kind,i)])}));
   return{kind,members,legs,total:round2(legs.reduce((sum,l)=>sum+l.time,0)),estimated:legs.some(l=>l.estimated)};
 }
-function rivalAthleteButton(a){return `<button type="button" class="rival-player-link" data-rival-athlete="${esc(a.id)}">${esc(a.name)}</button> ${gradeBadge(a.grade,`大${a.grade||"—"}`)}`}
+function normalizeFavoriteRivals(){
+  const seen=new Set();
+  state.favoriteRivals=(Array.isArray(state.favoriteRivals)?state.favoriteRivals:[]).filter(entry=>{
+    if(!entry||typeof entry.id!=="string"||!entry.id||typeof entry.name!=="string"||!entry.name.trim()||seen.has(entry.id))return false;
+    seen.add(entry.id);return true;
+  }).map(entry=>({id:entry.id,name:entry.name,organization:typeof entry.organization==="string"?entry.organization:""}));
+}
+function isFavoriteRival(id){return (state.favoriteRivals||[]).some(entry=>entry.id===id)}
+function setFavoriteRival(id,registered){
+  if(!registered){
+    if(!isFavoriteRival(id))return false;
+    state.favoriteRivals=state.favoriteRivals.filter(entry=>entry.id!==id);return true;
+  }
+  if(isFavoriteRival(id))return false;
+  const a=state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));
+  if(!a)return false;
+  (state.favoriteRivals??=[]).push({id:a.id,name:a.name,organization:a.organization});return true;
+}
+function favoriteRivalRows(){
+  const live=new Map(state.world.filter(a=>!a.retired&&["university","adult"].includes(a.category)).map(a=>[a.id,a]));
+  return (state.favoriteRivals||[]).map(entry=>({entry,athlete:live.get(entry.id)||null}));
+}
+function updateFavoriteRivalButtons(){
+  const entries=state.favoriteRivals||[],ids=new Set(entries.map(entry=>entry.id));
+  document.getElementById("favoriteRivalsBtn").textContent=`★ お気に入り（${entries.length}）`;
+  document.querySelectorAll("[data-favorite-rival]").forEach(button=>{
+    const saved=ids.has(button.dataset.favoriteRival),label=`${button.dataset.athleteName}のお気に入り登録を${saved?"解除":"追加"}`;
+    button.textContent=saved?"★":"☆";button.setAttribute("aria-pressed",String(saved));button.setAttribute("aria-label",label);button.title=label;
+  });
+}
+function toggleFavoriteRival(id){
+  const saved=isFavoriteRival(id);
+  if(!setFavoriteRival(id,!saved))return;
+  updateFavoriteRivalButtons();scheduleAutoSave();
+  showToast(saved?"お気に入りを解除しました":"お気に入りに登録しました",saved?"info":"good");
+}
+function showFavoriteRivals({scrollTop=0,focusId=null}={}){
+  const rows=favoriteRivalRows();
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">お気に入り選手 <span class="tag">${rows.length}人</span></h2><button id="favoriteRivalsClose">閉じる</button></div>
+    <p class="small muted">他大学戦力の選手一覧で、名前の左の☆を押すと登録できます。選手名または「選手詳細」から現在の能力・PBを確認できます。</p>
+    <div class="favorite-rival-list">${rows.map(({entry,athlete:a})=>{
+      const name=a?.name||entry.name,organization=a?.organization||entry.organization,event=a?.specialty;
+      return `<div class="favorite-rival-row" data-favorite-row="${esc(entry.id)}"><div><div class="favorite-rival-name">${a?`<button type="button" class="rival-player-link" data-favorite-detail="${esc(entry.id)}">${esc(name)}</button> ${a.category==="university"?gradeBadge(a.grade,`大${a.grade||"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(a))}</span>`}`:`<b>${esc(name)}</b>`}</div><div class="small muted">${a?"":"登録時："}${esc(organization)}</div></div>
+        <div>${a?`<div class="small muted">専門 ${esc(EVENT_LABEL[event]||"—")} ／ PB</div><b class="favorite-rival-pb">${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b>`:'<span class="small muted">卒業・引退などにより現在の選手情報がありません</span>'}</div>
+        <div class="row favorite-rival-actions"><button type="button" class="primary" data-favorite-detail="${esc(entry.id)}"${a?"":" disabled"}>選手詳細</button><button type="button" data-favorite-remove="${esc(entry.id)}" aria-label="${esc(name)}のお気に入り登録を解除">解除</button></div></div>`;
+    }).join("")||'<div class="empty-state">まだ登録されていません。他大学戦力の選手一覧で☆を押してください。</div>'}</div>`);
+  m.classList.add("modal-favorite-rivals");
+  const list=m.querySelector(".favorite-rival-list");list.scrollTop=scrollTop;
+  m.querySelector("#favoriteRivalsClose").onclick=()=>{closeModal();document.getElementById("favoriteRivalsBtn").focus({preventScroll:true})};
+  m.querySelectorAll("[data-favorite-detail]").forEach(button=>button.onclick=()=>showRivalPlayerDetail(button.dataset.favoriteDetail,{fromFavorites:true,returnScrollTop:list.scrollTop}));
+  m.querySelectorAll("[data-favorite-remove]").forEach(button=>button.onclick=()=>{
+    const top=list.scrollTop,next=button.closest(".favorite-rival-row").nextElementSibling||button.closest(".favorite-rival-row").previousElementSibling;
+    toggleFavoriteRival(button.dataset.favoriteRemove);showFavoriteRivals({scrollTop:top,focusId:next?.dataset.favoriteRow});
+  });
+  const focus=focusId?[...m.querySelectorAll("[data-favorite-remove]")].find(button=>button.dataset.favoriteRemove===focusId):null;
+  (focus||m.querySelector("#favoriteRivalsClose")).focus({preventScroll:true});
+}
+function rivalAthleteButton(a,withFavorite=false){return `${withFavorite?`<span class="rival-athlete-name"><button type="button" class="favorite-rival-toggle" data-favorite-rival="${esc(a.id)}" data-athlete-name="${esc(a.name)}" aria-pressed="${isFavoriteRival(a.id)}" aria-label="${esc(a.name)}のお気に入り登録を${isFavoriteRival(a.id)?"解除":"追加"}">${isFavoriteRival(a.id)?"★":"☆"}</button>`:""}<button type="button" class="rival-player-link" data-rival-athlete="${esc(a.id)}">${esc(a.name)}</button> ${gradeBadge(a.grade,`大${a.grade||"—"}`)}${withFavorite?"</span>":""}`}
 function eventPBLeaders(roster,event,limit){
   return sortedRelayRoster(roster.filter(a=>!a.retired&&validRaceTime(a.bestTimes?.[event])),event).slice(0,limit);
 }
@@ -8364,19 +8441,24 @@ function renderRivals(){
       return `<section class="rival-relay-card" data-rival-relay="${kind}"><h3>${RELAY_LABEL[kind]}</h3>${relay.members.length?`<p class="rival-relay-total">${relay.estimated?"参考合計":"PB合計"} <b>${fmt(relay.total)}</b></p><ol>${relay.legs.map((leg,i)=>`<li data-rival-leg="${i}"><span class="small muted">${EVENT_LABEL[leg.event]}</span><div>${rivalAthleteButton(leg.athlete)}</div><b>${fmt(leg.time)}</b>${leg.estimated?'<span class="small muted">参考</span>':""}</li>`).join("")}</ol>`:'<p class="muted">4名そろっていません。</p>'}</section>`;
     }).join("")}</div>`;
   }else{
-    content.innerHTML=`<p class="small muted rival-note">選手名を押すと全ステータスとPBを確認できます。スピード・スタミナは${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]:"専門種目"}の泳法を表示します。</p><div class="table-wrap rival-roster-wrap"><table class="rival-table"><thead><tr><th>選手・学年</th><th>専門種目</th><th>${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]+" PB":"専門PB"}</th><th>総合</th><th>スピード</th><th>スタミナ</th></tr></thead><tbody>${roster.map(a=>{
+    content.innerHTML=`<p class="small muted rival-note">名前の左の☆／★でお気に入りを登録・解除できます。選手名を押すと全ステータスとPBを確認できます。スピード・スタミナは${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]:"専門種目"}の泳法を表示します。</p><div class="table-wrap rival-roster-wrap"><table class="rival-table"><thead><tr><th>選手・学年</th><th>専門種目</th><th>${selectedRivalEvent?EVENT_LABEL[selectedRivalEvent]+" PB":"専門PB"}</th><th>総合</th><th>スピード</th><th>スタミナ</th></tr></thead><tbody>${roster.map(a=>{
       const event=selectedRivalEvent||a.specialty,stroke=EVENTS.includes(event)?strokeForEvent(event):null,overall=overallStatValue(a);
-      return `<tr data-rival-row="${esc(a.id)}"><td>${rivalAthleteButton(a)}</td><td>${specialtyTag(a.specialty)}</td><td><b>${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b>${EVENTS.includes(event)&&qualified(a,"intercollege",event)?'<span class="rival-standard">インカレ標準</span>':""}</td><td class="rival-stat">${statRankLabel(overall)}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_speed")):"—"}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_stamina")):"—"}</td></tr>`;
+      return `<tr data-rival-row="${esc(a.id)}"><td>${rivalAthleteButton(a,true)}</td><td>${specialtyTag(a.specialty)}</td><td><b>${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b>${EVENTS.includes(event)&&qualified(a,"intercollege",event)?'<span class="rival-standard">インカレ標準</span>':""}</td><td class="rival-stat">${statRankLabel(overall)}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_speed")):"—"}</td><td class="rival-stat">${stroke?statRankLabel(displayStatValue(a,stroke+"_stamina")):"—"}</td></tr>`;
     }).join("")||'<tr><td colspan="6">現在、所属選手はいません。</td></tr>'}</tbody></table></div>`;
   }
+  content.querySelectorAll("[data-favorite-rival]").forEach(b=>b.onclick=()=>toggleFavoriteRival(b.dataset.favoriteRival));
   content.querySelectorAll("[data-rival-athlete]").forEach(b=>b.onclick=()=>showRivalPlayerDetail(b.dataset.rivalAthlete));
 }
-function showRivalPlayerDetail(id){
-  const p=state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));if(!p)return;
-  const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${gradeBadge(p.grade,`大${p.grade||"—"}`)}</h2><button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
+function showRivalPlayerDetail(id,{fromFavorites=false,returnScrollTop=0}={}){
+  const p=fromFavorites?favoriteRivalRows().find(row=>row.entry.id===id)?.athlete:state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));
+  if(!p){if(fromFavorites)showFavoriteRivals({scrollTop:returnScrollTop});return}
+  const label=p.category==="university"?gradeBadge(p.grade,`大${p.grade||"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(p))}</span>`;
+  const back=fromFavorites?'<button id="backToFavoriteRivals">← お気に入り一覧</button>':"";
+  const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${label}</h2>${back}<button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
     const value=Math.round(displayStatValue(p,k));return `<div class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></div>`;
   }).join("")}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(p.bestTimes?.[e])?fmt(p.bestTimes[e]):"未計測"}</b></div>`).join("")}</div>${rivalMainResultsHtml(p)}</section></div>`);
   m.classList.add("modal-player-detail","modal-rival-player");m.querySelector("#x").onclick=()=>closeModal();
+  if(fromFavorites)m.querySelector("#backToFavoriteRivals").onclick=()=>showFavoriteRivals({scrollTop:returnScrollTop,focusId:id});
 }
 function renderRankings(){
   let table=document.getElementById("rankingTable");if(!table)return;
@@ -9033,6 +9115,7 @@ document.getElementById("universitiesBtn").onclick=()=>{
   document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
   document.getElementById("page-settings").classList.add("active");renderSettings();
 };
+document.getElementById("favoriteRivalsBtn").onclick=()=>showFavoriteRivals();
 document.getElementById("saveBtn").onclick=saveLocal;
 document.getElementById("loadBtn").onclick=()=>loadLocal(true);
 document.getElementById("resetBtn").onclick=()=>{closeUtilityMenu();resetGame()};
