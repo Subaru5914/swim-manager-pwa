@@ -43,6 +43,18 @@ test('normalization adds an empty list to existing saves and cleans duplicate an
  })()`);
  assert.deepEqual(r.empty,[]);assert.ok(r.stable);assert.deepEqual(r.clean,[{id:'one',name:'同姓 同名',organization:'甲大学'},{id:'gone',name:'情報なし',organization:''}]);
 });
+test('favorites group by current organization, sort grades ascending and use names and IDs for stable ties without rewriting registration order',()=>{
+ const run=game(),r=run(`(()=>{
+  state.world=[['b4','B大学',4,'Z'],['a4','A大学',4,'A'],['b1','B大学',1,'A'],['a2z','A大学',2,'Z'],['a2b','A大学',2,'A'],['a2a','A大学',2,'A'],['a1','A大学',1,'Z']].map(([id,organization,grade,name])=>({id,organization,grade,name,category:'university'}));
+  state.favoriteRivals=state.world.map(a=>({id:a.id,name:a.name,organization:'登録時の大学'}));state.favoriteRivals.push({id:'gone',name:'不明選手',organization:'A大学'});
+  const before=JSON.stringify(state),first=favoriteRivalRows().map(row=>row.entry.id),stable=before===JSON.stringify(state);
+  state.world.find(a=>a.id==='a4').grade=1;state.world.find(a=>a.id==='b1').organization='A大学';
+  return{first,stable,next:favoriteRivalRows().map(row=>row.entry.id),registered:state.favoriteRivals.map(a=>a.id)};
+ })()`);
+ assert.ok(r.stable);assert.deepEqual(r.first,['a1','a2a','a2b','a2z','a4','gone','b1','b4']);
+ assert.deepEqual(r.next,['a4','b1','a1','a2a','a2b','a2z','gone','b4']);
+ assert.deepEqual(r.registered,['b4','a4','b1','a2z','a2b','a2a','a1','gone']);
+});
 test('full save loading and JSON round trips keep favorites and all athlete stats, records and RNG',()=>{
  const run=game(),r=run(`(()=>{
   state=createState();migrateState();const a=state.world.find(a=>a.category==='university'&&!a.retired);setFavoriteRival(a.id,true);
