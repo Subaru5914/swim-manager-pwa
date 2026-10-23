@@ -56,6 +56,35 @@ test('final decisions use saved weighted draws, enforce the minimum score and ar
  })()`);
  assert.ok(r.stable&&r.below&&r.replay&&r.raceSeed);assert.ok(r.destination);
 });
+test('final decisions keep a ten-point lead near 60:40, share equal offers evenly and exclude ineligible schools',()=>{
+ const run=engine(),r=run(`(()=>{
+  const originalRoll=scoutingRoll;
+  const trial=(interests,draw,offers=Object.keys(interests))=>{
+   state={season:2026,rngSeed:5914,playerUniversity:'自大学',universities:['U1','U2','U3'].map(id=>({id,name:id})),recruits:[],world:[{id:'candidate',name:'検証選手'}],
+    scoutingCompetition:{season:2026,notices:[],candidates:{candidate:{interests,offers:[...offers],contacts:Object.fromEntries(Object.keys(interests).map(id=>[id,3])),destination:null}}}};
+   scoutingRoll=()=>draw;processScoutingDecisions(true);return scoutingRecord('candidate').destination;
+  };
+  try{
+   const distributions=[{player:80,U1:70},{player:80,U1:60},{player:70,U1:70},{player:80,U1:70,U2:60}].map(interests=>{
+    const counts=Object.fromEntries(Object.keys(interests).map(id=>[id,0]));
+    // Evenly spaced draws measure the actual selection intervals without
+    // statistical flakiness or duplicating the weighting formula in the test.
+    for(let n=0;n<10000;n++)counts[trial(interests,(n+.5)/10000)]++;
+    return counts;
+   });
+   const eligible=new Set();
+   for(let n=0;n<1000;n++)eligible.add(trial({player:80,U1:70,U2:100,U3:39},(n+.5)/1000,['player','U1','U3']));
+   return{distributions,eligible:[...eligible].sort()};
+  }finally{scoutingRoll=originalRoll}
+ })()`);
+ const [close,wider,equal,three]=r.distributions;
+ assert.ok(close.player>=5900&&close.player<=6100,JSON.stringify(close));assert.equal(close.player+close.U1,10000);
+ assert.ok(wider.player>=6800&&wider.player<=7000,JSON.stringify(wider));assert.ok(wider.player>close.player);
+ assert.deepEqual(equal,{player:5000,U1:5000});
+ assert.ok(three.player>three.U1&&three.U1>three.U2&&three.U2>2000,JSON.stringify(three));
+ assert.equal(Object.values(three).reduce((sum,n)=>sum+n,0),10000);
+ assert.deepEqual(r.eligible,['U1','player']);
+});
 test('CPU monthly negotiations spend bounded budgets, never duplicate months or places, and survive save/reload',()=>{
  reset();const r=run(`(()=>{
   const raceSeed=state.rngSeed;for(let slot=8;slot<=96;slot+=8){state.slot=slot;processScoutingMonth()}
