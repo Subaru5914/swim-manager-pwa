@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.51</title>
+<title>大学競泳監督シミュレーション PWA版 v2.52</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1462,7 +1462,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.51</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.52</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1696,9 +1696,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.51"></script>
-<script src="./save-history.js?version=v2.51"></script>
-<script src="./cloud-sync.js?version=v2.51"></script>
+<script src="./local-save.js?version=v2.52"></script>
+<script src="./save-history.js?version=v2.52"></script>
+<script src="./cloud-sync.js?version=v2.52"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1719,6 +1719,7 @@ Object.assign(STANDARDS.japan_open,{ba50:26.38,br50:28.30,fly50:24.42,sprintSour
 Object.assign(STANDARDS.japan_championship,{ba50:26.00,br50:28.08,fly50:24.24,sprintSource:SPRINT_SOURCES.japanChampionship});
 Object.assign(JAPAN_RECORD,{ba50:24.24,br50:26.65,fly50:23.06});
 const STATS=["start","mental","fr_speed","fr_stamina","fr_turn","ba_speed","ba_stamina","ba_turn","br_speed","br_stamina","br_turn","fly_speed","fly_stamina","fly_turn"];
+const PHYSICAL_STATS=STATS.filter(k=>k!=="mental");
 const DERIVED_STATS=["im_speed","im_stamina"];
 const TRAINING_DISPLAY_STATS=[...STATS,...DERIVED_STATS];
 const DETAIL_STATS=["start","mental","fr_speed","fr_stamina","ba_speed","ba_stamina","br_speed","br_stamina","fly_speed","fly_stamina","im_speed","im_stamina","fr_turn","ba_turn","fly_turn","br_turn"];
@@ -2022,7 +2023,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.51";
+  state.version="pwa-v2.52";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -2291,6 +2292,17 @@ function statRankLabel(value){
 function overallStatValue(p){
   return STATS.reduce((s,k)=>s+(+p.stats?.[k]||0),0)/STATS.length;
 }
+function physicalStatValue(p){
+  return PHYSICAL_STATS.reduce((sum,k)=>sum+(+p.stats?.[k]||0),0)/PHYSICAL_STATS.length;
+}
+function initialMentalValue(id){
+  // One independent 0–200 draw per new athlete, with the same distribution
+  // for every age, organization, reputation and physical ability. Reading or
+  // calibrating a player never consumes a live race/scouting random draw.
+  let hash=profileHash(`${state.cpuCompetitionSeed??state.rngSeed}:${id}:initial-mental-v1`);
+  hash=Math.imul(hash^(hash>>>16),0x7feb352d);hash=Math.imul(hash^(hash>>>15),0x846ca68b);
+  return round2((((hash^(hash>>>16))>>>0)+.5)/4294967296*200);
+}
 function topStatKeys(p,count=3){
   return [...TRAINING_DISPLAY_STATS].sort((a,b)=>displayStatValue(p,b)-displayStatValue(p,a)).slice(0,count);
 }
@@ -2322,11 +2334,12 @@ function pickGeneralFreshman(candidates){
 }
 
 function initialPlayerStatsByReputation(rawStats,year,reputation){
-  let rawAvg=STATS.reduce((s,k)=>s+(+rawStats[k]||60),0)/STATS.length;
+  let rawAvg=PHYSICAL_STATS.reduce((s,k)=>s+(+rawStats[k]||60),0)/PHYSICAL_STATS.length;
   let individual=clamp((rawAvg-82)*.7+gauss(0,11),-22,24);
   let target=clamp(78+reputation*.15+(Math.max(1,year)-1)*3.0+individual,60,158);
   let factor=target/Math.max(1,rawAvg),out={};
   for(let k of STATS){
+    if(k==="mental"){out[k]=rawStats[k];continue}
     let shape=(+rawStats[k]||rawAvg)*factor;
     out[k]=round2(clamp(shape+gauss(0,2.2),42,188));
   }
@@ -2747,20 +2760,21 @@ function makeAthlete(category,org,used,age=null,grade=null,strength=65,cohortSlo
   let team=cpuTeamProfile(category,org);
   strength=clamp(strength+team.offset+gauss(0,3.5),45,91);
   let talent=clamp(gauss(0,9),-22,18),peak=rng()<.015?rand(178,185):rand(166,175);
-  let cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,round2(clamp(peak+rand(-2,2),164,187))]));
+  let cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,k==="mental"?200:round2(clamp(peak+rand(-2,2),164,187))]));
   let specialty=category==="university"&&Number.isInteger(cohortSlot)?choice(SPECIALTY_EVENTS.filter(e=>strokeForEvent(e)===["fr","ba","br","fly","im"][(cohortSlot*2+grade-1)%5])):choice(rng()<.38?SPECIALTY_EVENTS.filter(e=>strokeForEvent(e)===team.stroke):SPECIALTY_EVENTS),stroke=specialty.startsWith("fly")?"fly":specialty.slice(0,2),stats={};
   STATS.forEach(k=>{
+    if(k==="mental"){stats[k]=100;return}
     let base=clamp(gauss(strength*1.5+5+talent,12),40,165);
-    if(k==="mental")base+=rand(-5,8);
     if(["fr","ba","br","fly"].includes(stroke)&&k.startsWith(stroke+"_"))base+=rand(8,18);
     if(k==="start"&&(specialty.endsWith("50")||specialty.endsWith("100")))base+=rand(4,10);
     stats[k]=round2(clamp(base,40,cpuStatCeilings[k]));
   });
   let types=["early","normal","late","ready","raw"],pt=types[Math.floor(rng()*types.length)];
-  if(pt==="ready")STATS.forEach(k=>stats[k]=round2(Math.min(cpuStatCeilings[k],stats[k]+rand(6,12))));
-  if(pt==="raw")STATS.forEach(k=>stats[k]=round2(Math.max(40,stats[k]-rand(8,18))));
+  if(pt==="ready")PHYSICAL_STATS.forEach(k=>stats[k]=round2(Math.min(cpuStatCeilings[k],stats[k]+rand(6,12))));
+  if(pt==="raw")PHYSICAL_STATS.forEach(k=>stats[k]=round2(Math.max(40,stats[k]-rand(8,18))));
   let potential=Object.fromEntries(STATS.map(k=>[k,200]));
   let a={id:uid("W"),name:newName(used),gender:"M",category,age,grade,organization:org,stats,potential,cpuStatCeilings,condition:65,fatigue:0,bestTimes:{},retired:false,scouted:false,discovered:false,potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),accolades:[],raceHistory:[],specialty,generatedPBSelectionPending:true};
+  a.stats.mental=initialMentalValue(a.id);
   if(category==="university"&&Number.isInteger(cohortSlot))a.cpuUniversityCohortSlot=cohortSlot;
   diversifyStrokeStats(a);
   diversifyCpuIndividual(a);
@@ -2959,7 +2973,7 @@ function restoreAthletePaceFromPB(a){
     // their entire athlete into a maximum-ability swimmer.
     if(abilityBenchmarkTime(event,200)>pb+tolerance)continue;
     const peak=Math.max(...STATS.filter(k=>k!=="mental").map(k=>a.stats[k]));
-    const elite=peak>=176||Object.values(a.cpuStatCeilings||{}).some(v=>v>=178);
+    const elite=peak>=176||PHYSICAL_STATS.some(k=>a.cpuStatCeilings?.[k]>=178);
     const cap=Math.max(peak,a.category==="middle"?149:a.category==="high"?165:elite?187:175);
     repaired=calibrateToTime(a,event,Math.max(abilityBenchmarkTime(event,200),pb+tolerance*.5),cap)||repaired;
     // Use a higher ceiling only if the recorded PB really requires it, and
@@ -3016,10 +3030,10 @@ function diversifyCpuIndividual(a){
   let mean=strokes.reduce((sum,s)=>sum+strokeBias[s],0)/4;
   let specialty=SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
   let distance=distanceOf(specialty),distanceBias=distance<=100?5+roll("distance")*9:distance>=400?-5-roll("distance")*9:(roll("distance")-.5)*16;
-  let exceptional=Object.values(a.cpuStatCeilings||{}).some(v=>v>=178)||STATS.some(k=>a.stats[k]>=176),cap=exceptional?187:175;
+  let exceptional=PHYSICAL_STATS.some(k=>a.cpuStatCeilings?.[k]>=178||a.stats[k]>=176),cap=exceptional?187:175;
   let peak=exceptional?178+roll("ceiling")*7:145+roll("ceiling")*29;
   if(!a.cpuStatCeilings)a.cpuStatCeilings=Object.fromEntries(STATS.map(k=>[k,175]));
-  for(let k of STATS){
+  for(let k of PHYSICAL_STATS){
     let stroke=k.split("_")[0],shift=level+(strokeBias[stroke]===undefined?0:strokeBias[stroke]-mean);
     if(k.endsWith("_speed"))shift+=distanceBias*.65;
     if(k.endsWith("_stamina"))shift-=distanceBias*1.6;
@@ -3064,8 +3078,8 @@ function applyCpuCompetitionProfile(a){
   let range=elite?settings.elite:contender?settings.contender:null;
   let target=range?range[0]+roll("power")*(range[1]-range[0])+field.upperShift:Math.min(settings.ordinary+field.level-roll("ordinaryCeiling")*12,average+8+roll("specialism")*8);
   target=clamp(target,40,settings.cap-.5);
-  let shift=average-overallStatValue(a);
-  for(let k of STATS)if(k!=="start"||a.startBalanceVersion!==1)a.stats[k]=round2(clamp(a.stats[k]+shift,40,settings.cap));
+  let shift=average-physicalStatValue(a);
+  for(let k of PHYSICAL_STATS)if(k!=="start"||a.startBalanceVersion!==1)a.stats[k]=round2(clamp(a.stats[k]+shift,40,settings.cap));
   let stroke=strokeForEvent(specialty);
   let keys=stroke==="im"?STATS.filter(k=>k!=="mental"):[`${stroke}_speed`,`${stroke}_stamina`,`${stroke}_turn`,"start"];
   fitCpuAbility(a,[specialty],keys,target,settings.cap);
@@ -3075,7 +3089,7 @@ function applyCpuCompetitionProfile(a){
     fitCpuAbility(a,events,[`${other}_speed`,`${other}_stamina`,`${other}_turn`],limit,settings.cap);
   }
   if(!a.cpuStatCeilings)a.cpuStatCeilings={};
-  for(let k of STATS){
+  for(let k of PHYSICAL_STATS){
     a.stats[k]=round2(a.stats[k]);
     a.cpuStatCeilings[k]=round2(Math.max(a.stats[k],Math.min(settings.cap,a.stats[k]+5+roll(k+":growth")*9)));
   }
@@ -3243,7 +3257,7 @@ function applyCpuRaceDistribution(a,preserved={}){
   if(a.cpuRaceDistributionCategory)for(const [event,time] of Object.entries(a.bestTimes||{})){
     if(EVENTS.includes(event)&&validRaceTime(time))preserved={...preserved,[event]:Math.min(preserved[event]??Infinity,time)};
   }
-  const cap=a.category==="middle"?149:a.category==="high"?165:Math.max(175,...STATS.map(k=>a.stats[k]));
+  const cap=a.category==="middle"?149:a.category==="high"?165:Math.max(175,...PHYSICAL_STATS.map(k=>a.stats[k]));
   for(const stroke of ["fr","ba","br","fly"]){
     fitCpuStrokeAbilities(a,stroke,targets,cap);
   }
@@ -3350,7 +3364,6 @@ function applyCpuUniversityRosterProfile(a){
   if(!a.cpuStatCeilings)a.cpuStatCeilings={};
   const start=round2(clamp(88+reputation*.17+(roll("start")-.5)*30,65,175));
   a.stats.start=a.startBalanceVersion===1?balancedStartValue(start,a.id):start;
-  a.stats.mental=round2(clamp(95+reputation*.14+(roll("mental")-.5)*50,65,181));
   // College technique starts from the same identity/reputation template for
   // both initial undergraduates and incoming school cohorts. The constrained
   // solver otherwise retains their different school-age turn baselines.
@@ -4172,19 +4185,19 @@ function prodigyChance(){
 }
 function applyProdigyBoost(p,year=1){
   if(!p||!p.stats)return p;
-  let avg=STATS.reduce((s,k)=>s+(p.stats[k]||0),0)/STATS.length;
+  let avg=physicalStatValue(p);
   let target=rand(125,145);
   let caps=Object.fromEntries(STATS.map(k=>[k,rand(151,158)]));
   if(avg<target){
     let preferred=SPECIALTY_EVENTS.includes(p.specialty)?p.specialty:bestSpecialtyByAbility(p);
     let st=strokeForEvent(preferred),factor=target/Math.max(1,avg);
-    for(let k of STATS){
+    for(let k of PHYSICAL_STATS){
       let specialtyBoost=(st!=="im"&&k.startsWith(st+"_"))?rand(3,10):0;
       if(st==="im"&&/(fr|ba|br|fly)_(speed|stamina)/.test(k))specialtyBoost=rand(2,7);
       p.stats[k]=round2(clamp((p.stats[k]||avg)*factor+specialtyBoost+gauss(0,2.2),45,caps[k]));
     }
   }
-  for(let k of STATS)p.stats[k]=round2(clamp(p.stats[k],0,caps[k]));
+  for(let k of PHYSICAL_STATS)p.stats[k]=round2(clamp(p.stats[k],0,caps[k]));
   p.prodigy=true;
   // Talented arrivals should also have a useful development curve, without raising the 200 cap.
   if(["ready","early"].includes(p.potentialType)){
@@ -4202,8 +4215,8 @@ function rollProdigy(p,year=1){
 function makeInitialPlayer(year,used){
   let preferred=choice(SPECIALTY_EVENTS),stroke=strokeForEvent(preferred),raw={};
   STATS.forEach(k=>{
+    if(k==="mental"){raw[k]=100;return}
     let v=gauss(76,13);
-    if(k==="mental")v+=rand(-4,7);
     if(stroke!=="im"&&k.startsWith(stroke+"_"))v+=rand(8,18);
     if(stroke==="im"&&/(fr|ba|br|fly)_(speed|stamina)/.test(k))v+=rand(3,10);
     if(k==="start"&&(preferred.endsWith("50")||preferred.endsWith("100")))v+=rand(4,9);
@@ -4218,6 +4231,7 @@ function makeInitialPlayer(year,used){
     potentialType:pt,growthProfile:deepClone(POTENTIAL_TYPES[pt].profile),
     raceHistory:[],accolades:[],condition:65,fatigue:0,bestTimes:{},specialty:preferred,prodigy:false
   };
+  p.stats.mental=initialMentalValue(p.id);
   p.specialty=bestSpecialtyByAbility(p);
   diversifyStrokeStats(p);
   rollProdigy(p,year);ensurePlayerGrowthType(p);
@@ -4310,9 +4324,9 @@ function makeCpuFieldSpecialist(category,organization,event,standard,used){
   for(let attempt=0;attempt<32||(lowest>=10000&&attempt<128);attempt++){
     if(attempt&&attempt%8===0)target=attempt<32?cpuFieldClock(event,category,standard,ceiling)
       :raceReferenceQuantile(cpuFieldReference(event,category,standard,ceiling),rand(.1,1));
-    for(const k of STATS){
+    for(const k of PHYSICAL_STATS){
       const main=stroke==="im"||k.startsWith(stroke+"_");
-      a.stats[k]=round2(k==="mental"?rand(112,174):k==="start"?balancedStartValue(rand(128,171),a.id):stroke==="im"?rand(125,175):main?rand(140,169):rand(88,128));
+      a.stats[k]=round2(k==="start"?balancedStartValue(rand(128,171),a.id):stroke==="im"?rand(125,175):main?rand(140,169):rand(88,128));
     }
     const distance=distanceOf(event),shape={50:[12,-20],100:[5,-6],200:[-15,12],400:[-22,15]}[distance];
     const strokes=stroke==="im"?MEDLEY_STROKES:[stroke];
@@ -4383,7 +4397,7 @@ function balanceInitialTeamDepth(){
   const relayTimes=roster=>RELAYS.map(kind=>expectedRelayTime(bestRelayMembers(roster,kind,false),kind));
   const cpuRelays=rosters.map(relayTimes),limits=RELAYS.map((_,i)=>cpuRelays.map(times=>times[i]).sort((a,b)=>a-b)[index]);
   const original=state.players.map(p=>STATS.map(k=>p.stats[k]));
-  const set=scale=>state.players.forEach((p,i)=>STATS.forEach((k,j)=>p.stats[k]=round2(original[i][j]*scale)));
+  const set=scale=>state.players.forEach((p,i)=>STATS.forEach((k,j)=>{if(k!=="mental")p.stats[k]=round2(original[i][j]*scale)}));
   const fits=()=>initialTeamDepthScore(state.players)<score-1e-6&&relayTimes(state.players).every((time,i)=>time>limits[i]+.02);
   if(fits())return;
   let lo=0,hi=1;
@@ -4406,7 +4420,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.51",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.52",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5328,7 +5342,7 @@ function ensureInternationalWorld(year){
     const make=(event,eligible=true)=>{
       let id=uid("INT"),a={id,name:internationalName(first,last,usedNames),gender:"M",category:"international",nationality:country,organization:country,age:Math.floor(rand(19,30)),grade:null,specialty:SPRINT_EVENTS.includes(event)?strokeForEvent(event)+"100":event,individualEvent:event,individualEligible:eligible,
         stats:Object.fromEntries(STATS.map(k=>[k,round2(rand(128,162))])),bestTimes:{},raceHistory:[],accolades:[],retired:false};
-      a.stats.mental=round2(rand(154,191));
+      a.stats.mental=initialMentalValue(a.id);
       balanceStartAbility(a);
       calibrateWorldAthlete(a,event,WORLD_REFERENCE.individual[event]*(1+quality+rand(-.002,.010)));
       attachMedleyStats(a);roster.push(a);athletes.push(a);return a;
@@ -6130,7 +6144,7 @@ function applyCpuCareerDecline(a){
     const tolerance=-Math.min(...MEET_FORM_TIME_RANGES[distanceOf(e)].map(r=>r[0]))+RACE_EXECUTION_RANGE[distanceOf(e)]+.005;
     return[e,Math.max(expectedTime(a,e),a.bestTimes[e]+tolerance)];
   });
-  const set=scale=>STATS.forEach((k,i)=>a.stats[k]=round2(clamp(original[i]-decline*scale,35,200))),fits=()=>limits.every(([e,limit])=>expectedTime(a,e)<=limit);
+  const set=scale=>STATS.forEach((k,i)=>a.stats[k]=round2(clamp(original[i]-decline*scale,Math.min(original[i],35),200))),fits=()=>limits.every(([e,limit])=>expectedTime(a,e)<=limit);
   set(1);
   if(!fits()){
     let lo=0,hi=1;
