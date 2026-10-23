@@ -29,8 +29,10 @@ test('failed migration rolls back a structurally valid save without mutating the
 });
 test('valid older saves load player stats, PBs and progress with automatic migration',()=>{
   const {run,store}=game();
-  const saved=run(`(()=>{let old=JSON.parse(originalText);old.version='pwa-v1.30';old.points=987;old.players[0].stats.fr_speed=170;old.players[0].bestTimes.fr100=48.5;delete old.recordRankings;delete old.recordRankingVersion;return JSON.stringify(old)})()`);
+  // A deliberately unreachable PB invokes the separate ability-repair path.
+  // This load-preservation fixture needs a clock reached by its actual profile.
+  const saved=run(`(()=>{let old=JSON.parse(originalText);old.version='pwa-v1.30';old.points=987;old.players[0].stats.fr_speed=170;old.players[0].bestTimes.fr100=round2(expectedTime(old.players[0],'fr100'));delete old.recordRankings;delete old.recordRankingVersion;return JSON.stringify(old)})()`);
   store(saved);assert.equal(run('loadLocal(true)'),true);
-  assert.equal(run('state.points'),987);assert.equal(run('state.players[0].stats.fr_speed'),170);assert.equal(run('state.players[0].bestTimes.fr100'),48.5);
+  assert.equal(run('state.points'),987);assert.equal(run('state.players[0].stats.fr_speed'),170);assert.equal(run('state.players[0].bestTimes.fr100'),JSON.parse(saved).players[0].bestTimes.fr100);
   assert.equal(run('state.recordRankingVersion'),2);assert.equal(run('selectedTrainingId'),null);
 });

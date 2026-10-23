@@ -76,9 +76,15 @@ test('real preliminary and final simulation uses the same ability base after a p
     p.bestTimes.fr100=expectedTime(p,'fr100');state.players=[p];const before=p.bestTimes.fr100;
     rng=()=>0;gauss=()=>0;updateResultHistory=(a,e,t)=>{if(t<a.bestTimes[e])a.bestTimes[e]=t;return{pb:t<a.bestTimes[e]}};
     const result=withMeetRaceContext('joint_record',82,2026,()=>runEvent('joint_record','fr100',[p.id]));
-    return{before,prelim:result.prelim[0].race.total,final:result.final[0].race.total,finalFinish:result.final[0].race.trajectory.at(-1).t};
+    const prelim=result.prelim[0].race,final=result.final[0].race;
+    return{before,prelim:prelim.total,final:final.total,prelimPhysics:prelim.physics,finalPhysics:final.physics,finalFinish:final.trajectory.at(-1).t};
   })()`);
-  assert.equal(r.prelim,Math.round((r.before-1)*100)/100);assert.equal(r.final,Math.round((r.before-1)*100)/100);assert.equal(r.finalFinish,r.final);
+  assert.ok(r.prelim<r.before);
+  for(const [stage,physics]of [['prelim',r.prelimPhysics],['final',r.finalPhysics]]){
+    assert.equal(physics.abilityBase,r.before);
+    assert.equal(r[stage],Math.round((r.before+physics.formCorrection+physics.raceCorrection+(physics.preliminaryDelay||0))*100)/100);
+  }
+  assert.equal(r.finalFinish,r.final);
 });
 test('repeated PB updates never move the ability base while training improves it',()=>{
   const run=game(),r=run(`(()=>{
