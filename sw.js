@@ -1,5 +1,5 @@
-const CACHE_NAME="swim-manager-pwa-v2.48";
-const APP_SHELL=["./","./index.html","./manifest.webmanifest","./local-save.js?version=v2.48","./save-history.js?version=v2.48","./cloud-sync.js?version=v2.48","./cloud-config.json","./icons/apple-touch-icon.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png"];
+const CACHE_NAME="swim-manager-pwa-v2.49";
+const APP_SHELL=["./","./index.html","./manifest.webmanifest","./local-save.js?version=v2.49","./save-history.js?version=v2.49","./cloud-sync.js?version=v2.49","./cloud-config.json","./icons/apple-touch-icon.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png"];
 function currentCacheMatch(request){return caches.open(CACHE_NAME).then(cache=>cache.match(request))}
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
