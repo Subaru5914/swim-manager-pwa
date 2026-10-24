@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.54</title>
+<title>大学競泳監督シミュレーション PWA版 v2.55</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1462,7 +1462,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.54</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.55</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1696,9 +1696,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.54"></script>
-<script src="./save-history.js?version=v2.54"></script>
-<script src="./cloud-sync.js?version=v2.54"></script>
+<script src="./local-save.js?version=v2.55"></script>
+<script src="./save-history.js?version=v2.55"></script>
+<script src="./cloud-sync.js?version=v2.55"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -2035,7 +2035,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.54";
+  state.version="pwa-v2.55";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -4432,7 +4432,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.54",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.55",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5384,7 +5384,7 @@ function raceEventField(meet,event,entrants){
   let prelim=heats.flat().sort((a,b)=>a.race.total-b.race.total);
   assignRaceRanks(prelim).forEach(x=>x.achievement=updateResultHistory(x.athlete,event,x.race.total,meet,"予選",x.rank));
   const {qualifiers,swimOffs}=selectRaceFinalists(prelim,event,meet);recordSwimOffs(swimOffs,event,meet);
-  let final=assignSeededLanes(qualifiers,x=>x.race.total).map(x=>({...x,prelimTime:x.race.total,entryPB:x.athlete.bestTimes[event],race:simulateRace(x.athlete,event,true,x.source==="PLAYER")})).sort((a,b)=>a.race.total-b.race.total);
+  let final=assignSeededLanes(qualifiers,x=>x.race.total).map(x=>({...x,prelimTime:x.race.total,entryPB:x.athlete.bestTimes[event]??null,race:simulateRace(x.athlete,event,true,x.source==="PLAYER")})).sort((a,b)=>a.race.total-b.race.total);
   assignRaceRanks(final).forEach(x=>x.achievement=updateResultHistory(x.athlete,event,x.race.total,meet,"A決勝",x.rank));
   return{prelim,final,heats,swimOffs};
 }
@@ -5688,6 +5688,9 @@ function entrySeedTime(row,event){
   return validRaceTime(pb)?pb:expectedTime(row.athlete,event);
 }
 function seedRaceHeats(entrants,event,meet="team_trial"){
+  // Freeze each stage's comparison PB, including an explicit unmeasured value
+  // that survives JSON saves after the swimmer sets their first PB.
+  entrants=entrants.map(row=>({...row,entryPB:raceEntryPB(row,event,row.athlete)??null}));
   const score=row=>entrySeedTime(row,event);
   // College selections and selected national qualifiers all race, adding heats rather
   // than silently dropping valid entries at the old nominal heat limit.
@@ -5775,7 +5778,7 @@ function runEvent(meet,e,userIds,cpuEntries=null){
     heatLane:x.heatLane,
     athlete:x.athlete,
     prelimTime:x.race.total,
-    entryPB:x.athlete.bestTimes[e],
+    entryPB:x.athlete.bestTimes[e]??null,
     race:x.source==="PLAYER"?simulateRace(x.athlete,e,true,true):simulateMeetRace(x.athlete,e,meet,false)
   }));
   final.sort((a,b)=>a.race.total-b.race.total);
@@ -7743,14 +7746,18 @@ function relayResultMembersHtml(members,legs,event){
     return `<div class="result-relay-leg" data-relay-leg="${i}" data-athlete-id="${esc(member?.id||"")}"><span class="result-relay-order">${i+1}泳${stroke?` ${stroke}`:""}</span><span class="result-relay-member"><b class="result-relay-name">${esc(member?.name||"メンバー不明")}</b>${member?athleteGradeHtml(member):""}</span><b class="result-relay-lap">${fmt(validRaceTime(legs?.[i])?legs[i]:null)}</b></div>`;
   }).join("")}</div>`;
 }
+function resultEntryPBCell(row,event){
+  const known=Object.hasOwn(row,"entryPB")||Object.hasOwn(row.achievement||{},"previousPB");
+  return `<td class="result-entry-pb">${row.source==="PLAYER"?fmt(known?raceEntryPB(row,event,row.athlete):null):"—"}</td>`;
+}
 function resultRankingRows(rows,event,qualifiers=null){
   const ranks=racePlacings(rows);
   if(RELAYS.includes(event))return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}" data-relay-team="${esc(x.athlete.organization||x.athlete.name)}"><td>${ranks[i]}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.nationality||x.athlete.organization||x.athlete.name)}</b></td><td><b>${fmt(x.race.total)}</b></td><td>${relayResultMembersHtml(x.members,x.race.legs,event)}</td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}</tr>`).join("");
-  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${ranks[i]}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeHtml(x.athlete)}</td><td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
+  return rows.map((x,i)=>`<tr class="${x.source==="PLAYER"?"result-own":""}"><td>${ranks[i]}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>${x.source==="PLAYER"?"★ ":""}${esc(x.athlete.name)}</b></td><td>${esc(x.nationality||x.athlete.organization||"")}</td><td>${x.athlete.category==="relay"?"—":athleteGradeHtml(x.athlete)}</td>${resultEntryPBCell(x,event)}<td><b>${fmt(x.race.total)}</b></td>${qualifiers?`<td>${finalQualificationTag(qualifiers.some(f=>f.athlete.id===x.athlete.id))}</td>`:""}<td class="result-marks">${achievementBadges(x,event)}</td></tr>`).join("");
 }
 function resultRankingTable(rows,event,qualifiers=null){
   if(RELAYS.includes(event))return `<div class="table-wrap"><table class="relay-results-table"><thead><tr><th>順位</th><th>コース</th><th>大学 / 国</th><th>記録</th><th>メンバー・ラップタイム</th>${qualifiers?"<th>決勝</th>":""}</tr></thead><tbody>${resultRankingRows(rows,event,qualifiers)}</tbody></table></div>`;
-  return `<div class="table-wrap"><table><thead><tr><th>順位</th><th>コース</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>記録</th>${qualifiers?"<th>決勝</th>":""}<th>PB・初突破</th></tr></thead><tbody>${resultRankingRows(rows,event,qualifiers)}</tbody></table></div>`;
+  return `<div class="table-wrap"><table class="individual-results-table"><thead><tr><th>順位</th><th>コース</th><th>選手 / チーム</th><th>所属</th><th>学年</th><th>レース前PB</th><th>記録</th>${qualifiers?"<th>決勝</th>":""}<th>PB・初突破</th></tr></thead><tbody>${resultRankingRows(rows,event,qualifiers)}</tbody></table></div>`;
 }
 function relayResultTable(teams,event,finalists=null){
   const rows=list=>list.map(team=>({source:ownsRelayTeam(team)?"PLAYER":"CPU",heatLane:team.heatLane,
@@ -8069,7 +8076,7 @@ function showMeetResults(result,onClose){
     if(!e){m.querySelector("#resBody").innerHTML="<p>個人種目の結果はありません。</p>";return}
     let rr=result.events[e],own=[...rr.prelim.filter(x=>x.source==="PLAYER").map(x=>({...x,stage:result.meet==="team_trial"?"記録会":"予選"})),
       ...rr.final.filter(x=>x.source==="PLAYER").map(x=>({...x,stage:"A決勝"}))];
-    let ownHtml=own.length?`<h3>自チーム結果</h3><div class="table-wrap"><table><thead><tr><th>区分</th><th>順位</th><th>コース</th><th>選手</th><th>記録</th><th>PB・初突破</th></tr></thead><tbody>${own.map(x=>`<tr class="result-own"><td>${x.stage}</td><td>${x.achievement?.rank||"—"}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>★ ${esc(x.athlete.name)}</b></td><td><b>${fmt(x.race.total)}</b></td><td class="result-marks">${badge(x,e)}</td></tr>`).join("")}</tbody></table></div>`:"<p>自チームの出場なし</p>";
+    let ownHtml=own.length?`<h3>自チーム結果</h3><div class="table-wrap"><table><thead><tr><th>区分</th><th>順位</th><th>コース</th><th>選手</th><th>レース前PB</th><th>記録</th><th>PB・初突破</th></tr></thead><tbody>${own.map(x=>`<tr class="result-own"><td>${x.stage}</td><td>${x.achievement?.rank||"—"}</td><td class="result-course">${x.heatLane||"—"}</td><td><b>★ ${esc(x.athlete.name)}</b></td>${resultEntryPBCell(x,e)}<td><b>${fmt(x.race.total)}</b></td><td class="result-marks">${badge(x,e)}</td></tr>`).join("")}</tbody></table></div>`:"<p>自チームの出場なし</p>";
     let finalHtml=rr.final.length?`<h3>A決勝</h3>${resultRankingTable(rr.final,e)}`:"";
     let prelimHtml=`<h3>予選総合（全${rr.heats?.length||0}組・上位8名が決勝）</h3>${resultRankingTable(rr.prelim,e,rr.final)}`;
     m.querySelector("#resBody").innerHTML=ownHtml+finalHtml+(result.meet==="team_trial"?"":prelimHtml)+swimOffResultsHtml(rr.swimOffs,e);
@@ -8097,7 +8104,9 @@ function showMeetResults(result,onClose){
   m.querySelector("#x").onclick=()=>closeModal(onClose);render();
 }
 function raceEntryPB(row,event,athlete){
+  if(row.swimOffRound&&Object.prototype.hasOwnProperty.call(row.achievement||{},"previousPB"))return row.achievement.previousPB;
   if(Object.prototype.hasOwnProperty.call(row,"entryPB"))return row.entryPB;
+  if(Object.prototype.hasOwnProperty.call(row.achievement||{},"previousPB"))return row.achievement.previousPB;
   return athlete?.bestTimes?.[event];
 }
 function relayMemberLabel(p){
