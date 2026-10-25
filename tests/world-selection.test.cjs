@@ -55,6 +55,18 @@ test('reading options and profiles never changes athletes, PBs or RNG, and selec
  assert.ok(r.unchanged&&r.rejected&&r.locked&&r.atomic);assert.ok(Object.values(r.wrong.individual).every(ids=>!ids.length));
 });
 
+test('additional selection keeps championship places ahead of faster representatives and orders ties and missing PBs without changing state',()=>{
+ const r=game()(`(()=>{const {all}=fixture();
+  const ranks=[8,9,10,11,5,6,7,1].map((i,j)=>({id:all[i].id,rank:j===3?3:j+1,time:60+j}));
+  const times={8:70,9:68,10:67,11:66,5:65,6:64,7:63,1:62,2:50,3:49,4:null,0:49};
+  all.forEach((a,i)=>{a.bestTimes.ba100=times[i];a.name='同名'});
+  const before=JSON.stringify(state),input=all.map(a=>a.id),sorted=sortedWorldSelectionCandidates(all,'ba100',ranks).map(a=>a.id);
+  return{sorted,unchanged:before===JSON.stringify(state),input:all.map(a=>a.id),original:input};
+ })()`);
+ assert.deepEqual(r.sorted,['candidate-8','candidate-9','candidate-11','candidate-10','candidate-5','candidate-6','candidate-7','candidate-1','candidate-0','candidate-3','candidate-2','candidate-4']);
+ assert.ok(r.unchanged);assert.deepEqual(r.input,r.original);
+});
+
 test('manual CPU and own finalists reach actual world heats, recorded results and the owned playback queue after save and reload',()=>{
  const r=game()(`(()=>{const {all}=fixture();setWorldAdditionalEntries(2027,{ba100:[all[1].id,all[9].id],im400:[all[1].id]});
   const serialized=JSON.stringify(state);state=JSON.parse(serialized);for(const a of [...state.players,...state.world,...state.japanTeam.athletes.map(m=>m.snapshot),...state.japanTeam.selectionCandidates.map(m=>m.snapshot)])attachMedleyStats(a);
