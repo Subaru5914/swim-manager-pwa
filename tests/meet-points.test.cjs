@@ -7,7 +7,7 @@ function game(){return vm.compileFunction(source.slice(0,source.indexOf('documen
  const own=swimmer('own'),reserve=swimmer('reserve');state.players=[own,reserve];
  const row=(id,time,own=false)=>({source:own?'PLAYER':'CPU',athlete:own?state.players.find(a=>a.id===id):{id,name:id,organization:'他大学'},race:{total:time},rank:99});
  const team=(organization,time)=>({organization,members:Array.from({length:4},(_,i)=>({id:'leg'+i})),race:{total:time}});
- function result(meet='teijimayama_championship',slot=60){return{meet,season:2026,slot,finalRankPointsVersion:1,pointUniversityId:controlledUniversityId(),pointUniversityName:state.playerUniversity,events:{},relays:[]}}
+ function result(meet='teijimayama_championship',slot=60){return{meet,season:2026,slot,entryPoints:0,finalRankPointsVersion:1,pointUniversityId:controlledUniversityId(),pointUniversityName:state.playerUniversity,events:{},relays:[]}}
  awardMeetGrowth=()=>null;refreshRecordBook=()=>{};refreshScoutBoard=()=>{};selectJapanTeam=()=>null;
  return code=>JSON.parse(JSON.stringify(eval(code)))`,[])()}
 
@@ -54,13 +54,35 @@ test('a completed pending snapshot recovers its award without races, while old s
  assert.equal(r.paid,112);assert.equal(r.points,112);assert.equal(r.log,1);assert.equal(r.snapshot,12);assert.ok(r.unchanged);
 });
 
-test('real meet execution replaces college entry currency, preserves national entry and winter invitation currency, and guards restricted completion',()=>{
+test('real meet execution adds college entry currency to final-place rewards and preserves national and winter currency',()=>{
  const r=game()(`(()=>{const reports=[];runRelays=()=>[];
   runEvent=(meet,event,ids)=>({prelim:ids.map(id=>row(id,50,true)),final:ids.map(id=>row(id,49,true)),heats:[]});
-  for(const [meet,slot,expected]of [['kansai_college',28,12],['intercollege',44,12],['teijimayama_championship',60,12],['japan_open',64,1],['japan_championship',94,1],['joint_record',76,30]]){
+  for(const [meet,slot,expected]of [['kansai_college',28,13],['intercollege',44,13],['teijimayama_championship',60,13],['japan_open',64,1],['japan_championship',94,1],['joint_record',76,30]]){
    state.slot=slot;const before=state.points,entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?['own']:[]]));markJointScouts=()=>{};
    const m=executeMeetWithForm(meet,entries,{}),after=state.points;completeMeet({...m,completed:false});reports.push({meet,gain:after-before,expected,once:after===state.points,history:m.historyEntry.pointsAfter===state.points});
   }return reports;
  })()`);
  for(const x of r){assert.equal(x.gain,x.expected,x.meet);assert.ok(x.once&&x.history,x.meet)}
+});
+
+test('individual entries earn one per athlete and event even without a final, and saves and duplicate requests never award entry points twice',()=>{
+ const r=game()(`(()=>{runRelays=()=>[];runEvent=(meet,event,ids)=>({prelim:ids.map(id=>row(id,50,true)),final:[],heats:[]});
+  const entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?['own','reserve']:e==='fr200'?['own']:[]]));
+  const m=executeMeetWithForm('teijimayama_championship',entries,{}, {deferRelayFinalEntries:true});
+  const starting=state.points,entry=m.entryPoints,packed=packMeetResult(m);state=JSON.parse(JSON.stringify(state));
+  const restored=unpackMeetResult(JSON.parse(JSON.stringify(packed)));completeMeet(restored);const before=JSON.stringify(state);
+  awardMeetEntryPoints(m.meet,3,m.season,m.slot);completeMeet({...restored,completed:false});
+  return{starting,entry,points:state.points,once:before===JSON.stringify(state),logs:state.pointLog,html:finalMeetPointRewardHtml(restored)};
+ })()`);
+ assert.equal(r.starting,103);assert.equal(r.entry,3);assert.equal(r.points,103);assert.ok(r.once);assert.deepEqual(r.logs.map(x=>[x.kind,x.points]),[['entry',3],['final_rank',0]]);assert.match(r.html,/＋3pt/);assert.match(r.html,/出場 3pt/);assert.match(r.html,/決勝順位 0pt/);
+});
+
+test('rank-only races in progress recover missing actual entries once while completed meets and entry-paid races keep their existing balance',()=>{
+ const r=game()(`(()=>{const m=result();delete m.entryPoints;
+  m.events={fr100:{prelim:[row('own',50,true),row('own',50,true),row('reserve',51,true),row('cpu',52)],final:[row('own',49,true)]},fr200:{prelim:[row('own',100,true)],final:[]}};
+  const archived=deepClone(m);archived.completed=true;completeMeet(archived);const completedUnchanged=state.points===100;
+  completeMeet(m);const after=JSON.stringify(state);completeMeet({...archived,completed:false});
+  return{completedUnchanged,entry:m.entryPoints,points:state.points,once:after===JSON.stringify(state),logs:state.pointLog.map(x=>[x.kind,x.points]),html:finalMeetPointRewardHtml(m)};
+ })()`);
+ assert.ok(r.completedUnchanged&&r.once);assert.equal(r.entry,3);assert.equal(r.points,115);assert.deepEqual(r.logs,[['entry',3],['final_rank',12]]);assert.match(r.html,/＋15pt/);
 });
