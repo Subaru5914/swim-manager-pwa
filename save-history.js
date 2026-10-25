@@ -22,6 +22,7 @@ class SwimSaveHistory {
     for (const book of Object.values(save.recordRankings || {})) for (const [event, rows] of Object.entries(book || {})) {
       for (const row of rows || []) records.push({ ...row, event: row.event || event });
     }
+    for (const archive of Object.values(save.universityControls || {})) for (const [event, rows] of Object.entries(archive.teamTop10 || {})) for (const row of rows || []) records.push({ ...row, event: row.event || event });
     for (const [event, rows] of Object.entries(save.teamTop10 || {})) for (const row of rows || []) records.push({ ...row, event: row.event || event });
     for (const [event, row] of Object.entries(save.recordBook || {})) if (row) records.push({ ...row, event: row.event || event });
     for (const record of records) {

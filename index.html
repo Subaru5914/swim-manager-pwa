@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.57</title>
+<title>大学競泳監督シミュレーション PWA版 v2.58</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1462,7 +1462,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.57</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.58</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1500,6 +1500,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 
 <main>
 <section id="page-home" class="page active">
+  <div id="meetRecovery" class="notice" hidden></div>
   <div class="page-lead"><div><h1>ホーム</h1><p>現在の週・評判・ポイントを確認して次の練習へ進みます。</p></div></div>
   <div class="grid">
     <div class="card dashboard-card"><div class="metric">現在</div><div id="homeDate" class="big"></div><div id="homeMeet" class="muted"></div></div>
@@ -1676,7 +1677,8 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 </section>
 
 <section id="page-settings" class="page">
-  <div class="page-lead"><div><h1>設定</h1><p>大学・学校・社会人チームの表示名を変更できます。</p></div></div>
+  <div class="page-lead"><div><h1>設定</h1><p>操作大学の切り替えと、大学・学校・社会人チームの表示名を変更できます。</p></div></div>
+  <div class="card"><div class="row"><h2 style="margin-right:auto">操作する大学</h2><button id="changeControlledUniversity" class="primary">操作大学を変更</button></div><p id="controlledUniversityNote" class="small muted"></p></div>
   <div class="card">
     <h2>設定 — 学校・チーム名</h2>
     <div class="grid" style="margin-top:12px">
@@ -1696,9 +1698,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.57"></script>
-<script src="./save-history.js?version=v2.57"></script>
-<script src="./cloud-sync.js?version=v2.57"></script>
+<script src="./local-save.js?version=v2.58"></script>
+<script src="./save-history.js?version=v2.58"></script>
+<script src="./cloud-sync.js?version=v2.58"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1786,6 +1788,7 @@ const PLAYER_GROWTH_TYPES={
 };
 const EARLY_GROWTH_MIN_AVERAGE=100;
 function ensurePlayerGrowthType(p){
+  if(p.controlledGrowthPreserved&&p.growthProfile){if(!Number.isFinite(p.entryAbilityAverage))p.entryAbilityAverage=round2(overallStatValue(p));return p.potentialType}
   if(!Number.isFinite(p.entryAbilityAverage))p.entryAbilityAverage=round2(overallStatValue(p));
   const eligible=p.entryAbilityAverage>=EARLY_GROWTH_MIN_AVERAGE;
   let type=p.potentialType;
@@ -2039,6 +2042,146 @@ function migrateUniversityReputationScale(){
   state.cpuUniversityRepModelVersion=3;
   state.collegeReputationBaselineVersion=2;
 }
+const UNIVERSITY_ASSET_FIELDS=['points','facilities','trainingPlans','trainingFocus','teamTop10','teamPodiumHistory','pointLog','lastTrainingGains'];
+function controlledUniversityId(){return state?.controlledUniversityId||'PLAYER'}
+function initializeUniversityControl(){
+  state.controlledUniversityId??='PLAYER';
+  state.playerUniversityProfile??={id:state.controlledUniversityId,name:state.playerUniversity,region:'kansai',strength:65,baseReputation:INITIAL_TEAM_REPUTATION};
+  state.playerUniversityProfile.name=state.playerUniversity;
+  state.universityControls??={};
+  for(const row of state.reputationEvaluations||[])row.universityId??=controlledUniversityId();
+  const tag=m=>{if(m&&!m.universityId)m.universityId=universityIdByName(m.organization||m.snapshot?.organization)||((m.own||m.ownAtSelection)?controlledUniversityId():null)};
+  for(const m of [...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])])tag(m);
+  for(const entry of state.japanTeamHistory||[]){for(const m of entry.athletes||[])tag(m);for(const relay of Object.values(entry.results?.relays||{}))for(const r of [relay.prelim,relay.final])for(const m of r?.members||[])tag(m)}
+  for(const a of state.alumniCareer||[])a.from??=state.playerUniversity;
+  for(const a of state.retiredArchive||[])a.almaMater??=(state.alumniCareer||[]).find(c=>c.id===a.id)?.from||state.playerUniversity;
+}
+function universityIdByName(name){return name===state.playerUniversity?controlledUniversityId():state.universities.find(u=>u.name===name)?.id}
+function universityAssetDefaults(){return{points:0,facilities:Object.fromEntries(STATS.map(k=>[k,0])),trainingPlans:{},trainingFocus:{},teamTop10:{},teamPodiumHistory:[],pointLog:[],lastTrainingGains:[]}}
+function universitySwitchBlockReason(){
+  if(state.meetSession||state.pendingMeetCompletion||state.activeCompetitionSlot)return '大会・エントリーを終了してから切り替えてください。';
+  if(state.pendingCollegeAdmissions||state.pendingSeasonRetirements||state.pendingFreshmenWelcome?.length||state.pendingSeasonNotices?.length||state.pendingMeetGrowthRewards?.length||state.pendingJapanCelebrationYear)return '進学・引退・大会のお知らせを確認してから切り替えてください。';
+  return '';
+}
+function archivedUniversityByName(name){
+  const id=universityIdByName(name);return id&&id!==controlledUniversityId()?state.universityControls?.[id]:null;
+}
+function archiveUniversityRecord(record){
+  const archive=archivedUniversityByName(record.organization);if(!archive||record.schoolCategory&&record.schoolCategory!=='university')return;
+  if(record.kind==='individual'&&!EVENTS.includes(record.event))return;
+  storeArchivedUniversityRecord(archive,record);
+}
+function storeArchivedUniversityRecord(archive,record){
+  const book=archive.teamTop10??={},rows=book[record.event]??=[];
+  const key=r=>r.kind==='relay'?(r.memberKey||r.members?.map(m=>m.id).join('|')):r.athleteId;
+  const i=rows.findIndex(r=>key(r)===key(record));
+  if(i<0)rows.push(deepClone(record));else if(record.time<rows[i].time)rows[i]=deepClone(record);
+  rows.sort((a,b)=>a.time-b.time);rows.splice(10);
+}
+function archiveUniversityPodium(record){
+  const archive=archivedUniversityByName(record.organization);if(!archive||!TEAM_PODIUM_MEETS.includes(record.meet)||record.rank>3||!mainResultRecord(record))return;
+  const rows=archive.teamPodiumHistory??=[],key=teamPodiumKey(record),i=rows.findIndex(r=>teamPodiumKey(r)===key);
+  if(i<0)rows.push(deepClone(record));else rows[i]=deepClone(record);
+}
+function archiveWorldRelayRecord(record){
+  if(record.meet!=="world_championship"||raceHistoryPhaseOrder(record)!==0)return;
+  const memberId=member=>state.japanTeam?.athletes?.find(a=>a.id===member.id)?.universityId||universityIdByName(activeAthletes().find(a=>a.id===member.id)?.organization);
+  for(const id of new Set(record.members.map(memberId).filter(Boolean))){
+    if(id===controlledUniversityId()||!state.universityControls?.[id])continue;
+    const archive=state.universityControls[id],saved={...record,kind:"relay",members:record.members.map((m,i)=>({...m,legIndex:i,own:memberId(m)===id}))};
+    storeArchivedUniversityRecord(archive,saved);
+    if(record.rank<=3){const rows=archive.teamPodiumHistory??=[],key=teamPodiumKey(saved),i=rows.findIndex(r=>teamPodiumKey(r)===key);if(i<0)rows.push(deepClone(saved));else rows[i]=deepClone(saved)}
+  }
+}
+function seedControlledUniversityHistory(profile,assets,roster){
+  const insert=record=>{
+    const rows=assets.teamTop10[record.event]??=[],key=r=>r.kind==='relay'?(r.memberKey||r.members?.map(m=>m.id).join('|')):r.athleteId;
+    const i=rows.findIndex(r=>key(r)===key(record));if(i<0)rows.push(deepClone(record));else if(record.time<rows[i].time)rows[i]=deepClone(record);
+    rows.sort((a,b)=>a.time-b.time);rows.splice(10);
+  };
+  for(const [event,rows]of Object.entries(state.recordRankings?.university||{}))for(const record of rows)if(record.organization===profile.name)insert({...record,event});
+  for(const a of roster){
+    for(const [event,time]of Object.entries(a.bestTimes||{}))if(EVENTS.includes(event)&&validRaceTime(time))insert({kind:'individual',event,time,athleteId:a.id,name:a.name,organization:profile.name,season:state.season,slot:null,meet:'control_pb',stage:'保存PB',schoolCategory:'university',gradeAtRecord:a.grade||a.year});
+    for(const h of playerMainResults(a))if(TEAM_PODIUM_MEETS.includes(h.meet)&&h.rank<=3&&h.schoolCategory==='university'&&(h.organization??profile.name)===profile.name){
+      const record={...h,organization:profile.name,kind:'individual',athleteId:a.id,name:a.name};
+      if(!assets.teamPodiumHistory.some(r=>teamPodiumKey(r)===teamPodiumKey(record)))assets.teamPodiumHistory.push(deepClone(record));
+    }
+  }
+  for(const meet of state.meetHistory||[])for(const [event,rows]of Object.entries(meet.podiums||{}))for(const r of rows)if(r.organization===profile.name){
+    const record={...r,event,kind:'individual',season:meet.season,slot:meet.slot,meet:meet.meet};
+    if(TEAM_PODIUM_MEETS.includes(meet.meet)&&!assets.teamPodiumHistory.some(x=>teamPodiumKey(x)===teamPodiumKey(record)))assets.teamPodiumHistory.push(deepClone(record));
+  }
+}
+function switchControlledUniversity(id){
+  initializeUniversityControl();const reason=universitySwitchBlockReason();if(reason)return{ok:false,msg:reason};
+  const target=state.universities.find(u=>u.id===id);if(!target)return{ok:false,msg:'大学が見つかりません。'};
+  const incoming=state.world.filter(a=>a.category==='university'&&!a.retired&&a.organization===target.name);
+  if(!incoming.length)return{ok:false,msg:'現在操作できる在籍選手がいません。'};
+  const previous={...state.playerUniversityProfile,name:state.playerUniversity,reputation:state.reputation},oldId=controlledUniversityId();
+  const assets={};for(const key of UNIVERSITY_ASSET_FIELDS)assets[key]=state[key]??universityAssetDefaults()[key];
+  state.universityControls[oldId]=assets;
+  const next=state.universityControls[id]??universityAssetDefaults();
+  if(!state.universityControls[id])seedControlledUniversityHistory(target,next,incoming);
+  previous.managedReputationRange=[Math.max(0,Math.min(previous.baseReputation-100,state.reputation)),Math.min(REPUTATION_LIMIT,Math.max(previous.baseReputation+100,state.reputation))];
+  const outgoing=state.players.map(p=>{
+    p.category='university';p.grade=p.year;delete p.year;p.managedUniversityId=oldId;
+    p.cpuUniversityRosterProfileVersion=2;p.cpuCompetitionCategory='university';p.cpuCompetitionProfileVersion=2;p.cpuIndividualProfileVersion=1;
+    p.startBalanceVersion=1;delete p.cpuSchoolTrainingShape;
+    if(p.cpuDevelopment?.version===1){p.cpuDevelopment.goals=p.cpuDevelopment.goals.map((v,i)=>Math.max(v,p.stats[STATS[i]]));p.cpuDevelopment.floors=p.cpuDevelopment.floors.map((v,i)=>Math.min(v,expectedTime(p,EVENTS[i])))}
+    return p;
+  });
+  const ids=new Set(incoming.map(a=>a.id));state.world=state.world.filter(a=>!ids.has(a.id)).concat(outgoing);
+  state.universities=state.universities.filter(u=>u.id!==id).concat([previous]);
+  state.controlledUniversityId=id;state.playerUniversityProfile={...target};state.playerUniversity=target.name;state.reputation=target.reputation;
+  state.players=incoming.map(a=>{a.year=a.grade;delete a.grade;a.managedUniversityId=id;if(a.playerGrowthModelVersion!==1)a.controlledGrowthPreserved=true;a.condition??=65;a.fatigue??=0;a.injury_weeks??=0;a.prodigy=!!a.prodigy;ensurePlayerGrowthType(a);return a});
+  for(const key of UNIVERSITY_ASSET_FIELDS)state[key]=next[key]??universityAssetDefaults()[key];
+  const ownIds=new Set(state.players.map(p=>p.id));state.lastTrainingGains=state.lastTrainingGains.filter(g=>ownIds.has(g.id));
+  for(const p of state.players){state.trainingPlans[p.id]??=defaultPlan();state.trainingFocus[p.id]??=defaultTrainingFocus(p)}
+  // The lower-case player key is a UI role. Move its school-bound data rather
+  // than moving offers, confirmed recruits or participation to another school.
+  const remap=key=>key==='player'?oldId:key===id?'player':key;
+  const remapObject=obj=>Object.fromEntries(Object.entries(obj||{}).map(([key,value])=>[remap(key),value]));
+  for(const row of state.meetParticipationHistory||[])row.counts=remapObject(row.counts);
+  const competition=state.scoutingCompetition;
+  if(competition){
+    competition.schools=remapObject(competition.schools);
+    competition.schools[oldId]??={budget:scoutingBudget(previous.reputation),remaining:0};
+    for(const r of Object.values(competition.candidates||{})){
+      r.interests=remapObject(r.interests);r.contacts=remapObject(r.contacts);
+      r.offers=(r.offers||[]).map(remap);r.cpuTargets=(r.cpuTargets||[]).map(remap).filter(key=>key!=='player');
+      if(r.contacts[oldId]!=null&&!r.cpuTargets.includes(oldId))r.cpuTargets.push(oldId);
+      if(r.destination)r.destination=remap(r.destination);
+    }
+    for(const n of competition.notices||[])if(n.schoolId)n.schoolId=remap(n.schoolId);
+  }
+  state.recruits=[];
+  for(const a of state.world)if(a.category==='high'){
+    if(a.scouted)a.scoutProtected=true;
+    a.scouted=competition?.candidates?.[a.id]?.destination==='player';if(a.scouted)state.recruits.push(a.id);
+  }
+  for(const a of outgoing)ensureCpuDevelopment(a);
+  state.kansaiIds=state.universities.filter(u=>u.region==='kansai').map(u=>u.id);
+  state.interIds=[...state.universities].sort((a,b)=>b.reputation-a.reputation).map(u=>u.id);
+  state.teamPodiumHistoryVersion=2;
+  selectedTrainingId=null;selectedRivalUniversityId=null;
+  return{ok:true,msg:`${target.name}へ操作大学を切り替えました。`};
+}
+function showUniversityControlPicker(){
+  const reason=universitySwitchBlockReason(),schools=rivalUniversities();
+  const m=showModal(`<div class="row"><h2 style="margin-right:auto">操作大学を変更</h2><button id="controlClose">閉じる</button></div><p>現在：<b>${esc(state.playerUniversity)}</b></p><p class="small">年度・選手・能力・PB・記録を維持して切り替えます。ポイント・施設・練習指示は大学ごとに保存し、初めて操作する大学のポイント・施設は0から始まります。全40大学で現在の大会日程を共有し、関西以外の操作大学も既存大会へ招待参加します。</p>${reason?`<div class="notice">${esc(reason)}</div>`:''}<label>大学<select id="controlUniversity" style="max-width:100%">${schools.map(u=>`<option value="${esc(u.id)}">${esc(u.name)}（${reputationLabel(u.reputation)} ${u.reputation.toFixed(1)}pt）</option>`).join('')}</select></label><div id="controlPreview" class="notice" style="margin-top:12px"></div><button id="controlApply" class="primary" style="margin-top:12px"${reason?' disabled':''}>この大学へ切り替える</button><p id="controlMessage" class="small" role="status"></p>`);
+  m.classList.add('modal-university-control');
+  const select=m.querySelector('#controlUniversity');
+  const preview=()=>{const roster=rivalUniversityRoster(select.value);m.querySelector('#controlPreview').innerHTML=`在籍 <b>${roster.length}名</b> ／ ${[1,2,3,4].map(y=>`大${y} ${roster.filter(a=>a.grade===y).length}名`).join(' / ')}<br>インカレ標準突破 <b>${roster.filter(a=>EVENTS.some(e=>qualified(a,'intercollege',e))).length}名</b>`};
+  select.onchange=preview;preview();m.querySelector('#controlClose').onclick=()=>closeModal();
+  m.querySelector('#controlApply').onclick=async()=>{
+    const button=m.querySelector('#controlApply');button.disabled=true;
+    const backup=deepClone(state),r=switchControlledUniversity(select.value);
+    if(!r.ok){m.querySelector('#controlMessage').textContent=r.msg;button.disabled=false;return}
+    if(!await writeSaveSilently('control')){state=backup;for(const a of activeAthletes())attachMedleyStats(a);m.querySelector('#controlMessage').textContent='保存できなかったため切り替えを取り消しました。';button.disabled=false;return}
+    closeModal();initSelectors();renderAll();showToast(r.msg,'good');
+  };
+}
+
 function bestSpecialtyByAbility(p){return SPECIALTY_EVENTS.slice().sort((a,b)=>expectedTime(p,a)/JAPAN_RECORD[a]-expectedTime(p,b)/JAPAN_RECORD[b])[0]||"fr100"}
 function ensurePlayerSpecialty(p){if(!SPECIALTY_EVENTS.includes(p.specialty))p.specialty=SPRINT_EVENTS.includes(p.specialty)?strokeForEvent(p.specialty)+"100":bestSpecialtyByAbility(p);return p.specialty}
 function migrateLegacyOrganizationNames(){
@@ -2076,7 +2219,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.57";
+  state.version="pwa-v2.58";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -2090,6 +2233,7 @@ function migrateState(){
   initializeReputationHistory();
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
   migrateUniversityReputationScale();
+  initializeUniversityControl();
   if(!state.lastTrainingGains)state.lastTrainingGains=[];
   if(!state.alumniCareer)state.alumniCareer=[];
   if(!state.pendingFreshmenWelcome)state.pendingFreshmenWelcome=[];
@@ -2107,7 +2251,7 @@ function migrateState(){
     if(upgradeOrganizationNames)for(let n of defaultOrganizationNames[cat])if(!names.includes(n))names.push(n);
     state.organizationNames[cat]=names;
   }
-  for(let u of EXTRA_UNIVERSITIES)if(!state.universities.some(x=>x.id===u.id)){
+  for(let u of EXTRA_UNIVERSITIES)if(u.id!==controlledUniversityId()&&!state.universities.some(x=>x.id===u.id)){
     const added=deepClone(u);
     while(state.universities.some(x=>x.name===added.name)||added.name===state.playerUniversity)added.name=added.name.endsWith("大学")?added.name.replace(/大学$/,"水明大学"):added.name+"水明大学";
     added.baseReputation=initialUniversityReputation(added.strength);added.reputation=added.baseReputation;
@@ -2135,7 +2279,7 @@ function migrateState(){
     fixedCapNormalize(a);
     if(a.category==="high"&&a.grade!==3&&a.cpuSpecialtySeason!==state.season)alignScoutSpecialty(a);
     if(a.category==="high"&&a.grade!==3)a.discovered=false;
-    if(!a.alumni)a.raceHistory=[];
+    if(!a.alumni&&!a.managedUniversityId)a.raceHistory=[];
     else{
       if(!Array.isArray(a.raceHistory))a.raceHistory=[];
       if(a.raceHistory.length>600)a.raceHistory=a.raceHistory.slice(-600);
@@ -2190,7 +2334,7 @@ function migrateState(){
   updateCpuRankedSpecialties();
   refreshScoutBoard();
   initializeTeamPodiumHistory();
-  if(state.pendingMeetCompletion)completeMeet({...state.pendingMeetCompletion,events:{},relays:[]});
+  if(state.pendingMeetCompletion&&!state.meetSession?.result)completeMeet({...state.pendingMeetCompletion,events:{},relays:[]});
   if(state.completedMeetKeys.includes(`${state.season}:intercollege`)&&!state.seniorRetirementSeasons.includes(state.season)){
     const retired=processSeniorRetirement(state.season);
     if(retired.length)state.pendingSeasonNotices.push({season:state.season,meet:"intercollege",evaluation:null,retired});
@@ -2270,6 +2414,7 @@ function renamePlayerUniversity(newName){
   let old=state.playerUniversity;
   if(state.universities.some(u=>u.name===n))return{ok:false,msg:"同名の大学があります"};
   state.playerUniversity=n;
+  if(state.playerUniversityProfile)state.playerUniversityProfile.name=n;
   state.players.forEach(p=>p.organization=n);
   renameRecordOrganization(old,n);
   for(let rows of Object.values(state.teamTop10||{}))for(let r of rows){
@@ -2793,7 +2938,18 @@ function simulateRelay(members,kind,record=false,preliminary=false){
   return{event:kind,distance:distOff,total:round2(total),legs,cumulativeLegs,trajectory,relay:true}
 }
 function defaultPlan(){let x={};STATS.forEach(k=>x[k]=100/STATS.length);return x}
-function newName(used){for(let i=0;i<1000;i++){let n=choice(WEIGHTED_LAST)+" "+choice(FIRST);if(!used.has(n)){used.add(n);return n}}return choice(WEIGHTED_LAST)+" "+choice(FIRST)+Math.floor(rand(100,999))}
+const MIXED_NAME_RATE=.001;
+const MIXED_FIRST=["レオン","ノア","ルーク","アレックス","ジョシュア","リアム","カイ","ニコラス","ダニエル","マシュー","アラン","エリック","エミル","マックス","ネイサン","ライアン","リオン","ルカ","レイ","ケビン"].filter(name=>!FIRST.includes(name));
+const MIXED_LAST=["ブラウン","ウォーカー","ウィルソン","ミラー","クラーク","ベネット","ハリス","マーティン","ロペス","ガルシア","アンダーソン","デイビス","モリス","リー","チェン","キム","パク","グエン","ルフェーブル","ロッシ"];
+function newName(used){
+  const mixed=rng()<MIXED_NAME_RATE,foreignSurname=mixed&&rng()<.5;
+  for(let i=0;i<1000;i++){
+    const name=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:FIRST);
+    if(!used.has(name)){used.add(name);return name}
+  }
+  const base=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:FIRST);
+  let suffix=2;while(used.has(base+suffix))suffix++;const name=base+suffix;used.add(name);return name;
+}
 function makeAthlete(category,org,used,age=null,grade=null,strength=65,cohortSlot=null){
   if(age==null)age={middle:Math.floor(rand(13,16)),high:Math.floor(rand(16,19)),university:Math.floor(rand(19,23)),adult:Math.floor(rand(23,30))}[category];
   if(grade==null&&category!=="adult")grade={middle:age-12,high:age-15,university:age-18}[category];
@@ -2947,7 +3103,7 @@ function updateSchoolPersonalBests(preservedPBs=null){
 function migrateSprintEvents(){
   for(const a of [...(state.players||[]),...(state.world||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)])ensurePlayerSpecialty(a);
   for(const a of [...(state.world||[]),...(state.internationalWorld?.athletes||[])]){
-    if(a.alumni||a.retired)continue;
+    if(a.alumni||a.managedUniversityId||a.retired)continue;
     if(a.category==="international"){
       if(!a.individualEvent&&a.individualEligible)a.individualEvent=a.specialty;
       ensurePlayerSpecialty(a);
@@ -3385,7 +3541,7 @@ function universityReferenceClock(event,quantile,regional=false,nationalStar=fal
 }
 function applyCpuUniversityRosterProfile(a){
   if(a.cpuUniversityRosterProfileVersion===2)return false;
-  if(a.scouted||state.recruits?.includes(a.id)){
+  if(a.scouted||a.scoutProtected||a.managedUniversityId||state.recruits?.includes(a.id)){
     a.cpuUniversityRosterProfileVersion=2;a.cpuRaceDistributionCategory="university";return false;
   }
   const advancing=!!a.cpuCompetitionCategory&&a.cpuCompetitionCategory!=="university";
@@ -3470,7 +3626,7 @@ const CPU_COLLEGE_MEDLEY_LEGS={
   national:[[54.72,60.48,51.96,47.26],[53.97,60.64,51.39,49.18],[55.13,60.58,51.27,48.47],[55.14,59.67,52.32,49.59],[55.27,61.55,51.05,49.37],[55.10,60.15,52.27,49.80],[54.77,61.21,52.91,50.34],[55.44,62.33,53.14,48.81]]
 };
 function adjustableCpu(a){
-  return a&&!a.alumni&&!a.retired&&!a.scouted&&!state.recruits?.includes(a.id)&&["middle","high","university","adult"].includes(a.category);
+  return a&&!a.alumni&&!a.managedUniversityId&&!a.scoutProtected&&!a.retired&&!a.scouted&&!state.recruits?.includes(a.id)&&["middle","high","university","adult"].includes(a.category);
 }
 function cpuDepthRegion(a){return universityObjectByName(a.organization)?.region==="kansai"?"kansai":"national"}
 function cpuDepthAnchors(rows){
@@ -3988,7 +4144,7 @@ function universityStrengthFromReputation(rep){
 }
 function boundedCpuReputation(u,value){
   let base=u.baseReputation??initialUniversityReputation(u.strength);
-  return round2(clamp(value,Math.max(0,base-100),Math.min(REPUTATION_LIMIT,base+100)));
+  return round2(clamp(value,u.managedReputationRange?.[0]??Math.max(0,base-100),u.managedReputationRange?.[1]??Math.min(REPUTATION_LIMIT,base+100)));
 }
 function universityObjectByName(name){
   return state.universities?.find(u=>u.name===name)||null;
@@ -4066,10 +4222,10 @@ function settleUniversityReputations(season,checkpoint){
   const cpuChanges=state.universities.map(u=>{
     const changes=meets.map(meet=>reputationComparison(season,meet,u.id)),change=changes.reduce((sum,r)=>sum+r.delta,0),old=u.reputation;
     u.reputation=boundedCpuReputation(u,old+change);
-    return {id:u.id,delta:round2(u.reputation-old),comparisons:changes};
+    return {id:u.id,before:old,reputation:u.reputation,delta:round2(u.reputation-old),comparisons:changes};
   });
   state.interIds=[...state.universities].sort((a,b)=>(b.reputation||0)-(a.reputation||0)).map(u=>u.id);
-  const evaluation={season,meet:checkpoint,before,reputation:state.reputation,delta:round2(state.reputation-before),comparisons,cpuChanges,reputationScaleVersion:2};
+  const evaluation={season,meet:checkpoint,before,reputation:state.reputation,delta:round2(state.reputation-before),comparisons,cpuChanges,reputationScaleVersion:2,universityId:controlledUniversityId()};
   state.reputationEvaluations.push(evaluation);
   return evaluation;
 }
@@ -4180,7 +4336,7 @@ function showPendingSeasonNotices(onClose){
   m.querySelector("#seasonNoticeNext").onclick=()=>{state.pendingSeasonNotices.shift();autoSaveNow();closeModal(()=>showPendingSeasonNotices(onClose))};
 }
 function reputationRuleHtml(){
-  const recent=state.reputationEvaluations.slice(-12).reverse();
+  const recent=state.reputationEvaluations.flatMap(r=>{if((r.universityId||'PLAYER')===controlledUniversityId())return[r];const c=r.cpuChanges?.find(c=>c.id===controlledUniversityId());return c?[{...r,...c,reputation:c.reputation??'—'}]:[]}).slice(-12).reverse();
   return `<div class="notice"><b>各大会の個人種目の出場人数を、その大会の前年度と比較します。</b><br>増員なら上昇、減員なら下降、同人数なら変化なし。同一選手は複数種目・予選と決勝を合わせて1人と数え、リレーだけの出場者は加点・減点とも対象外です。自大学・他大学に共通で適用します。</div>
     <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>大会</th><th>1人増減ごとの評判</th><th>計算時期</th></tr></thead><tbody>
       <tr><td>関西カレッジ</td><td>±${REPUTATION_WEIGHTS.kansai_college}</td><td rowspan="2">インカレ終了時</td></tr><tr><td>インカレ</td><td>±${REPUTATION_WEIGHTS.intercollege}</td></tr>
@@ -4451,9 +4607,11 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.57",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.58",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
+    if(nameSettings.universityProfiles)s.universities=deepClone(nameSettings.universityProfiles);
+    if(nameSettings.playerUniversityProfile){s.playerUniversityProfile={...deepClone(nameSettings.playerUniversityProfile),baseReputation:INITIAL_TEAM_REPUTATION};s.controlledUniversityId=s.playerUniversityProfile.id}
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
     for(let cat of ["middle","high","adult"]){
       let names=nameSettings.organizationNames?.[cat];
@@ -4741,6 +4899,9 @@ function reconcilePersonalBests(){
   }
 }
 function renameRecordOrganization(oldName,newName){
+  for(const archive of Object.values(state.universityControls||{}))for(const record of [...Object.values(archive.teamTop10||{}).flat(),...(archive.teamPodiumHistory||[])])if(record.organization===oldName)record.organization=newName;
+  for(const row of state.alumniCareer||[]){if(row.from===oldName)row.from=newName;if(row.to===oldName)row.to=newName}
+  for(const a of state.retiredArchive||[])if(a.almaMater===oldName)a.almaMater=newName;
   for(const layer of state.cpuUniversityDepthMaps||[])if(layer.teams?.[oldName]){layer.teams[newName]=layer.teams[oldName];delete layer.teams[oldName]}
   for(let book of Object.values(state.recordRankings||{}))for(let rows of Object.values(book))for(let r of rows)if(r.organization===oldName)r.organization=newName;
   for(const a of [...activeAthletes(),...(state.retiredArchive||[]),...[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].map(m=>m.snapshot).filter(Boolean)]){
@@ -4767,6 +4928,7 @@ function recordIndividualResult(a,event,time,meet,stage,stamp={}){
     ...recordSchoolInfo(a,stamp.season??activeCompetitionSeason(),category==="high"||category==="university"?category:null)};
   upsertRecordRanking("japan",record);
   if(category!=="japan")upsertRecordRanking(category,deepClone(record));
+  if(category==="university")archiveUniversityRecord(record);
 }
 function recordRelayResult(kind,team,meet,stage){
   if(!RELAYS.includes(kind)||team.members?.length!==4||!validRaceTime(team.race?.total)||!validRaceTime(round2(team.race.total)))return;
@@ -4775,6 +4937,7 @@ function recordRelayResult(kind,team,meet,stage){
     rank:stage==="予選"?team.prelimRank??null:team.rank??null,heatLane:team.heatLane??null,
     legs:team.members.map((a,i)=>validRaceTime(team.race.legs?.[i])?round2(team.race.legs[i]):null)};
   recordTeamRelayPodium(record);
+  archiveUniversityRecord(record);archiveUniversityPodium(record);archiveWorldRelayRecord(record);
   // Only the lead-off leg has an individual start. Commit its official clock
   // here, never during simulations or before a pending final lineup is fixed.
   const first=team.members[0],event=relayLegEvent(kind,0),time=record.legs[0],individualStage=`リレー第1泳者・${stage}`;
@@ -4785,7 +4948,7 @@ function recordRelayResult(kind,team,meet,stage){
     if(pb&&state.players.includes(first))upsertIndividualTop10(event,first,time,meet,individualStage);
   }
   team.members.forEach((a,i)=>{
-    if(!state.players.includes(a)&&!a.alumni&&!(meet==="world_championship"&&ownJapanAthlete(a.id)))return;
+    if(!state.players.includes(a)&&!a.alumni&&!a.managedUniversityId&&!(meet==="world_championship"&&ownJapanAthlete(a.id)))return;
     if(!Array.isArray(a.raceHistory))a.raceHistory=[];
     let history=relayMemberHistory(record,i),key=relayHistoryKey(history);
     let existing=a.raceHistory.findIndex(h=>RELAYS.includes(h.event)&&relayHistoryKey(h)===key);
@@ -4847,10 +5010,11 @@ function upsertMainResult(a,history){
 function recordAthleteMainResult(a,history){
   const record=mainResultRecord(history);if(!record)return;
   const school=mainResultSchoolInfo(a,record);
+  if(school.schoolCategory==="university")archiveUniversityPodium({...record,...school,kind:"individual",athleteId:a.id,name:a.name,organization:history.organization??a.organization});
   const targets=new Set();
   const rival=RIVAL_PODIUM_MEETS.includes(record.meet)&&EVENTS.includes(record.event);
-  if(state.players.includes(a)||a.alumni||rival)targets.add(a);
-  const live=state.players.find(p=>p.id===a.id)||state.world.find(p=>p.id===a.id&&(p.alumni||rival));
+  if(state.players.includes(a)||a.alumni||a.managedUniversityId||rival)targets.add(a);
+  const live=state.players.find(p=>p.id===a.id)||state.world.find(p=>p.id===a.id&&(p.alumni||p.managedUniversityId||rival));
   if(live)targets.add(live);
   const representative=state.japanTeam?.athletes?.find(p=>p.id===a.id&&p.ownAtSelection);
   if(representative?.snapshot)targets.add(representative.snapshot);
@@ -4874,15 +5038,15 @@ function upsertTeamPodium(record){
 function teamPodiumOwnSchool(a,record){
   if(record.meet==="world_championship"){
     const entry=(state.japanTeamHistory||[]).find(row=>(row.worldSeason??row.year)===record.season),member=entry?.athletes?.find(member=>member.id===a.id);
-    if(member)return !!member.own;
+    if(member)return representativeBelongsToControl(member);
     if(state.japanTeam?.year===calendarYear(record.season,record.slot||36)){
-      const selected=state.japanTeam.athletes?.find(member=>member.id===a.id);if(selected)return !!selected.ownAtSelection;
+      const selected=state.japanTeam.athletes?.find(member=>member.id===a.id);if(selected)return representativeBelongsToControl({...selected.snapshot,universityId:selected.universityId});
     }
   }
   if(record.schoolCategory!=="university")return false;
-  return state.players.some(p=>p.id===a.id)||!!a.alumni||
-    (state.retiredArchive||[]).some(p=>p.id===a.id)||(state.alumniCareer||[]).some(p=>p.id===a.id)||
-    !!state.japanTeam?.athletes?.some(member=>member.id===a.id&&member.ownAtSelection);
+  return state.players.some(p=>p.id===a.id)||(a.alumni&&a.almaMater===state.playerUniversity)||
+    (state.retiredArchive||[]).some(p=>p.id===a.id&&(p.almaMater||p.organization)===state.playerUniversity)||(state.alumniCareer||[]).some(p=>p.id===a.id&&p.from===state.playerUniversity)||
+    ownJapanAthlete(a.id);
 }
 function recordTeamRelayPodium(record){
   if(!TEAM_PODIUM_MEETS.includes(record.meet)||raceHistoryPhaseOrder(record)!==0)return;
@@ -5119,8 +5283,8 @@ function selectJapanTeam(results,year){
     relays[kind]=top.length===4?top.map(remember):[];
   }
   relays["4x100medley"]=selectMedleyRelay(results).map(remember);
-  let athletes=[...selected.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
-  const selectionCandidates=[...candidates.values()].map(a=>({id:a.id,snapshot:deepClone(a),ownAtSelection:state.players.some(p=>p.id===a.id)}));
+  let athletes=[...selected.values()].map(a=>({id:a.id,snapshot:deepClone(a),universityId:universityIdByName(a.organization),ownAtSelection:state.players.some(p=>p.id===a.id)}));
+  const selectionCandidates=[...candidates.values()].map(a=>({id:a.id,snapshot:deepClone(a),universityId:universityIdByName(a.organization),ownAtSelection:state.players.some(p=>p.id===a.id)}));
   state.japanTeam={year,selectedSeason:activeCompetitionSeason(),selectedSlot:activeCompetitionSlot(),individual,relays,selectionTimes,selectionFinalists,selectionCandidates,athletes,additionalIndividual:{},announced:false};
   archiveJapanTeam();return state.japanTeam;
 }
@@ -5145,7 +5309,7 @@ function japanTeamAthlete(id){
 }
 function japanRepresentativeMember(a,id,own=false){
   const category=a?.category||((a?.year||a?.grade)?"university":"unknown");
-  return{id:id||a?.id,name:a?.name||"選手名不明",organization:a?.organization||"所属不明",own,
+  return{id:id||a?.id,name:a?.name||"選手名不明",organization:a?.organization||"所属不明",universityId:[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].find(m=>m.id===(id||a?.id)&&m.universityId)?.universityId??universityIdByName(a?.organization),own,
     schoolCategory:category,gradeAtRecord:a?.year||a?.grade||null,age:a?.age||null};
 }
 function archiveJapanTeam(){
@@ -5157,7 +5321,7 @@ function archiveJapanTeam(){
   Object.assign(entry,{selectedSeason:team.selectedSeason,selectedSlot:team.selectedSlot,
     individual:deepClone(automatic.individual),additionalIndividual:deepClone(team.additionalIndividual||{}),
     relays:deepClone(automatic.relays),selectionTimes:deepClone(team.selectionTimes||{}),
-    athletes:(team.athletes||[]).map(member=>japanRepresentativeMember(member.snapshot||japanTeamAthlete(member.id),member.id,!!member.ownAtSelection))});
+    athletes:(team.athletes||[]).map(member=>({...japanRepresentativeMember(member.snapshot||japanTeamAthlete(member.id),member.id,!!member.ownAtSelection),universityId:member.universityId??universityIdByName(member.snapshot?.organization)}))});
   entry.results=entry.results||{};entry.results.individual=entry.results.individual||{};entry.results.relays=entry.results.relays||{};
   return entry;
 }
@@ -5253,7 +5417,8 @@ function initializeJapanTeamHistory(){
   }
   state.japanTeamHistoryVersion=1;
 }
-function ownJapanAthlete(id){return state.players.some(p=>p.id===id)||!![...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].find(x=>x.id===id)?.ownAtSelection}
+function representativeBelongsToControl(member){return member?.universityId?member.universityId===controlledUniversityId():member?.organization?member.organization===state.playerUniversity:!!member?.own&&controlledUniversityId()==="PLAYER"}
+function ownJapanAthlete(id){const member=[...(state.japanTeam?.athletes||[]),...(state.japanTeam?.selectionCandidates||[])].find(x=>x.id===id);return state.players.some(p=>p.id===id)||!!member&&representativeBelongsToControl({...member.snapshot,universityId:member.universityId})}
 function ownsRelayTeam(team){return team.organization===state.playerUniversity||(team.organization==="日本"&&team.members.some(p=>ownJapanAthlete(p.id)))}
 function japanChampionshipFinalists(team,event){
   if(Array.isArray(team.selectionFinalists?.[event]))return team.selectionFinalists[event].filter(row=>row.rank>=1&&row.rank<=8&&validRaceTime(row.time));
@@ -5311,7 +5476,7 @@ function setWorldAdditionalEntries(year,entries){
   const athletes=(team.athletes||[]).filter(member=>roster.has(member.id));
   for(const id of roster)if(!athletes.some(member=>member.id===id)){
     const a=japanTeamAthlete(id),candidate=team.selectionCandidates?.find(member=>member.id===id);
-    if(a)athletes.push({id,snapshot:deepClone(candidate?.snapshot||a),ownAtSelection:ownJapanAthlete(id)});
+    if(a)athletes.push({id,snapshot:deepClone(candidate?.snapshot||a),universityId:candidate?.universityId??universityIdByName(a.organization),ownAtSelection:ownJapanAthlete(id)});
   }
   team.additionalIndividual=next;team.athletes=athletes;
   archiveJapanTeam();return worldAutoEntries(year);
@@ -5473,7 +5638,7 @@ function filterMeetEntryGrades(meet,selections,relaySel){
   for(const kind of RELAYS)if((relaySel[kind]||[]).some(id=>!allowed.has(id)))relaySel[kind]=[];
 }
 function qualified(p,meet,e){if(!meetGradeEligible(p,meet)||!meetIndividualEvents(meet).includes(e))return false;let s=standardFor(meet,e);return s==null||(validRaceTime(p.bestTimes?.[e])&&p.bestTimes[e]<=s)}
-function universityName(id){if(id==="PLAYER")return state.playerUniversity;return state.universities.find(x=>x.id===id)?.name||id}
+function universityName(id){if(id===controlledUniversityId())return state.playerUniversity;return state.universities.find(x=>x.id===id)?.name||id}
 function meetUniversities(meet){if(meet==="kansai_college"||meet==="teijimayama_championship")return[state.playerUniversity,...state.kansaiIds.map(universityName)];if(meet==="intercollege")return[state.playerUniversity,...state.interIds.map(universityName)];return[state.playerUniversity,...state.universities.map(x=>x.name)]}
 function allowedCpu(a,meet){if(a.retired||!meetGradeEligible(a,meet))return false;if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet))return a.category==="university"&&meetUniversities(meet).includes(a.organization);if(OPEN_AGE_MEETS.has(meet))return["middle","high","university","adult"].includes(a.category);return false}
 function updateResultHistory(a,e,t,meet,stage,rank){
@@ -5488,7 +5653,7 @@ function updateResultHistory(a,e,t,meet,stage,rank){
   let achievement={pb,newlyCleared,cleared:newCleared,previousPB:validRaceTime(old)?old:null,rank};
 
   // Detailed race history is useful only for own swimmers and own-team alumni.
-  if(state.players.includes(a)||a.alumni||(meet==="world_championship"&&ownJapanAthlete(a.id))){
+  if(state.players.includes(a)||a.alumni||a.managedUniversityId||(meet==="world_championship"&&ownJapanAthlete(a.id))){
     if(!Array.isArray(a.raceHistory))a.raceHistory=[];
     a.raceHistory.push({season:activeCompetitionSeason(),slot:activeCompetitionSlot(),date:dateText(activeCompetitionSlot()),meet,event:e,stage,time:round2(t),rank,pb,standardsCleared:newCleared,newlyCleared,
       organization:a.organization,...recordSchoolInfo(a)});
@@ -6372,7 +6537,7 @@ function adultRetirementProbability(age){
 }
 function seasonRetirementRow(a,own=false){
   const category=own?"university":a.category,specialty=EVENTS.includes(a.specialty)?a.specialty:null;
-  return{id:a.id,name:a.name,organization:own?state.playerUniversity:a.organization||"所属不明",category,own,alumni:!!a.alumni,
+  return{id:a.id,name:a.name,organization:own?state.playerUniversity:a.organization||"所属不明",category,own,alumni:!!a.alumni&&a.almaMater===state.playerUniversity,
     grade:category==="university"?4:null,age:category==="university"&&!own?a.age-1:a.age,
     specialty,specialtyPB:specialty&&validRaceTime(a.bestTimes?.[specialty])?a.bestTimes[specialty]:null};
 }
@@ -6680,7 +6845,7 @@ function newSeason(){
       state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:org,status:"社会人継続",age:p.age});
     }else{
       retiring.push(seasonRetirementRow(p,true));
-      state.retiredArchive.push({id:p.id,name:p.name,organization:p.organization,age:p.age,reason:"大学卒業・競技終了",season:state.season,bestTimes:deepClone(p.bestTimes),raceHistory:deepClone(p.raceHistory),accolades:deepClone(p.accolades)});
+      state.retiredArchive.push({id:p.id,name:p.name,organization:p.organization,almaMater:state.playerUniversity,age:p.age,reason:"大学卒業・競技終了",season:state.season,bestTimes:deepClone(p.bestTimes),raceHistory:deepClone(p.raceHistory),accolades:deepClone(p.accolades)});
       state.alumniCareer.push({id:p.id,name:p.name,season:state.season,from:state.playerUniversity,to:"-",status:"大学卒業・競技終了",age:p.age});
     }
   }
@@ -6704,7 +6869,7 @@ function newSeason(){
         retiring.push(seasonRetirementRow(a));
         // Only own-team alumni need retirement tracking.
         if(a.alumni){
-          state.retiredArchive.push({id:a.id,name:a.name,organization:a.organization,age:a.age,reason:"社会人引退",season:state.season,bestTimes:deepClone(a.bestTimes),raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades)});
+          state.retiredArchive.push({id:a.id,name:a.name,organization:a.organization,almaMater:a.almaMater,age:a.age,reason:"社会人引退",season:state.season,bestTimes:deepClone(a.bestTimes),raceHistory:deepClone(a.raceHistory),accolades:deepClone(a.accolades)});
           let career=(state.alumniCareer||[]).find(x=>x.id===a.id&&x.status==="社会人継続");
           if(career)career.status="社会人引退";
         }
@@ -6731,9 +6896,12 @@ function newSeason(){
         // National qualifiers always continue; other CPU graduates retain their chance.
         if(eligibleAfterIntercollege(a)||rng()<.22){
           a.almaMater=a.organization;a.graduationSeason=state.season;
+          if(archivedUniversityByName(a.organization)){a.alumni=true;state.alumniCareer.push({id:a.id,name:a.name,season:state.season,from:a.organization,to:null,status:"社会人継続",age:a.age-1})}
           a.category="adult";a.grade=null;a.organization=choice(organizationNames().adult);
+          const career=state.alumniCareer.find(c=>c.id===a.id&&c.to===null);if(career)career.to=a.organization;
         }else{
           retiring.push(seasonRetirementRow(a));
+          if(archivedUniversityByName(a.organization)){state.retiredArchive.push({...deepClone(a),almaMater:a.organization,season:state.season,reason:"大学卒業・競技終了"});state.alumniCareer.push({id:a.id,name:a.name,season:state.season,from:a.organization,to:"-",status:"大学卒業・競技終了",age:a.age-1})}
           continue;
         }
       }
@@ -6908,7 +7076,7 @@ function scoutProbabilityDetails(a,rankings=null){
   const preference=ensureScoutPreferences(a,rankings),facilityLevel=scoutFacilityLevel(event);
   const facilityBonus=preference.worldAmbition ? .22*facilityLevel/100 : 0;
   // Our university belongs to Kansai; changing its display name does not relocate it.
-  const regionBonus=preference.preferredRegion==="kansai" ? .10 : 0;
+  const regionBonus=preference.preferredRegion==="kansai"&&(state.playerUniversityProfile?.region||"kansai")==="kansai" ? .10 : 0;
   const enrollmentRank=scoutEnrollmentRank(a,event),earlyBonus=preference.earlyCompetition&&enrollmentRank!=null&&enrollmentRank<=3?.10:0;
   const prestigeBonus=preference.prestigeSchool&&reputation>=300?.10:0;
   const raw=base+reputationBonus+untitledBonus+facilityBonus+regionBonus+earlyBonus+prestigeBonus;
@@ -6937,7 +7105,7 @@ function refreshScoutBoard(rankings=highSchoolScoutRankings()){
   return state.scoutBoard.map(id=>byId.get(id)).filter(Boolean);
 }
 // Scouting has its own saved random stream; reading a board never draws a race roll.
-function scoutingSchools(){return [{id:"player",name:state.playerUniversity,region:"kansai",reputation:state.reputation},...state.universities]}
+function scoutingSchools(){return [{id:"player",name:state.playerUniversity,region:state.playerUniversityProfile?.region||"kansai",reputation:state.reputation},...state.universities]}
 function scoutingBudget(rep){return rep>=500?100:rep>=300?80:rep>=150?60:rep>=50?40:30}
 function scoutingRoll(){
   const c=state.scoutingCompetition;c.randomState=(Math.imul(c.randomState,1664525)+1013904223)>>>0;return c.randomState/4294967296;
@@ -7204,7 +7372,7 @@ function showStandards(){
   });
 }
 function ownAlumniIds(){
-  return new Set((state.world||[]).filter(a=>a.alumni).map(a=>a.id).concat((state.alumniCareer||[]).filter(a=>a.status==="社会人継続"||a.status==="社会人引退").map(a=>a.id)));
+  return new Set((state.world||[]).filter(a=>a.alumni&&a.almaMater===state.playerUniversity).map(a=>a.id).concat((state.alumniCareer||[]).filter(a=>(!a.from||a.from===state.playerUniversity)&&(a.status==="社会人継続"||a.status==="社会人引退")).map(a=>a.id)));
 }
 function top10AthleteName(id,name){
   let p=state.players.find(p=>p.id===id);
@@ -7308,7 +7476,8 @@ function renderJapanTeam(){
   selector.innerHTML=entries.map(entry=>`<option value="${entry.year}">${entry.year}年</option>`).join("")||'<option value="">代表未選出</option>';
   selector.value=selectedJapanTeamYear==null?"":String(selectedJapanTeamYear);selector.disabled=!entries.length;
   selector.onchange=()=>{selectedJapanTeamYear=Number(selector.value);renderJapanTeam()};
-  const entry=entries.find(entry=>entry.year===selectedJapanTeamYear);
+  const savedEntry=entries.find(entry=>entry.year===selectedJapanTeamYear),entry=savedEntry?deepClone(savedEntry):null;
+  if(entry){for(const member of entry.athletes||[])member.own=representativeBelongsToControl(member);for(const relay of Object.values(entry.results?.relays||{}))for(const result of [relay.prelim,relay.final])for(const member of result?.members||[])member.own=representativeBelongsToControl(member)}
   const edit=document.getElementById("editJapanTeamSelection");edit.hidden=!entry||!canEditWorldSelection(entry.year);edit.onclick=()=>openWorldAdditionalEntry(36,entry.year,{manageOnly:true});
   document.getElementById("japanTeamTitle").textContent=entry?`${entry.year}年 世界大会 日本代表`:"日本代表";
   document.getElementById("japanTeamNote").textContent=entry?
@@ -7332,7 +7501,7 @@ function renderJapanTeam(){
   }).join(""):'<tr><td colspan="4">リレーの代表選出後に表示されます。</td></tr>';
   document.getElementById("japanTeamRelays").innerHTML=`<table class="japan-team-table"><thead><tr><th>種目</th><th>選考時メンバー</th><th>世界大会 予選 / ラップ</th><th>世界大会 決勝 / ラップ</th></tr></thead><tbody>${relayRows}</tbody></table>`;
 }
-function showUniversities(){let rows=[{id:"PLAYER",name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id==="PLAYER"?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id==="PLAYER")renamePlayerUniversity(n);else renameOrganization("university",state.universities.findIndex(x=>x.id===id),n);closeModal();showUniversities();renderAll()})}
+function showUniversities(){let rows=[{id:controlledUniversityId(),name:state.playerUniversity},...state.universities].map(u=>`<tr><td>${u.id}</td><td>${esc(u.name)}</td><td><button data-id="${u.id}">改名</button></td></tr>`).join("");let m=showModal(`<div class="row"><h2 style="margin-right:auto">大学名変更</h2><button id="x">閉じる</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>大学名</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);m.querySelector("#x").onclick=()=>closeModal();m.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{let id=b.dataset.id,old=id===controlledUniversityId()?state.playerUniversity:state.universities.find(x=>x.id===id).name,n=prompt("新しい大学名",old);if(!n||n===old)return;if([state.playerUniversity,...state.universities.map(x=>x.name)].includes(n)){alert("同名の大学があります");return}if(id===controlledUniversityId())renamePlayerUniversity(n);else renameOrganization("university",state.universities.findIndex(x=>x.id===id),n);closeModal();showUniversities();renderAll()})}
 
 function entryFormPointsHtml(){return `<span class="entry-form-points" data-entry-form-points>所持 ${state.points}pt</span>`}
 function meetFormBoostButtonHtml(a,meet,slot,season){
@@ -7410,10 +7579,101 @@ function worldCandidateProfileHtml(a,event,options){
     <div class="world-profile-stats">${MEDLEY_STROKES.flatMap(s=>[s+"_speed",s+"_stamina",s+"_turn"]).concat(["im_speed","im_stamina"]).map(stat).join("")}</div>
     <h3>PB <span class="small muted">${snapshot?"選考時の自己ベスト":"現在の自己ベスト"}</span></h3><div class="world-profile-pbs">${EVENTS.map(e=>`<div data-world-profile-pb="${e}" class="${e===event?"selected":""}"><span>${EVENT_LABEL[e]}</span><b>${validRaceTime(a.bestTimes?.[e])?fmt(a.bestTimes[e]):"未計測"}</b></div>`).join("")}</div>`;
 }
+const MEET_DRAFT_STORAGE_KEY='swimManagerMeetDraftV1';
+function createGameIdentity(){return globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)}
+function beginMeetSession(meet,slot,season,phase='entry',selections={},relaySel={}){
+  state.gameId??=createGameIdentity();
+  const id=[state.gameId,controlledUniversityId(),season,slot,meet].join(':');
+  if(state.meetSession?.id!==id)state.meetSession={version:1,id,universityId:controlledUniversityId(),meet,slot,season,phase,selections:deepClone(selections),relaySel:deepClone(relaySel),revision:state.meetSessionRevision||0};
+  return state.meetSession;
+}
+function nextMeetRevision(session){state.meetSessionRevision=Math.max(state.meetSessionRevision||0,session.revision||0)+1;return session.revision=state.meetSessionRevision}
+function updateMeetDraft(phase,changes={}){
+  const session=state.meetSession;if(!session)return;
+  Object.assign(session,changes,{phase,revision:nextMeetRevision(session)});
+  try{const {result,...draft}=session;localStorage.setItem(MEET_DRAFT_STORAGE_KEY,JSON.stringify(draft))}catch(e){if(typeof saveMeetCheckpoint==='function')saveMeetCheckpoint().then(ok=>{if(!ok)showToast('選択内容を保存できません。画面を閉じずにセーブ書出で保管してください。','bad')})}
+  if(typeof scheduleAutoSave==='function')scheduleAutoSave(300);
+}
+function restoreMeetDraftJournal(){
+  const session=state.meetSession;if(!session)return;
+  try{
+    const draft=JSON.parse(localStorage.getItem(MEET_DRAFT_STORAGE_KEY)||'null');
+    if(draft?.version===1&&draft.id===session.id&&draft.universityId===controlledUniversityId()&&draft.revision>session.revision&&['entry','confirmation','worldEntry','racing'].includes(session.phase)){
+      const result=session.result;Object.assign(session,draft);if(result)session.result=result;
+    }
+  }catch(e){}
+}
+function clearMeetSession(){state.meetSession=null;try{localStorage.removeItem(MEET_DRAFT_STORAGE_KEY)}catch(e){}}
+function packMeetResult(result){
+  const athletes={};
+  const fields=['id','name','year','grade','category','age','gender','organization','stats','potential','imAptitude','specialty','bestTimes','condition','fatigue','startBalanceVersion','almaMater'];
+  const data=JSON.parse(JSON.stringify(result,(key,value)=>{
+    if(key==='trajectory'||key==='selection')return undefined;
+    if(value?.id&&value.stats){
+      if(!athletes[value.id])athletes[value.id]=Object.fromEntries(fields.filter(k=>value[k]!==undefined).map(k=>[k,deepClone(value[k])]));
+      return{savedAthleteId:value.id};
+    }
+    return value;
+  }));
+  return{data,athletes};
+}
+function unpackMeetResult(saved){
+  if(!saved?.data?.meet)throw new Error('大会結果の保存データがありません。');
+  const athletes=new Map([...(state.players||[]),...(state.world||[]),...(state.internationalWorld?.athletes||[]),...(state.japanTeam?.athletes||[]).map(m=>m.snapshot).filter(Boolean)].map(a=>[a.id,a]));
+  const result=JSON.parse(JSON.stringify(saved.data),(key,value)=>{
+    if(value?.savedAthleteId){const id=value.savedAthleteId;if(!athletes.has(id)){const a=saved.athletes?.[id];if(!a)throw new Error('大会選手を復元できません。');athletes.set(id,attachMedleyStats(deepClone(a)))}return athletes.get(id)}
+    return value;
+  });
+  if(result.historyEntry)result.historyEntry=state.meetHistory.find(r=>r.meet===result.meet&&r.season===result.season&&r.slot===result.slot)||result.historyEntry;
+  if(result.teamScoreEntry)result.teamScoreEntry=state.teamScoreHistory.find(r=>r.meet===result.meet&&r.season===result.season)||result.teamScoreEntry;
+  return result;
+}
+async function saveMeetCheckpoint(){
+  meetCheckpointWrites++;meetCheckpointBusy=true;
+  try{return await writeSaveSilently('checkpoint')}finally{meetCheckpointWrites--;meetCheckpointBusy=meetCheckpointWrites>0}
+}
+function showMeetSaveRetry(retry){
+  const m=showModal('<h2>大会の進行を保存できませんでした</h2><p>画面を開いたまま空き容量を確認し、再度保存してください。保存済みの大会を計算し直さずに続けられます。</p><div class="row"><button id="meetSaveRetry" class="primary">保存して続ける</button><button id="meetSaveExport">セーブ書出</button></div>');
+  m.querySelector('#meetSaveRetry').onclick=async()=>{const button=m.querySelector('#meetSaveRetry');button.disabled=true;try{await retry()}finally{if(button.isConnected)button.disabled=false}};m.querySelector('#meetSaveExport').onclick=exportJson;
+}
+async function meetPlaybackCheckpoint(result,cursor,show,refresh=false){
+  const session=state.meetSession;
+  if(!session||session.meet!==result.meet){show();return}
+  session.phase='racing';session.cursor=deepClone(cursor);nextMeetRevision(session);
+  if(refresh||!session.result)session.result=packMeetResult(result);
+  try{localStorage.removeItem(MEET_DRAFT_STORAGE_KEY)}catch(e){}
+  if(await saveMeetCheckpoint())show();else showMeetSaveRetry(()=>meetPlaybackCheckpoint(result,cursor,show,refresh));
+}
+async function finishRecoveredMeet(result){
+  completeMeet(result);
+  state.activeCompetitionSlot=null;state.activeCompetitionSeason=null;
+  if(state.meetSession){state.meetSession.phase='summary';state.meetSession.result=packMeetResult(result);nextMeetRevision(state.meetSession)}
+  if(!await saveMeetCheckpoint()){showMeetSaveRetry(()=>finishRecoveredMeet(result));return}
+  renderAll();showMeetSummary(result,()=>renderAll());
+}
+function resumeMeetSession(){
+  const session=state.meetSession;if(!session||session.universityId!==controlledUniversityId())return false;
+  restoreMeetDraftJournal();
+  try{
+    if(session.phase==='entry')openMeetEntry(session.meet,session.slot,session.season,session.selections,session.relaySel);
+    else if(session.phase==='worldEntry')openWorldAdditionalEntry(session.slot,session.season,{restoreSelections:session.worldSelections,manageOnly:!!session.manageOnly});
+    else if(session.phase==='confirmation')showEntryConfirmation(session.meet,deepClone(session.selections),deepClone(session.relaySel),session.slot,session.season);
+    else if(session.phase==='racing'){
+      const result=unpackMeetResult(session.result);state.activeCompetitionSlot=session.slot;state.activeCompetitionSeason=session.season;
+      const seed=state.rngSeed;let queue;try{queue=buildMeetRaceQueue(result,result.entries)}finally{state.rngSeed=seed}
+      playMeetSequence(result,result.entries,()=>finishRecoveredMeet(result),queue,session.cursor);
+    }else if(session.phase==='summary')showMeetSummary(unpackMeetResult(session.result),()=>renderAll());
+    else return false;
+    return true;
+  }catch(e){console.error(e);showToast('大会の復元に失敗しました。セーブ書出でデータを保管し、再開をお試しください。','bad');return false}
+}
+
 function openWorldAdditionalEntry(competitionSlot,competitionSeason,settings={}){
   const year=calendarYear(competitionSeason,competitionSlot),initial=worldAdditionalEntryOptions(year);
   if(!canEditWorldSelection(year)||!initial.athletes.length||(!settings.manageOnly&&!Object.values(initial.vacancies).some(n=>n>0)))return false;
   const original=state.japanTeam.individual,automatic=worldAutoEntries(year),selections=Object.fromEntries(EVENTS.map(e=>[e,automatic.individual[e].filter(id=>!(original[e]||[]).includes(id))]));
+  if(settings.restoreSelections)for(const e of EVENTS)selections[e]=[...(settings.restoreSelections[e]||[])];
+  beginMeetSession("world_championship",competitionSlot,competitionSeason,"worldEntry");
   const sortedEvents=new Set(),formContext={meet:"world_championship",slot:competitionSlot,season:competitionSeason};
   let compareEvent=EVENTS.find(e=>initial.vacancies[e]>0)||EVENTS[0],compareId=null;
   const m=showModal(`<div class="row"><h2 style="margin-right:auto">${year}年 世界大会 日本代表選考</h2>${entryFormPointsHtml()}<button id="std">参加・派遣標準</button>${settings.manageOnly?'<button id="cancelWorldSelection">戻る</button>':""}</div>
@@ -7462,16 +7722,18 @@ function openWorldAdditionalEntry(competitionSlot,competitionSeason,settings={})
     const total=EVENTS.reduce((n,e)=>n+selections[e].filter(Boolean).length,0),roster=new Set([...Object.values(original).flat(),...Object.values(state.japanTeam.relays||{}).flat(),...Object.values(selections).flat().filter(Boolean)]);
     m.querySelector("#worldAdditionalSummary").textContent=`追加エントリー ${total}件 ／ 日本代表 ${roster.size}名 ／ ★ 自チーム`;
     bindEntryMeetForm(m,formContext);renderProfile();wrap.scrollTop=top;wrap.scrollLeft=left;
+    updateMeetDraft("worldEntry",{worldSelections:deepClone(selections),manageOnly:!!settings.manageOnly});
   };
   m.querySelector("#worldSelectionListTab").onclick=()=>showView("selection");m.querySelector("#worldSelectionProfileTab").onclick=()=>showView("profile");
   m.querySelector("#worldCompareEvent").onchange=e=>{compareEvent=e.target.value;compareId=null;renderProfile()};
   m.querySelector("#worldCompareAthlete").onchange=e=>{compareId=e.target.value;renderProfile()};
   m.querySelector("#std").onclick=showStandards;
-  if(settings.manageOnly)m.querySelector("#cancelWorldSelection").onclick=()=>{closeModal();renderJapanTeam()};
+  if(settings.manageOnly)m.querySelector("#cancelWorldSelection").onclick=()=>{clearMeetSession();autoSaveNow();closeModal();renderAll()};
   m.querySelector("#clearWorldAdditional").onclick=()=>{for(const e of EVENTS)selections[e]=[];render()};
   m.querySelector("#confirmWorldAdditional").onclick=()=>{
     try{
       const combined=setWorldAdditionalEntries(year,Object.fromEntries(EVENTS.map(e=>[e,selections[e].filter(Boolean)])));
+      if(settings.manageOnly)clearMeetSession();
       autoSaveNow();closeModal();renderAll();
       if(!settings.manageOnly)showEntryConfirmation("world_championship",combined.individual,combined.relays,competitionSlot,competitionSeason);
     }catch(error){m.querySelector("#worldSelectionMessage").textContent=error.message}
@@ -7488,7 +7750,8 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   const meetEvents=meetIndividualEvents(meet);
   let selections=Object.fromEntries(EVENTS.map(e=>[e,meetEvents.includes(e)?[...(initialSelections?.[e]||[])]:[]])),relaySel=initialRelaySel?deepClone(initialRelaySel):{};
   filterMeetEntryGrades(meet,selections,relaySel);
-  let sortEvent=null;
+  beginMeetSession(meet,competitionSlot,competitionSeason,"entry",selections,relaySel);
+  let sortEvent=state.meetSession.sortEvent||null;
   let ruleText=RECORD_MEETS.has(meet)
     ?`記録会：各選手が個人${EVENTS.length}種目から自由に選択できます。個人種目数の上限はありません。`
     :COLLEGE_ENTRY_LIMIT_MEETS.has(meet)
@@ -7547,6 +7810,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     summary.innerHTML=`個人エントリー合計 <b>${total}</b>件${byEvent?" ／ "+byEvent:""}`;
     m.querySelector("#entryCompactCount").textContent=`個人 ${total}件`;
     bindEntryMeetForm(m,formContext);
+    updateMeetDraft("entry",{selections:deepClone(selections),relaySel:deepClone(relaySel),sortEvent});
   }
 
   m.querySelectorAll("[data-entry-sort]").forEach(button=>button.onclick=()=>{
@@ -7557,7 +7821,9 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   });
   if(m.querySelector("#std"))m.querySelector("#std").onclick=showStandards;
   m.querySelector("#clearAll").onclick=()=>{EVENTS.forEach(e=>selections[e]=[]);render()};
-  if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=()=>openRelayEditor(relaySel,render,{formContext:{meet,slot:competitionSlot,season:competitionSeason}});
+  const editRelay=()=>openRelayEditor(relaySel,()=>{state.meetSession.relayDraft=null;render()},{formContext:{meet,slot:competitionSlot,season:competitionSeason},initialDraft:state.meetSession.relayDraft?.draft,
+    onDraft:draft=>updateMeetDraft("entry",{relayDraft:{phase:"preliminary",draft:deepClone(draft)}}),onCancel:()=>updateMeetDraft("entry",{relayDraft:null})});
+  if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=editRelay;
   m.querySelector("#confirmEntry").onclick=()=>{
     if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
       for(let e of EVENTS)if(selections[e].length>3){alert(`${EVENT_LABEL[e]}が3人を超えています`);return}
@@ -7567,8 +7833,11 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     showEntryConfirmation(meet,deepClone(selections),deepClone(relaySel),competitionSlot,competitionSeason);
   };
   render();
+  if(state.meetSession.relayDraft?.phase==="preliminary")editRelay();
 }
 function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.slot,competitionSeason=state.season){
+  beginMeetSession(meet,competitionSlot,competitionSeason,"confirmation",selections,relaySel);
+  updateMeetDraft("confirmation",{selections:deepClone(selections),relaySel:deepClone(relaySel),relayDraft:null});
   filterMeetEntryGrades(meet,selections,relaySel);
   const findAthlete=id=>meet==="world_championship"?japanTeamAthlete(id):state.players.find(p=>p.id===id);
   const worldOptions=meet==="world_championship"?worldAdditionalEntryOptions(calendarYear(competitionSeason,competitionSlot)):null;
@@ -7603,44 +7872,30 @@ function showEntryConfirmation(meet,selections,relaySel,competitionSlot=state.sl
     setTimeout(()=>openMeetEntry(meet,competitionSlot,competitionSeason,selections,relaySel),0);
   };
 
-  m.querySelector("#goRace").onclick=()=>{
-    document.getElementById("modalRoot").innerHTML=`<div class="modal-back"><div class="modal modal-race-prep">
-      <div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} レース</h2><div class="clock">READY</div></div>
-      <div class="race-stage" style="padding:24px;text-align:center">
-        <div class="big">レース準備中</div>
-        <div class="muted" style="margin-top:8px">組み合わせとレースを生成しています</div>
-        <div class="race-progress" style="margin-top:18px"><span style="width:45%"></span></div>
-      </div>
-    </div></div>`;
-    setTimeout(()=>{
+  const startRace=async()=>{
+    if(meetCheckpointBusy)return;
+    if(!await saveMeetCheckpoint()){showMeetSaveRetry(startRace);return}
+    document.getElementById("modalRoot").innerHTML='<div class="modal-back"><div class="modal modal-race-prep"><h2>レース準備中</h2><p>組み合わせとレースを生成し、進行を保存しています。</p></div></div>';
+    setTimeout(async()=>{
+      const before=JSON.stringify(state);
       try{
-        state.activeCompetitionSlot=competitionSlot;
-        state.activeCompetitionSeason=competitionSeason;
-        let result=executeMeet(meet,selections,relaySel,{deferRelayFinalEntries:true});
-        let own=meet==="world_championship"?worldOwnEntries(calendarYear(competitionSeason,competitionSlot)):{individual:selections,relays:relaySel};
-        result.entries=deepClone(own.individual);
-        result.relayEntries=deepClone(own.relays);
-        let queue=buildMeetRaceQueue(result,own.individual);
-        autoSaveNow();
-
-        const finishMeet=()=>{
-          completeMeet(result);
-          state.activeCompetitionSlot=null;
-          state.activeCompetitionSeason=null;
-          renderAll();autoSaveNow();
-          showMeetSummary(result,()=>renderAll());
-        };
-
-        playMeetSequence(result,own.individual,finishMeet,queue);
+        state.activeCompetitionSlot=competitionSlot;state.activeCompetitionSeason=competitionSeason;
+        const result=executeMeet(meet,selections,relaySel,{deferRelayFinalEntries:true});
+        const own=meet==="world_championship"?worldOwnEntries(calendarYear(competitionSeason,competitionSlot)):{individual:selections,relays:relaySel};
+        result.entries=deepClone(own.individual);result.relayEntries=deepClone(own.relays);
+        const queue=buildMeetRaceQueue(result,own.individual);
+        state.meetSession.phase="racing";state.meetSession.result=packMeetResult(result);state.meetSession.cursor=null;nextMeetRevision(state.meetSession);
+        try{localStorage.removeItem(MEET_DRAFT_STORAGE_KEY)}catch(e){}
+        if(!await saveMeetCheckpoint()){showMeetSaveRetry(async()=>{if(await saveMeetCheckpoint())resumeMeetSession()});return}
+        playMeetSequence(result,own.individual,()=>finishRecoveredMeet(result),queue);
       }catch(err){
-        console.error(err);
-        state.activeCompetitionSlot=null;
-        state.activeCompetitionSeason=null;
-        document.getElementById("modalRoot").innerHTML="";
-        alert("レース開始処理でエラーが発生しました: "+(err?.message||err));
+        console.error(err);state=JSON.parse(before);state.activeCompetitionSlot=null;state.activeCompetitionSeason=null;
+        showEntryConfirmation(meet,selections,relaySel,competitionSlot,competitionSeason);
+        showToast("レース開始処理を中断しました。エントリーから再開できます。","bad");
       }
     },30);
   };
+  m.querySelector("#goRace").onclick=startRace;
 }
 function replayRaceToOfficialTime(p,event,target,relayTakeover=false){
   let scale=.92;
@@ -7826,52 +8081,50 @@ function showEventOverallPlayback(q,onClose){
   m.classList.add("modal-event-result");
   m.querySelector("#nextEv").onclick=()=>closeModal(onClose);
 }
-function playMeetSequence(result,selections,onComplete,preparedQueue=null){
-  let program=buildMeetProgram(result,selections),queue=preparedQueue||buildMeetRaceQueue(result,selections);
-  let pi=0,raceNumber=0,completedPrelims=new Set();
-  const next=()=>{
-    while(pi<program.length&&!queue.some(q=>q.programIndex===pi)){
-      if(program[pi].phase==="prelim")completedPrelims.add(program[pi].event);
-      pi++;
-    }
-    if(pi>=program.length){onComplete();return}
-    let programIndex=pi++,block=program[programIndex],races=queue.filter(q=>q.programIndex===programIndex);
-    const runGroup=gi=>{
-      if(gi>=races.length){showEventOverallPlayback(block,()=>{
-        if(block.phase==="prelim")completedPrelims.add(block.event);
-        next();
-      });return}
-      let q=races[gi],label=`${block.showOverview?block.day+"日目 ":""}${q.label}　${++raceNumber}/${queue.length}`;
-      const showGroup=()=>showRaceGroupResult(q,()=>runGroup(gi+1));
-      setTimeout(()=>playRaceCanvas(q.event,q.rows,{
-        meet:result.meet,stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup
-      }),0);
+function playMeetSequence(result,selections,onComplete,preparedQueue=null,resume=null){
+  const program=buildMeetProgram(result,selections);let queue=preparedQueue||buildMeetRaceQueue(result,selections);
+  const completedPrelims=new Set(program.slice(0,resume?.programIndex||0).filter(b=>b.phase==="prelim").map(b=>b.event));
+  const playBlock=(index,gi=0,step="program")=>{
+    while(index<program.length&&!queue.some(q=>q.programIndex===index)){if(program[index].phase==="prelim")completedPrelims.add(program[index].event);index++;gi=0;step="program"}
+    if(index>=program.length){onComplete();return}
+    let block=program[index],races=queue.filter(q=>q.programIndex===index);
+    const checkpoint=(stage,show,refresh=false)=>meetPlaybackCheckpoint(result,{programIndex:index,groupIndex:gi,step:stage},show,refresh);
+    const nextBlock=()=>{if(block.phase==="prelim")completedPrelims.add(block.event);playBlock(index+1)};
+    const overall=()=>checkpoint("overall",()=>showEventOverallPlayback(block,nextBlock));
+    const runGroup=(groupIndex,stage="race")=>{
+      gi=groupIndex;if(gi>=races.length){overall();return}
+      const q=races[gi],number=queue.filter(q=>q.programIndex<index).length+gi+1,label=`${block.showOverview?block.day+"日目 ":""}${q.label}　${number}/${queue.length}`;
+      let moved=false;
+      const nextGroup=()=>{if(moved)return;moved=true;runGroup(gi+1)};
+      const showGroup=()=>checkpoint("group",()=>showRaceGroupResult(q,nextGroup));
+      if(stage==="group"){showGroup();return}
+      checkpoint("race",()=>setTimeout(()=>playRaceCanvas(q.event,q.rows,{meet:result.meet,stageLabel:label,nextLabel:"この組の結果を見る",onDone:showGroup,onSkip:showGroup}),0));
     };
-    const beginBlock=()=>{
-      if(!races.length){next();return}
-      if(block.showOverview)showMeetDayProgram(result,block,()=>runGroup(0),completedPrelims);
+    const begin=()=>{
+      if(step==="overall"){overall();return}
+      if(step==="race"||step==="group"){runGroup(gi,step);return}
+      if(block.showOverview)checkpoint("program",()=>showMeetDayProgram(result,block,()=>runGroup(0),completedPrelims));
       else runGroup(0);
     };
-    let relayEntry=result.relays?.find(x=>x[0]===block.event);
+    const relayEntry=result.relays?.find(x=>x[0]===block.event);
     if(block.stage==="relay_final"&&relayEntry?.[2]?.finalEntryPending){
-      let team=relayEntry[1].find(ownsRelayTeam),initialIds=team.members.map(p=>p.id),draft={[block.event]:[...initialIds]};
+      const team=relayEntry[1].find(ownsRelayTeam),initialIds=team.members.map(p=>p.id),draft={[block.event]:[...initialIds]};
       const enterFinal=ids=>{
-        setRelayFinalEntry(result,block.event,ids);
-        Object.assign(block,buildMeetProgram(result,selections)[programIndex]);
-        queue=queue.filter(q=>q.programIndex!==programIndex).concat(buildMeetBlockRaceQueue(block,programIndex));
-        races=queue.filter(q=>q.programIndex===programIndex);
-        autoSaveNow();beginBlock();
+        setRelayFinalEntry(result,block.event,ids);if(state.meetSession)state.meetSession.relayDraft=null;
+        Object.assign(block,buildMeetProgram(result,selections)[index]);
+        queue=queue.filter(q=>q.programIndex!==index).concat(buildMeetBlockRaceQueue(block,index));races=queue.filter(q=>q.programIndex===index);step="program";gi=0;
+        checkpoint("program",begin,true);
       };
-      openRelayEditor(draft,()=>enterFinal(draft[block.event]),{
-        kinds:[block.event],roster:relayFinalRoster(result),required:true,
+      checkpoint("relayEntry",()=>openRelayEditor(draft,()=>enterFinal(draft[block.event]),{
+        kinds:[block.event],roster:relayFinalRoster(result),required:true,initialDraft:state.meetSession?.relayDraft?.phase==="final"?state.meetSession.relayDraft.draft:null,
+        onDraft:changed=>updateMeetDraft("racing",{relayDraft:{phase:"final",kind:block.event,draft:deepClone(changed)}}),
         formContext:{meet:result.meet,slot:result.slot??activeCompetitionSlot(),season:result.season??activeCompetitionSeason()},
-        title:`${RELAY_LABEL[block.event]} 決勝エントリー`,confirmLabel:"このメンバーで決勝へ",
-        cancelLabel:"予選の編成で決勝へ",onCancel:()=>enterFinal(initialIds),
+        title:`${RELAY_LABEL[block.event]} 決勝エントリー`,confirmLabel:"このメンバーで決勝へ",cancelLabel:"予選の編成で決勝へ",onCancel:()=>enterFinal(initialIds),
         notice:result.meet==="world_championship"?"予選を通過しました。選出済みの日本代表から決勝の4名と泳順を選んでください。":"予選を通過しました。自チームから決勝の4名と泳順を選んでください。"
-      });
-    }else beginBlock();
+      }));
+    }else begin();
   };
-  next();
+  playBlock(resume?.programIndex||0,resume?.groupIndex||0,resume?.step||"program");
 }
 function relayFinalRoster(result){
   return result.meet==="world_championship"?(state.japanTeam?.athletes||[]).map(x=>japanTeamAthlete(x.id)).filter(Boolean):playerMeetRoster(result.meet);
@@ -7913,7 +8166,7 @@ function setRelayFinalEntry(result,kind,ids){
 function openRelayEditor(relaySel,done,options={}){
   const root=document.getElementById("modalRoot");
   const formContext=options.formContext;
-  const kinds=options.kinds||RELAYS,roster=sortedEntryRoster((options.roster||state.players).filter(a=>meetGradeEligible(a,formContext?.meet))),draft=deepClone(relaySel);
+  const kinds=options.kinds||RELAYS,roster=sortedEntryRoster((options.roster||state.players).filter(a=>meetGradeEligible(a,formContext?.meet))),draft=deepClone(options.initialDraft||relaySel);
   const layer=document.createElement("div");
   layer.className="modal-back";
   layer.style.zIndex="80";
@@ -7951,7 +8204,7 @@ function openRelayEditor(relaySel,done,options={}){
       let kind=sel.dataset.kind,i=+sel.dataset.i;
       if(!draft[kind])draft[kind]=["","","",""];
       draft[kind][i]=sel.value;
-      refreshKind(kind);
+      refreshKind(kind);options.onDraft?.(draft);
     });
   }
   function refreshKind(kind){
@@ -8075,7 +8328,7 @@ function collegePointRankings(scores){
   });
 }
 function showMeetSummary(result,onClose){
-  const results=()=>showMeetResults(result,()=>showPendingMeetGrowthRewards(()=>showPendingSeasonNotices(()=>showScoutingNotices(onClose))));
+  const results=()=>showMeetResults(result,()=>{if(state.meetSession?.phase==="summary"&&state.meetSession.meet===result.meet){clearMeetSession();autoSaveNow()}showPendingMeetGrowthRewards(()=>showPendingSeasonNotices(()=>showScoutingNotices(onClose)))});
   if(!TEAM_SCORE_MEETS.has(result.meet)){results();return}
   let rows=collegePointRankings(result.teamScores),m=showModal(`<div class="row"><h2 style="margin-right:auto">${MEET_LABEL[result.meet]} 大学対抗ポイントランキング</h2><button id="collegeRankingNext" class="primary">大会総括へ</button></div>
     <div class="notice"><b>全4日間の日程が終了しました！</b><br>優勝・2位・3位を表彰し、4〜8位を入賞として表示します。個人種目の決勝得点に、リレーの倍得点を加算した総合順位です。同点は同順位です。</div>
@@ -8315,6 +8568,8 @@ function renderStatus(){
     `<span class="status-chip">評判 ${reputationLabel(state.reputation)} ${state.reputation.toFixed(1)}</span>`;
 }
 function renderHome(){
+  const recovery=document.getElementById("meetRecovery");if(recovery){recovery.hidden=!state.meetSession;recovery.innerHTML=state.meetSession?`<b>${esc(meetLabel(state.meetSession.meet,state.meetSession.slot))}の進行を保存しています。</b> <button id="resumeMeetBtn" class="primary">大会・エントリーを再開</button>`:"";if(state.meetSession)recovery.querySelector("#resumeMeetBtn").onclick=resumeMeetSession}
+  document.getElementById("advanceBtn").disabled=!!state.meetSession;
   let d=slotDate(state.slot),meet=meetAt(d);
   document.getElementById("homeDate").textContent=dateText(state.slot);
   document.getElementById("homeMeet").textContent=meet?`今コマンド: ${meetLabel(meet,state.slot)}`:"通常練習";
@@ -8479,11 +8734,11 @@ function setFavoriteRival(id,registered){
   (state.favoriteRivals??=[]).push({id:a.id,name:a.name,organization:a.organization});return true;
 }
 function favoriteRivalRows(){
-  const live=new Map(state.world.filter(a=>!a.retired&&["university","adult"].includes(a.category)).map(a=>[a.id,a]));
+  const live=new Map([...state.players,...state.world.filter(a=>!a.retired&&["university","adult"].includes(a.category))].map(a=>[a.id,a]));
   const universities=new Map(rivalUniversities().map((u,i)=>[u.name,i]));
   const organization=row=>row.athlete?.organization||row.entry.organization;
   const universityOrder=row=>universities.get(organization(row))??Number.MAX_SAFE_INTEGER;
-  const grade=row=>row.athlete?.category==="university"&&Number.isInteger(row.athlete.grade)?row.athlete.grade:Infinity;
+  const grade=row=>Number.isInteger(row.athlete?.year??row.athlete?.grade)?row.athlete.year??row.athlete.grade:Infinity;
   return (state.favoriteRivals||[]).map(entry=>({entry,athlete:live.get(entry.id)||null})).sort((a,b)=>
     universityOrder(a)-universityOrder(b)||organization(a).localeCompare(organization(b),"ja")||(grade(a)<grade(b)?-1:grade(a)>grade(b)?1:0)||
     (a.athlete?.name||a.entry.name).localeCompare(b.athlete?.name||b.entry.name,"ja")||a.entry.id.localeCompare(b.entry.id));
@@ -8508,7 +8763,7 @@ function showFavoriteRivals({scrollTop=0,focusId=null}={}){
     <p class="small muted">大学の並びは他大学戦力と同じ評判順、同じ大学内は大1→大4の順です。他大学戦力の名前の左の☆で登録し、選手名または「選手詳細」から現在の能力・PBを確認できます。</p>
     <div class="favorite-rival-list">${rows.map(({entry,athlete:a})=>{
       const name=a?.name||entry.name,organization=a?.organization||entry.organization,event=a?.specialty;
-      return `<div class="favorite-rival-row" data-favorite-row="${esc(entry.id)}"><div><div class="favorite-rival-name">${a?`<button type="button" class="rival-player-link" data-favorite-detail="${esc(entry.id)}">${esc(name)}</button> ${a.category==="university"?gradeBadge(a.grade,`大${a.grade||"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(a))}</span>`}`:`<b>${esc(name)}</b>`}</div><div class="small muted">${a?"":"登録時："}${esc(organization)}</div></div>
+      return `<div class="favorite-rival-row" data-favorite-row="${esc(entry.id)}"><div><div class="favorite-rival-name">${a?`<button type="button" class="rival-player-link" data-favorite-detail="${esc(entry.id)}">${esc(name)}</button> ${a.year||a.category==="university"?gradeBadge(a.year??a.grade,`大${a.year??a.grade??"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(a))}</span>`}`:`<b>${esc(name)}</b>`}</div><div class="small muted">${a?"":"登録時："}${esc(organization)}</div></div>
         <div>${a?`<div class="small">${specialtyTag(event,"専門 ")} <span class="muted">／ PB</span></div><b class="favorite-rival-pb">${validRaceTime(a.bestTimes?.[event])?fmt(a.bestTimes[event]):"未計測"}</b>`:'<span class="small muted">卒業・引退などにより現在の選手情報がありません</span>'}</div>
         <div class="row favorite-rival-actions"><button type="button" class="primary" data-favorite-detail="${esc(entry.id)}"${a?"":" disabled"}>選手詳細</button><button type="button" data-favorite-remove="${esc(entry.id)}" aria-label="${esc(name)}のお気に入り登録を解除">解除</button></div></div>`;
     }).join("")||'<div class="empty-state">まだ登録されていません。他大学戦力の選手一覧で☆を押してください。</div>'}</div>`);
@@ -8578,7 +8833,7 @@ function showRivalPlayerDetail(id,{fromFavorites=false,returnScrollTop=0}={}){
     }else if(fromFavorites)showFavoriteRivals({scrollTop:returnScrollTop,focusId:id});
     else{closeModal();restoreAfterLayout()}
   };
-  const label=p.category==="university"?gradeBadge(p.grade,`大${p.grade||"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(p))}</span>`;
+  const label=p.year||p.category==="university"?gradeBadge(p.year??p.grade,`大${p.year??p.grade??"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(p))}</span>`;
   const back=fromFavorites?'<button id="backToFavoriteRivals">← お気に入り一覧</button>':"";
   const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${label}</h2>${back}<button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
     const value=Math.round(displayStatValue(p,k));return `<div class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></div>`;
@@ -8637,8 +8892,8 @@ function alumniDisplayAge(row){
   return row.age+(Number.isInteger(row.season)?Math.max(0,state.season-row.season):0);
 }
 function renderAlumniArchive(){
-  let career=(state.alumniCareer||[]).slice().reverse();
-  let retired=state.retiredArchive.slice().reverse().filter(a=>a.organization===state.playerUniversity&&!career.some(c=>c.id===a.id));
+  let career=(state.alumniCareer||[]).filter(a=>!a.from||a.from===state.playerUniversity).slice().reverse();
+  let retired=state.retiredArchive.slice().reverse().filter(a=>(a.almaMater||a.organization)===state.playerUniversity&&!career.some(c=>c.id===a.id));
   document.getElementById("archiveTable").innerHTML=`<table><thead><tr><th>選手</th><th>進路 / 最終所属</th><th>状況</th><th>年度</th><th>年齢</th></tr></thead><tbody>${
     career.map(a=>`<tr data-alumni-id="${esc(a.id)}"><td><b>${esc(a.name)}</b></td><td>${esc(a.to||"-")}</td><td>${esc(a.status)}</td><td>${a.season}</td><td>${alumniDisplayAge(a)??"-"}</td></tr>`).join("")+
     retired.slice(0,100).map(a=>`<tr data-alumni-id="${esc(a.id)}"><td>${esc(a.name)}</td><td>${esc(a.organization)}</td><td>${esc(a.reason)}</td><td>${a.season}</td><td>${alumniDisplayAge(a)??"-"}</td></tr>`).join("")
@@ -8709,6 +8964,8 @@ function renderFacilities(){
 function renderSettings(){
   if(!document.getElementById("settingsMiddle"))return;
   let names=organizationNames();
+  document.getElementById("controlledUniversityNote").textContent=`現在：${state.playerUniversity}。選手・記録・年度を維持して切り替えます。`+(universitySwitchBlockReason()||"");
+  document.getElementById("changeControlledUniversity").onclick=showUniversityControlPicker;
   const preserveScroll=(button,change)=>{
     const page=document.getElementById("page-settings");
     const positions=[...new Set([document.scrollingElement,document.getElementById("gameScroll"),...page.querySelectorAll(".org-edit-list")])].filter(Boolean).map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
@@ -8928,6 +9185,7 @@ function closeUtilityMenu(){
   document.querySelector(".utility-menu")?.removeAttribute("open");
 }
 
+let meetCheckpointBusy=false,meetCheckpointWrites=0;
 let autoSaveTimer=null;
 let lastAutoSaveAt=null;
 let autoSaveEnabled=true;
@@ -9053,7 +9311,7 @@ function resetGame(){
 成長ルール・タイム計算などの仕様は保持されます。
 
 現在の進行データは失われます。よろしいですか？`))return;
-  let nameSettings={playerUniversity:state.playerUniversity,
+  let nameSettings={playerUniversity:state.playerUniversity,playerUniversityProfile:deepClone(state.playerUniversityProfile),universityProfiles:deepClone(state.universities),
     universityNames:Object.fromEntries(state.universities.map(u=>[u.id,u.name])),
     organizationNames:deepClone(organizationNames())};
   try{
@@ -9241,13 +9499,14 @@ document.addEventListener("keydown",e=>{
   page.querySelector("#trainingPlayers tr.selected")?.scrollIntoView({block:"nearest",inline:"nearest"});
 });
 
-document.getElementById("advanceBtn").onclick=()=>{
-  if(localSaveBusy||document.querySelector("#modalRoot .modal"))return;
+document.getElementById("advanceBtn").onclick=async()=>{
+  if(localSaveBusy||meetCheckpointBusy||state.meetSession||document.querySelector("#modalRoot .modal"))return;
   let competitionSlot=state.slot,competitionSeason=state.season;
   let d=slotDate(competitionSlot),meet=meetAt(d),gains=trainCommand();
 
   // The calendar always advances as soon as the training turn is completed.
   advanceSlot();
+  if(meet){beginMeetSession(meet,competitionSlot,competitionSeason);if(!await saveMeetCheckpoint()){showMeetSaveRetry(async()=>{if(await saveMeetCheckpoint())resumeMeetSession()});return}}
   if(japanTeamCelebrationDue(competitionSeason,competitionSlot))state.pendingJapanCelebrationYear=competitionSeason;
   renderAll();
   if(state.pendingJapanCelebrationYear||state.pendingSeasonRetirements||state.pendingCollegeAdmissions)autoSaveNow();
@@ -9311,6 +9570,7 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="hidden")autoSaveNow();
 });
 window.addEventListener("pagehide",()=>autoSaveNow());
+window.addEventListener("beforeunload",e=>{if(state?.meetSession&&meetCheckpointBusy){e.preventDefault();e.returnValue=""}});
 
 function renderPwaStatus(){
   let el=document.getElementById("pwaStatus");if(!el)return;
@@ -9363,6 +9623,7 @@ function finishGameStartup(loaded){
   if(!loaded){state=createState();migrateState()}
   try{if(!lastAutoSaveAt)lastAutoSaveAt=+(localStorage.getItem("swimManagerLastAutoSave")||0)||null}catch(e){}
   renderAll();initializeCloudSync();
+  if(state.meetSession){setTimeout(()=>resumeMeetSession(),0);return}
   const showStartupCelebrations=()=>{
     if(state.japanTeam&&state.pendingJapanCelebrationYear===state.japanTeam.year&&!state.japanTeam.announced)setTimeout(()=>showJapanTeamCelebration(showSeasonTransitionNotices),0);
     else if(state.pendingSeasonRetirements||state.pendingCollegeAdmissions||(state.slot===1&&state.pendingFreshmenWelcome?.length))setTimeout(()=>showSeasonTransitionNotices(),0);
