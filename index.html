@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.56</title>
+<title>大学競泳監督シミュレーション PWA版 v2.57</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1462,7 +1462,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.56</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.57</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1696,9 +1696,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.56"></script>
-<script src="./save-history.js?version=v2.56"></script>
-<script src="./cloud-sync.js?version=v2.56"></script>
+<script src="./local-save.js?version=v2.57"></script>
+<script src="./save-history.js?version=v2.57"></script>
+<script src="./cloud-sync.js?version=v2.57"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1735,7 +1735,10 @@ const STAT_CLASS={start:"focus-start",mental:"focus-mental",fr_speed:"focus-fr",
 Object.assign(STAT_CLASS,{im_speed:"focus-im",im_stamina:"focus-im"});
 const FIXED_TRAINING_LEVEL=100;
 const BALANCE_MODEL_VERSION=1;
-const INITIAL_TEAM_REPUTATION=35;
+const INITIAL_TEAM_REPUTATION=50;
+const REPUTATION_LIMIT=1000;
+const REPUTATION_SCALE=[0,50,150,300,500,1000];
+const REPUTATION_STRENGTH_SCALE=[0,30,80,160,280,600];
 const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
 const MEETS={"4-4-後半":"team_trial","5-4-後半":"team_trial","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-2-後半":"world_championship","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","11-2-後半":"teijimayama_championship","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
 const MEET_LABEL={team_trial:"自チーム記録会",kansai_college:"関西カレッジ",intercollege:"インカレ",teijimayama_championship:"帝嶋山選手権",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",world_championship:"世界大会",initial_pb:"初期PB",cpu_training:"練習記録会"};
@@ -1997,7 +2000,45 @@ function meetLabel(meet,slot=null){
 function activeCompetitionSlot(){return state.activeCompetitionSlot||state.slot}
 function activeCompetitionSeason(){return state.activeCompetitionSeason||state.season}
 
-function reputationLabel(v){if(v>=280)return"名門";if(v>=160)return"強豪";if(v>=80)return"中堅";if(v>=30)return"発展途上";return"弱小"}
+function reputationLabel(v){if(v>=500)return"名門";if(v>=300)return"強豪";if(v>=150)return"中堅";if(v>=50)return"発展途上";return"弱小"}
+function interpolateReputation(value,from,to){
+  value=clamp(+value||0,from[0],from.at(-1));
+  const i=Math.max(0,from.findIndex((upper,index)=>index&&value<=upper)-1);
+  return to[i]+(value-from[i])/(from[i+1]-from[i])*(to[i+1]-to[i]);
+}
+function expandedReputation(value){return round2(interpolateReputation(value,REPUTATION_STRENGTH_SCALE,REPUTATION_SCALE))}
+// Keep the effect on recruitment, practice and generated abilities on one
+// common strength scale; expanding displayed points must not amplify it.
+function reputationStrengthValue(value){return interpolateReputation(value,REPUTATION_SCALE,REPUTATION_STRENGTH_SCALE)}
+function migrateUniversityReputationScale(){
+  if(state.reputationScaleVersion!==2){
+    state.reputation=expandedReputation(state.reputation);
+    for(const u of state.universities){
+      let base=u.baseReputation??round2(reputationStrengthValue(initialUniversityReputation(u.strength||75)));
+      let current=Number.isFinite(u.reputation)?u.reputation:base;
+      if(state.cpuUniversityRepModelVersion!==3){
+        const strength=u.strength||75;
+        const previousBase=state.cpuUniversityRepModelVersion===2?clamp(35+(strength-65)*8.5,20,320):clamp(60+(strength-65)*14,25,500);
+        base=round2(reputationStrengthValue(initialUniversityReputation(strength)));
+        current=clamp(base+(current-previousBase)*.85,15,550);
+      }
+      u.baseReputation=expandedReputation(base);u.reputation=expandedReputation(current);
+    }
+    // Historical calculations retain their original numbers and are labelled
+    // in the UI. Unread notices use the new scale without replaying a reward.
+    for(const row of state.reputationEvaluations||[])row.reputationScaleVersion??=1;
+    for(const notice of state.pendingSeasonNotices||[])if(notice.evaluation){
+      const e=notice.evaluation;e.before=expandedReputation(e.before);e.reputation=expandedReputation(e.reputation);e.delta=round2(e.reputation-e.before);
+    }
+    state.reputationScaleVersion=2;
+  }
+  for(const u of state.universities){
+    if(!Number.isFinite(u.baseReputation))u.baseReputation=initialUniversityReputation(u.strength||75);
+    if(!Number.isFinite(u.reputation))u.reputation=u.baseReputation;
+  }
+  state.cpuUniversityRepModelVersion=3;
+  state.collegeReputationBaselineVersion=2;
+}
 function bestSpecialtyByAbility(p){return SPECIALTY_EVENTS.slice().sort((a,b)=>expectedTime(p,a)/JAPAN_RECORD[a]-expectedTime(p,b)/JAPAN_RECORD[b])[0]||"fr100"}
 function ensurePlayerSpecialty(p){if(!SPECIALTY_EVENTS.includes(p.specialty))p.specialty=SPRINT_EVENTS.includes(p.specialty)?strokeForEvent(p.specialty)+"100":bestSpecialtyByAbility(p);return p.specialty}
 function migrateLegacyOrganizationNames(){
@@ -2035,7 +2076,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.56";
+  state.version="pwa-v2.57";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -2048,10 +2089,7 @@ function migrateState(){
   if(!state.reputationParticipation)state.reputationParticipation=[];
   initializeReputationHistory();
   if(!Array.isArray(state.universities))state.universities=deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES));
-  for(let u of state.universities){
-    if(!Number.isFinite(u.baseReputation))u.baseReputation=initialUniversityReputation(u.strength||75);
-    if(!Number.isFinite(u.reputation))u.reputation=u.baseReputation;
-  }
+  migrateUniversityReputationScale();
   if(!state.lastTrainingGains)state.lastTrainingGains=[];
   if(!state.alumniCareer)state.alumniCareer=[];
   if(!state.pendingFreshmenWelcome)state.pendingFreshmenWelcome=[];
@@ -2074,15 +2112,6 @@ function migrateState(){
     while(state.universities.some(x=>x.name===added.name)||added.name===state.playerUniversity)added.name=added.name.endsWith("大学")?added.name.replace(/大学$/,"水明大学"):added.name+"水明大学";
     added.baseReputation=initialUniversityReputation(added.strength);added.reputation=added.baseReputation;
     state.universities.push(added);
-  }
-  if(state.cpuUniversityRepModelVersion!==3){
-    for(let u of state.universities){
-      let strength=u.strength||75;
-      let oldBase=state.cpuUniversityRepModelVersion===2?clamp(35+(strength-65)*8.5,20,320):clamp(60+(strength-65)*14,25,500);
-      let newBase=initialUniversityReputation(strength),current=Number.isFinite(u.reputation)?u.reputation:oldBase;
-      u.baseReputation=newBase;u.reputation=round2(clamp(newBase+(current-oldBase)*.85,15,550));
-    }
-    state.cpuUniversityRepModelVersion=3;
   }
   state.universities.forEach(u=>u.reputation=boundedCpuReputation(u,u.reputation));
   state.kansaiIds=state.universities.filter(u=>u.region==="kansai").map(u=>u.id);
@@ -2169,7 +2198,6 @@ function migrateState(){
   initializeJapanTeamHistory();
   initializeMainResults();
   restoreRivalMainResults();
-  migrateInitialCollegeReputation();
   initializeCpuDevelopment();
   initializeScoutingCompetition();
   refreshScoutBoard();
@@ -2329,7 +2357,7 @@ function recruitAbility(a){
   return abilityValue(a,SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:scoutSpecialty(a))*200;
 }
 function universityTalentPreference(a,reputation){
-  const attraction=reputation>=280?6:reputation>=160?4:0;
+  const attraction=reputation>=500?6:reputation>=300?4:0;
   if(!attraction)return 1;
   const talent=clamp((recruitAbility(a)-80)/80,0,1);
   return 1+attraction*talent*talent;
@@ -2348,7 +2376,7 @@ function pickGeneralFreshman(candidates){
 function initialPlayerStatsByReputation(rawStats,year,reputation){
   let rawAvg=PHYSICAL_STATS.reduce((s,k)=>s+(+rawStats[k]||60),0)/PHYSICAL_STATS.length;
   let individual=clamp((rawAvg-82)*.7+gauss(0,11),-22,24);
-  let target=clamp(78+reputation*.15+(Math.max(1,year)-1)*3.0+individual,60,158);
+  let target=clamp(78+reputationStrengthValue(reputation)*.15+(Math.max(1,year)-1)*3.0+individual,60,158);
   let factor=target/Math.max(1,rawAvg),out={};
   for(let k of STATS){
     if(k==="mental"){out[k]=rawStats[k];continue}
@@ -3363,26 +3391,26 @@ function applyCpuUniversityRosterProfile(a){
   const advancing=!!a.cpuCompetitionCategory&&a.cpuCompetitionCategory!=="university";
   if(!Number.isInteger(state.cpuCompetitionSeed))state.cpuCompetitionSeed=profileHash(`${state.rngSeed}:competition-fields`);
   const roll=key=>(profileHash(state.cpuCompetitionSeed+":"+a.id+":college-roster-v1:"+key)%10001)/10000;
-  const reputation=universityReputationByName(a.organization),label=reputationLabel(reputation);
+  const reputation=universityReputationByName(a.organization),strength=reputationStrengthValue(reputation),label=reputationLabel(reputation);
   const slot=Number.isInteger(a.cpuUniversityCohortSlot)?a.cpuUniversityCohortSlot:Math.floor(roll("slot")*CPU_UNIVERSITY_CLASS_SIZE);
   const aceCount=label==="名門"?3:label==="強豪"?2:label==="中堅"?1:0;
   const ace=slot<aceCount,regional=universityObjectByName(a.organization)?.region==="kansai";
-  const nationalStar=ace&&regional&&reputation>=160&&slot===0&&(state.season-(a.grade||1)+1+profileHash(a.organization))%4===0;
+  const nationalStar=ace&&regional&&reputation>=300&&slot===0&&(state.season-(a.grade||1)+1+profileHash(a.organization))%4===0;
   const quantile=ace?(label==="名門"?.005+roll("level")*.40:label==="強豪"?.015+roll("level")*.55:.22+roll("level")*.35)
     :(label==="名門"?.25+roll("level")*.85:label==="強豪"?.45+roll("level")*.85:label==="中堅"?.65+roll("level")*.65:label==="発展途上"?.90+roll("level")*.70:1.05+roll("level"));
   const specialty=SPECIALTY_EVENTS.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a),main=strokeForEvent(specialty),cap=roll("exceptional")<.015?187:175;
   const targets={};
   if(main==="im")a.imAptitude={speed:round2(8+roll("im-speed")*10),stamina:round2(8+roll("im-stamina")*10)};
   if(!a.cpuStatCeilings)a.cpuStatCeilings={};
-  const start=round2(clamp(88+reputation*.17+(roll("start")-.5)*30,65,175));
+  const start=round2(clamp(88+strength*.17+(roll("start")-.5)*30,65,175));
   a.stats.start=a.startBalanceVersion===1?balancedStartValue(start,a.id):start;
   // College technique starts from the same identity/reputation template for
   // both initial undergraduates and incoming school cohorts. The constrained
   // solver otherwise retains their different school-age turn baselines.
   for(const stroke of MEDLEY_STROKES){
-    a.stats[stroke+"_speed"]=round2(clamp(112+reputation*.08+(roll(stroke+":initial-speed")-.5)*30,60,cap));
-    a.stats[stroke+"_stamina"]=round2(clamp(112+reputation*.08+(roll(stroke+":initial-stamina")-.5)*30,60,cap));
-    a.stats[stroke+"_turn"]=round2(clamp(88+reputation*.14+(roll(stroke+":initial-turn")-.5)*30,60,cap));
+    a.stats[stroke+"_speed"]=round2(clamp(112+strength*.08+(roll(stroke+":initial-speed")-.5)*30,60,cap));
+    a.stats[stroke+"_stamina"]=round2(clamp(112+strength*.08+(roll(stroke+":initial-stamina")-.5)*30,60,cap));
+    a.stats[stroke+"_turn"]=round2(clamp(88+strength*.14+(roll(stroke+":initial-turn")-.5)*30,60,cap));
   }
   for(const event of EVENTS){
     const stroke=strokeForEvent(event),secondary=main==="im"?.08:stroke===main?0:.40+roll(stroke+":secondary")*.85;
@@ -3391,7 +3419,7 @@ function applyCpuUniversityRosterProfile(a){
     const distance=distanceOf(event),bias=(roll(stroke+":distance")-.5)*.48;
     const distanceShift=distance<=100?bias:distance>=400?-bias:0;
     targets[event]=abilityForRaceClock(event,universityReferenceClock(event,Math.max(0,(nationalStar&&stroke===main?Math.min(quantile,.03+roll("star-level")*.09):quantile)+secondary+distanceShift),regional,nationalStar&&stroke===main));
-    if(main!=="im"&&stroke!==main&&stroke!=="im")targets[event]=Math.max(targets[event],75+reputation*.06+(roll(stroke+":secondary-floor")-.5)*12);
+    if(main!=="im"&&stroke!==main&&stroke!=="im")targets[event]=Math.max(targets[event],75+strength*.06+(roll(stroke+":secondary-floor")-.5)*12);
   }
   for(const stroke of MEDLEY_STROKES)fitCpuStrokeAbilities(a,stroke,targets,cap,{50:.3,100:2,200:2,400:2});
   if(main==="im"){
@@ -3953,21 +3981,21 @@ function restoreCpuUniversityRosters(){
 }
 
 function initialUniversityReputation(strength){
-  return round2(25+330*Math.pow(clamp((strength-65)/26,0,1),1.45));
+  return expandedReputation(round2(25+330*Math.pow(clamp((strength-65)/26,0,1),1.45)));
 }
 function universityStrengthFromReputation(rep){
-  return clamp(57+rep*.083,58,91);
+  return clamp(57+reputationStrengthValue(rep)*.083,58,91);
 }
 function boundedCpuReputation(u,value){
   let base=u.baseReputation??initialUniversityReputation(u.strength);
-  return round2(clamp(value,Math.max(15,base-25),Math.min(550,base+25)));
+  return round2(clamp(value,Math.max(0,base-100),Math.min(REPUTATION_LIMIT,base+100)));
 }
 function universityObjectByName(name){
   return state.universities?.find(u=>u.name===name)||null;
 }
 function universityReputationByName(name){
   if(name===state.playerUniversity)return state.reputation;
-  return universityObjectByName(name)?.reputation??80;
+  return universityObjectByName(name)?.reputation??150;
 }
 function chooseCpuUniversityForRecruit(a){
   const counts=new Map();
@@ -3977,7 +4005,7 @@ function chooseCpuUniversityForRecruit(a){
   const stroke=strokeForEvent(a.specialty),balanced=available.filter(u=>state.world.filter(p=>p.category==="university"&&p.grade===1&&p.organization===u.name&&strokeForEvent(p.specialty)===stroke&&!p.retired).length<2);
   if(balanced.length)available=balanced;
   const weights=available.map(u=>{
-    const rep=u.reputation??80,label=reputationLabel(rep);
+    const rep=u.reputation??150,label=reputationLabel(rep);
     const prestige=label==="名門"?8:label==="強豪"?5:label==="中堅"?1.5:1;
     const wish=a.scoutPreferences?.prestigeSchool&&(label==="名門"||label==="強豪")?1.5:1;
     return prestige*wish*universityTalentPreference(a,rep)/(1+(counts.get(u.name)||0)*.25);
@@ -3986,14 +4014,14 @@ function chooseCpuUniversityForRecruit(a){
   for(let i=0;i<available.length;i++){r-=weights[i];if(r<=0)return available[i].name}
   return available.at(-1)?.name||null;
 }
-const REPUTATION_WEIGHTS={kansai_college:2,intercollege:10,japan_open:15,japan_championship:24};
+const REPUTATION_WEIGHTS={kansai_college:2,intercollege:8,japan_open:12,japan_championship:18};
 function initializeReputationHistory(){
   if(!Array.isArray(state.meetParticipationHistory))state.meetParticipationHistory=[];
   if(!Array.isArray(state.reputationEvaluations))state.reputationEvaluations=[];
   if(!Array.isArray(state.completedMeetKeys))state.completedMeetKeys=[];
   if(!Array.isArray(state.seniorRetirementSeasons))state.seniorRetirementSeasons=[];
   if(!Array.isArray(state.pendingSeasonNotices))state.pendingSeasonNotices=[];
-  if(state.participationModelVersion===1)return;
+  if(state.participationModelVersion===2)return;
   for(const row of state.reputationParticipation||[]){
     if(!RESTRICTED.has(row.meet)||!Number.isInteger(row.season)||!Number.isFinite(row.athletes))continue;
     const key=`${row.season}:${row.meet}`;
@@ -4002,7 +4030,10 @@ function initializeReputationHistory(){
     if(index<0)state.meetParticipationHistory.push(entry);else state.meetParticipationHistory[index]=entry;
     if(!state.completedMeetKeys.includes(key))state.completedMeetKeys.push(key);
   }
-  state.participationModelVersion=1;
+  // Old attendance combined individual entrants and relay-only swimmers.
+  // Keep it for history, but never compare it with an individual-only count.
+  for(const row of state.meetParticipationHistory)row.individualOnly??=false;
+  state.participationModelVersion=2;
 }
 function meetParticipationCounts(result){
   const groups=new Map([["player",new Set()],...state.universities.map(u=>[u.id,new Set()])]);
@@ -4012,50 +4043,33 @@ function meetParticipationCounts(result){
     const id=own?"player":athlete.category==="university"?byName.get(athlete.organization):null;
     if(id)groups.get(id)?.add(athlete.id);
   };
-  for(const event of Object.values(result.events||{}))for(const row of [...(event.prelim||[]),...(event.final||[])])add(row.athlete,row.source==="PLAYER");
-  for(const [,finals,meta] of result.relays||[])for(const team of [...(meta?.prelim||[]),...(finals||[])])for(const athlete of team.members||[])add(athlete,team.organization===state.playerUniversity);
+  for(const [key,event]of Object.entries(result.events||{}))if(EVENTS.includes(key))for(const row of [...(event.prelim||[]),...(event.final||[])])add(row.athlete,row.source==="PLAYER");
   return Object.fromEntries([...groups].map(([id,athletes])=>[id,athletes.size]));
 }
 function reputationComparison(season,meet,id){
-  const current=state.meetParticipationHistory.find(r=>r.season===season&&r.meet===meet)?.counts?.[id]??0;
-  const previous=state.meetParticipationHistory.find(r=>r.season===season-1&&r.meet===meet)?.counts?.[id];
-  const baseline=previous??(season===2026&&TEAM_SCORE_MEETS.has(meet)?0:null);
-  return {meet,current,previous:baseline,delta:baseline==null?0:(current-baseline)*REPUTATION_WEIGHTS[meet]};
-}
-function migrateInitialCollegeReputation(){
-  if(state.collegeReputationBaselineVersion===1)return;
-  const first=state.reputationEvaluations.find(r=>r.season===2026&&r.meet==="intercollege");
-  const before=state.reputation;
-  if(first&&(first.comparisons||[]).some(c=>c.previous==null&&TEAM_SCORE_MEETS.has(c.meet))){
-    let carry=0;
-    for(const row of state.reputationEvaluations){
-      const previousDelta=row.delta;
-      if(row===first){
-        row.comparisons=row.comparisons.map(c=>c.previous==null&&TEAM_SCORE_MEETS.has(c.meet)?{...c,previous:0,delta:c.current*REPUTATION_WEIGHTS[c.meet]}:c);
-      }else if(!carry)continue;
-      row.before=round2(clamp(row.before+carry,0,600));
-      row.reputation=round2(clamp(row.before+row.comparisons.reduce((sum,c)=>sum+c.delta,0),0,600));
-      row.delta=round2(row.reputation-row.before);
-      carry=round2(carry+row.delta-previousDelta);
-    }
-    state.reputation=round2(clamp(state.reputation+carry,0,600));
-    if(reputationLabel(before)!==reputationLabel(state.reputation))state.pendingSeasonNotices.push({season:state.season,meet:"intercollege",evaluation:{before,reputation:state.reputation,delta:round2(state.reputation-before)},retired:[]});
-  }
-  state.collegeReputationBaselineVersion=1;
+  if(meet==="kansai_college"&&id!=="player"&&state.universities.find(u=>u.id===id)?.region!=="kansai")return{meet,current:0,previous:0,delta:0,eligible:false};
+  const row=state.meetParticipationHistory.find(r=>r.season===season&&r.meet===meet);
+  const previousRow=state.meetParticipationHistory.find(r=>r.season===season-1&&r.meet===meet);
+  const current=row?.individualOnly===true?row.counts?.[id]??0:null;
+  const previous=previousRow?.individualOnly===true?previousRow.counts?.[id]??null:null;
+  // Other universities already start with a reputation for their established
+  // team. Their first recorded attendance establishes a baseline, not a bonus.
+  const baseline=previous??(!previousRow&&id==="player"&&season===2026&&TEAM_SCORE_MEETS.has(meet)?0:null);
+  return {meet,current,previous:baseline,delta:baseline==null||current==null?0:(current-baseline)*REPUTATION_WEIGHTS[meet]};
 }
 function settleUniversityReputations(season,checkpoint){
   if(!["intercollege","japan_championship"].includes(checkpoint))return null;
   if(state.reputationEvaluations.some(r=>r.season===season&&r.meet===checkpoint))return null;
   const meets=checkpoint==="intercollege"?["kansai_college","intercollege"]:["japan_open","japan_championship"];
   const comparisons=meets.map(meet=>reputationComparison(season,meet,"player")),delta=comparisons.reduce((sum,r)=>sum+r.delta,0),before=state.reputation;
-  state.reputation=round2(clamp(before+delta,0,600));
+  state.reputation=round2(clamp(before+delta,0,REPUTATION_LIMIT));
   const cpuChanges=state.universities.map(u=>{
     const changes=meets.map(meet=>reputationComparison(season,meet,u.id)),change=changes.reduce((sum,r)=>sum+r.delta,0),old=u.reputation;
     u.reputation=boundedCpuReputation(u,old+change);
     return {id:u.id,delta:round2(u.reputation-old),comparisons:changes};
   });
   state.interIds=[...state.universities].sort((a,b)=>(b.reputation||0)-(a.reputation||0)).map(u=>u.id);
-  const evaluation={season,meet:checkpoint,before,reputation:state.reputation,delta:round2(state.reputation-before),comparisons,cpuChanges};
+  const evaluation={season,meet:checkpoint,before,reputation:state.reputation,delta:round2(state.reputation-before),comparisons,cpuChanges,reputationScaleVersion:2};
   state.reputationEvaluations.push(evaluation);
   return evaluation;
 }
@@ -4096,7 +4110,10 @@ function completeMeet(result){
   }
   // Award growth before the intercollege checkpoint removes retiring seniors.
   awardMeetGrowth(result);
-  const counts=result.participationCounts||meetParticipationCounts(result),row={season,meet:result.meet,counts};
+  const hasEvents=Object.keys(result.events||{}).length>0;
+  const individualOnly=hasEvents||!result.participationCounts||result.participationModelVersion===2;
+  const counts=hasEvents||!result.participationCounts?meetParticipationCounts(result):result.participationCounts;
+  const row={season,meet:result.meet,counts,individualOnly};
   const index=state.meetParticipationHistory.findIndex(r=>r.season===season&&r.meet===result.meet);
   if(index<0)state.meetParticipationHistory.push(row);else state.meetParticipationHistory[index]=row;
   const evaluation=settleUniversityReputations(season,result.meet);
@@ -4124,7 +4141,7 @@ function clearPendingMeetCompletion(result){
 function prepareMeetCompletion(result,options){
   if(options.deferRelayFinalEntries&&result.meet!=="team_trial"){
     state.pendingMeetCompletion={meet:result.meet,season:result.season,slot:result.slot,growthParticipantIds:ownMeetParticipantIds(result),
-      ...(RESTRICTED.has(result.meet)?{participationCounts:meetParticipationCounts(result)}:{})};
+      ...(RESTRICTED.has(result.meet)?{participationCounts:meetParticipationCounts(result),participationModelVersion:2}:{})};
   }else completeMeet(result);
 }
 function awardMeetGrowth(result){
@@ -4164,12 +4181,14 @@ function showPendingSeasonNotices(onClose){
 }
 function reputationRuleHtml(){
   const recent=state.reputationEvaluations.slice(-12).reverse();
-  return `<div class="notice"><b>各大会の出場人数を、その大会の前年度と比較します。</b><br>増員なら上昇、減員なら下降、同人数なら変化なし。複数種目に出ても1人と数え、リレーのみに出た選手や決勝で交代した選手も含めます。初年度の関西カレッジ・インカレは前年0人として計算します。それ以外で前年度の人数がない大会は基準記録のみです。</div>
+  return `<div class="notice"><b>各大会の個人種目の出場人数を、その大会の前年度と比較します。</b><br>増員なら上昇、減員なら下降、同人数なら変化なし。同一選手は複数種目・予選と決勝を合わせて1人と数え、リレーだけの出場者は加点・減点とも対象外です。自大学・他大学に共通で適用します。</div>
     <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>大会</th><th>1人増減ごとの評判</th><th>計算時期</th></tr></thead><tbody>
-      <tr><td>関西カレッジ</td><td>±2</td><td rowspan="2">インカレ終了時</td></tr><tr><td>インカレ</td><td>±10</td></tr>
-      <tr><td>ジャパンオープン</td><td>±15</td><td rowspan="2">日本選手権終了時</td></tr><tr><td>日本選手権</td><td>±24</td></tr>
-    </tbody></table></div><p class="small muted">年度更新による自然減衰はありません。区分: 弱小 0–29 / 発展途上 30–79 / 中堅 80–159 / 強豪 160–279 / 名門 280+</p>
-    <h3>最近の評判計算</h3><div class="table-wrap"><table><thead><tr><th>年度</th><th>計算時期</th><th>出場人数（前年 → 今年）</th><th>増減</th><th>評判</th></tr></thead><tbody>${recent.map(r=>`<tr><td>${r.season}</td><td>${MEET_LABEL[r.meet]}終了</td><td>${r.comparisons.map(c=>`${MEET_LABEL[c.meet]}：${c.previous??"未記録"} → ${c.current}人`).join("<br>")}</td><td>${r.delta>=0?"+":""}${r.delta}</td><td>${r.reputation}</td></tr>`).join("")||'<tr><td colspan="5">まだ計算履歴がありません。</td></tr>'}</tbody></table></div>`;
+      <tr><td>関西カレッジ</td><td>±${REPUTATION_WEIGHTS.kansai_college}</td><td rowspan="2">インカレ終了時</td></tr><tr><td>インカレ</td><td>±${REPUTATION_WEIGHTS.intercollege}</td></tr>
+      <tr><td>ジャパンオープン</td><td>±${REPUTATION_WEIGHTS.japan_open}</td><td rowspan="2">日本選手権終了時</td></tr><tr><td>日本選手権</td><td>±${REPUTATION_WEIGHTS.japan_championship}</td></tr>
+    </tbody></table></div><p class="small">自大学の初年度の関西カレッジ・インカレは前年0人として計算します。他大学の初年度、前年度の人数がない大会、旧データで個人出場者を判別できない大会は基準記録のみです。関西以外の大学は関西カレッジの計算対象外です。</p>
+    <p class="small">他大学は初期基準評判の±100pt以内（全体の範囲は0〜${REPUTATION_LIMIT}pt）で変動します。基準は毎年更新しません。年度更新による自然減衰もありません。</p>
+    <p class="small muted">区分: 弱小 50未満 / 発展途上 50〜150未満 / 中堅 150〜300未満 / 強豪 300〜500未満 / 名門 500〜${REPUTATION_LIMIT}pt。旧尺度の計算履歴は当時の数値を表示します。</p>
+    <h3>最近の評判計算</h3><div class="table-wrap"><table><thead><tr><th>年度</th><th>計算時期</th><th>出場人数（前年 → 今年）</th><th>増減</th><th>評判</th></tr></thead><tbody>${recent.map(r=>`<tr><td>${r.season}${r.reputationScaleVersion===1?'<br><span class="small muted">旧尺度</span>':""}</td><td>${MEET_LABEL[r.meet]}終了</td><td>${r.comparisons.map(c=>`${MEET_LABEL[c.meet]}：${c.previous??"未記録"} → ${c.current??"判別不可"}人`).join("<br>")}</td><td>${r.delta>=0?"+":""}${r.delta}</td><td>${r.reputation}</td></tr>`).join("")||'<tr><td colspan="5">まだ計算履歴がありません。</td></tr>'}</tbody></table></div>`;
 }
 function showReputationInfo(){
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">学校評判の仕組み</h2><button id="x">閉じる</button></div>${reputationRuleHtml()}`);
@@ -4432,7 +4451,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.56",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:1,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.57",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     for(let u of s.universities)if(nameSettings.universityNames?.[u.id])u.name=nameSettings.universityNames[u.id];
@@ -5629,7 +5648,7 @@ function selectJointCpuEntries(candidates,capacity,event){
       if(i&&ability!==ranked[i-1].ability)rank=i;
       const strength=1-rank/Math.max(1,ranked.length-1);
       const reputation=category==="university"?universityReputationByName(athlete.organization):0;
-      const prestige=reputation>=280?1.8:reputation>=160?1.4:1;
+      const prestige=reputation>=500?1.8:reputation>=300?1.4:1;
       const weight=(1+5*strength*strength)*prestige;
       return {athlete,priority:-Math.log(Math.max(1e-9,rng()))/weight};
     }).sort((a,b)=>b.priority-a.priority).map(row=>row.athlete);
@@ -6198,7 +6217,7 @@ function applyCpuTraining(a,trainingEvents=null){
   }
   if(a.category==="adult"&&a.adultGrowth.rate===0)return;
   const grade=a.category==="adult"?clamp((a.age||23)-22,1,4):clamp(a.grade||1,1,4),mult=a.growthProfile?.[grade]||1;
-  const team=a.category==="university"?clamp(.82+universityReputationByName(a.organization)/1200,.84,1.22):1,desired=[],rates=[],main=strokeForEvent(a.specialty);
+  const team=a.category==="university"?clamp(.82+reputationStrengthValue(universityReputationByName(a.organization))/1200,.84,1.22):1,desired=[],rates=[],main=strokeForEvent(a.specialty);
   const focusedStrokes=new Set([main]);
   if(a.category==="university"&&trainingEvents instanceof Set)for(const event of trainingEvents)focusedStrokes.add(strokeForEvent(event));
   const peak=Math.max(...MEDLEY_STROKES.map(s=>(a.stats[s+"_speed"]+a.stats[s+"_stamina"])/2));
@@ -6332,7 +6351,7 @@ function graduateToAdult(p){
   let bestRatio=Math.min(...EVENTS.map(e=>Number.isFinite(p.bestTimes?.[e])?p.bestTimes[e]/JAPAN_RECORD[e]:9));
   let abilityChance=clamp((avg-105)/95,0,.38);
   let resultChance=bestRatio<1.08?.28:bestRatio<1.14?.14:0;
-  let repChance=clamp(state.reputation/1800,0,.22);
+  let repChance=clamp(reputationStrengthValue(state.reputation)/1800,0,.22);
   return rng()<clamp(.10+abilityChance+resultChance+repChance,.10,.72);
 }
 function alumniAdultFromPlayer(p,organization){
@@ -6876,22 +6895,22 @@ function scoutEnrollmentRank(a,event=scoutSpecialty(a)){
   return 1+[...unique.values()].filter(p=>Number.isFinite(p.bestTimes?.[event])&&p.bestTimes[event]>0&&p.bestTimes[event]<time).length;
 }
 function scoutReputationBonus(reputation,difficulty){
-  if(reputation<80)return 0;
-  const progress=clamp((reputation-80)/420,0,1);
+  if(reputation<150)return 0;
+  const progress=clamp((reputationStrengthValue(reputation)-80)/420,0,1);
   return (.02+.46*Math.pow(progress,1.6))*(.75+.25*difficulty);
 }
 function scoutProbabilityDetails(a,rankings=null){
   rankings=rankings||highSchoolScoutRankings();
   const event=scoutSpecialty(a,rankings),rank=scoutHighSchoolRank(a,event,rankings),title=scoutRankingTitle(a,rankings);
   const difficulty=rank==null?0:Math.exp(-(rank-1)/45);
-  const reputation=clamp(+state.reputation||0,0,600);
+  const reputation=clamp(+state.reputation||0,0,REPUTATION_LIMIT);
   const base=.58-.54*difficulty,reputationBonus=scoutReputationBonus(reputation,difficulty),untitledBonus=title?0:.04;
   const preference=ensureScoutPreferences(a,rankings),facilityLevel=scoutFacilityLevel(event);
   const facilityBonus=preference.worldAmbition ? .22*facilityLevel/100 : 0;
   // Our university belongs to Kansai; changing its display name does not relocate it.
   const regionBonus=preference.preferredRegion==="kansai" ? .10 : 0;
   const enrollmentRank=scoutEnrollmentRank(a,event),earlyBonus=preference.earlyCompetition&&enrollmentRank!=null&&enrollmentRank<=3?.10:0;
-  const prestigeBonus=preference.prestigeSchool&&reputation>=160?.10:0;
+  const prestigeBonus=preference.prestigeSchool&&reputation>=300?.10:0;
   const raw=base+reputationBonus+untitledBonus+facilityBonus+regionBonus+earlyBonus+prestigeBonus;
   return {event,rank,title,reputation,base,reputationBonus,untitledBonus,preference,facilityLevel,facilityBonus,regionBonus,enrollmentRank,earlyBonus,prestigeBonus,probability:clamp(raw,.01,.97)};
 }
@@ -6919,7 +6938,7 @@ function refreshScoutBoard(rankings=highSchoolScoutRankings()){
 }
 // Scouting has its own saved random stream; reading a board never draws a race roll.
 function scoutingSchools(){return [{id:"player",name:state.playerUniversity,region:"kansai",reputation:state.reputation},...state.universities]}
-function scoutingBudget(rep){return rep>=280?100:rep>=160?80:rep>=80?60:rep>=30?40:30}
+function scoutingBudget(rep){return rep>=500?100:rep>=300?80:rep>=150?60:rep>=50?40:30}
 function scoutingRoll(){
   const c=state.scoutingCompetition;c.randomState=(Math.imul(c.randomState,1664525)+1013904223)>>>0;return c.randomState/4294967296;
 }
@@ -6940,13 +6959,13 @@ function scoutingEnrollmentRank(a,schoolId,event){
 function scoutingAffinity(a,schoolId,rankings){
   if(schoolId==="player")return scoutProbabilityDetails(a,rankings).probability;
   const school=state.universities.find(u=>u.id===schoolId);if(!school)return .01;
-  const event=a.specialty,rank=scoutHighSchoolRank(a,event,rankings),difficulty=rank==null?0:Math.exp(-(rank-1)/45),rep=school.reputation??80;
+  const event=a.specialty,rank=scoutHighSchoolRank(a,event,rankings),difficulty=rank==null?0:Math.exp(-(rank-1)/45),rep=school.reputation??150;
   const wish=ensureScoutPreferences(a,rankings),untitled=rank==null||rank>SCOUT_TITLE_RANK_LIMIT;
   // Match the university's actual training efficiency, rather than inventing facility levels.
-  const training=clamp((clamp(.82+rep/1200,.84,1.22)-.84)/.38,0,1);
+  const training=clamp((clamp(.82+reputationStrengthValue(rep)/1200,.84,1.22)-.84)/.38,0,1);
   return clamp(.58-.54*difficulty+scoutReputationBonus(rep,difficulty)+(untitled?.04:0)+(wish.worldAmbition?.22*training:0)+
     (wish.preferredRegion==="kansai"&&school.region==="kansai"?.10:0)+
-    (wish.earlyCompetition&&scoutingEnrollmentRank(a,schoolId,event)<=3?.10:0)+(wish.prestigeSchool&&rep>=160?.10:0),.01,.97);
+    (wish.earlyCompetition&&scoutingEnrollmentRank(a,schoolId,event)<=3?.10:0)+(wish.prestigeSchool&&rep>=300?.10:0),.01,.97);
 }
 function scoutingNeed(a,school){
   const stroke=strokeForEvent(a.specialty),roster=state.world.filter(p=>!p.retired&&p.category==="university"&&p.organization===school.name);
@@ -7883,7 +7902,10 @@ function setRelayFinalEntry(result,kind,ids){
   if(result.teamScoreEntry)result.teamScoreEntry.scores=result.teamScores;
   refreshRecordBook();
   if(state.pendingMeetCompletion?.meet===result.meet&&state.pendingMeetCompletion?.season===result.season){
-    if(RESTRICTED.has(result.meet))state.pendingMeetCompletion.participationCounts=meetParticipationCounts(result);
+    if(RESTRICTED.has(result.meet)){
+      state.pendingMeetCompletion.participationCounts=meetParticipationCounts(result);
+      state.pendingMeetCompletion.participationModelVersion=2;
+    }
     state.pendingMeetCompletion.growthParticipantIds=ownMeetParticipantIds(result);
   }
   return team;
@@ -8700,7 +8722,7 @@ function renderSettings(){
   const list=(category,arr)=>`<div class="org-edit-list">${arr.map((n,i)=>{
     let repHtml="";
     if(category==="university"){
-      let u=state.universities[i],rep=u?.reputation??80;
+      let u=state.universities[i],rep=u?.reputation??150;
       repHtml=`<span class="tag">${reputationLabel(rep)} ${rep.toFixed(1)}</span>`;
     }
     return`<div class="org-edit-row"><span>${esc(n)}</span>${repHtml}<button data-org="${category}" data-index="${i}">改名</button></div>`;
@@ -8712,7 +8734,7 @@ function renderSettings(){
     arr.forEach((name,i)=>{
       const row=current.children[i];row.firstElementChild.textContent=name;
       if(category==="university"){
-        const rep=state.universities[i]?.reputation??80;
+        const rep=state.universities[i]?.reputation??150;
         row.querySelector(".tag").textContent=`${reputationLabel(rep)} ${rep.toFixed(1)}`;
       }
     });

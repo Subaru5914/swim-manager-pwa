@@ -39,7 +39,7 @@ for(const seed of [12345,54321,5914,24680])test(`reset policy seed ${seed}: deve
     return{...summary,bad,reloadStable:snapshot===JSON.stringify([state.players,state.world])&&seed===state.rngSeed,reputationAfterLoad:state.reputation};
   })()`);
   assert.deepEqual(r.bad,[]);
-  assert.equal(r.reputation,35);assert.equal(r.label,'発展途上');assert.equal(r.count,32);assert.deepEqual(r.classes,[8,8,8,8]);
+  assert.equal(r.reputation,50);assert.equal(r.label,'発展途上');assert.equal(r.count,32);assert.deepEqual(r.classes,[8,8,8,8]);
   for(const rank of [r.depthRank,...r.relayRanks])assert.ok(rank>=30&&rank<=40,JSON.stringify(r));
   assert.ok(r.reloadStable);assert.equal(r.reputationAfterLoad,310);
   t.diagnostic(JSON.stringify({seed,ordinary:r.ordinary,ordinaryMean:r.ordinaryMean,depthRank:r.depthRank,relayRanks:r.relayRanks,prodigies:r.prodigies}));

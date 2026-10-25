@@ -23,8 +23,8 @@ test('restored universities have eight swimmers in each grade, balanced strokes 
     const events=Object.fromEntries(meetIndividualEvents('intercollege').map(e=>[e,{final:entries[e].map(id=>({athlete:byId.get(id)})).sort((a,b)=>expectedTime(a.athlete,e)-expectedTime(b.athlete,e)).slice(0,8)}]));
     const scores=teamScoring('intercollege',events,[]);
     return {count:state.universities.length,kansai:state.kansaiIds.length,teams,
-      strongScores:state.universities.filter(u=>u.reputation>=160).map(u=>scores[u.name]).sort((a,b)=>a-b),
-      otherScores:state.universities.filter(u=>u.reputation<160).map(u=>scores[u.name]).sort((a,b)=>a-b),
+      strongScores:state.universities.filter(u=>u.reputation>=300).map(u=>scores[u.name]).sort((a,b)=>a-b),
+      otherScores:state.universities.filter(u=>u.reputation<300).map(u=>scores[u.name]).sort((a,b)=>a-b),
       winners:meetIndividualEvents('intercollege').map(e=>reputationLabel(universityReputationByName(events[e].final[0].athlete.organization))),
       regional:CPU_KANSAI_RACE_REFERENCE.fly200.includes(122.29)&&CPU_KANSAI_RACE_REFERENCE.fr400.includes(232.21),
       clocks:meetIndividualEvents('kansai_college').map(e=>{

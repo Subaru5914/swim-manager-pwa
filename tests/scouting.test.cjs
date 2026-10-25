@@ -33,7 +33,7 @@ test('every active third-year high-school swimmer in any top-50 ranking appears,
 test('matching wishes add facility and region bonuses while unrelated facilities and missing wishes do not',()=>{
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
-    state.reputation=35;
+    state.reputation=50;
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.specialty='fr100';a.accolades=[];a.bestTimes={fr100:JAPAN_RECORD.fr100};
     a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
@@ -46,7 +46,7 @@ test('matching wishes add facility and region bonuses while unrelated facilities
     const oldName=state.playerUniversity;state.playerUniversity='大学を改名';const renamed=scoutProbability(a);state.playerUniversity=oldName;
     a.specialty='im200';a.bestTimes={im200:JAPAN_RECORD.im200};state.facilities=Object.fromEntries(STATS.map(k=>[k,k.startsWith('fr_')?100:0]));
     const imPartial=scoutProbabilityDetails(a);state.facilities=Object.fromEntries(STATS.map(k=>[k,100]));const imFull=scoutProbabilityDetails(a);
-    state.reputation=550;a.specialty='fr100';a.bestTimes={fr100:JAPAN_RECORD.fr100*3};const capped=scoutProbability(a);
+    state.reputation=1000;a.specialty='fr100';a.bestTimes={fr100:JAPAN_RECORD.fr100*3};const capped=scoutProbability(a);
     return {ordinary,withoutWish,levels,unrelated,matched,renamed,imPartial,imFull,capped};
   })())`));
   assert.equal(result.ordinary,result.withoutWish);assert.equal(result.levels[0],result.ordinary);
@@ -172,10 +172,10 @@ test('reputation starts helping at mid-tier and accelerates; prestige and early-
     const a=state.world.find(a=>a.category==='high'&&a.grade===3);
     a.specialty='fr100';a.bestTimes={fr100:50};a.accolades=[];
     a.scoutPreferences={version:3,worldAmbition:false,preferredRegion:null,earlyCompetition:false,prestigeSchool:false};
-    const reps=[0,35,79,80,100,120,140,160,280,450,600].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a)});
-    const labels=[279,280,450,600].map(reputationLabel);
+    const reps=[0,50,149,150,187.5,225,262.5,300,500,765.63,1000].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a)});
+    const labels=[499,500,800,1000].map(reputationLabel);
     a.scoutPreferences.prestigeSchool=true;
-    const prestige=[159,160,279,280,600].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a).prestigeBonus});
+    const prestige=[299,300,499,500,1000].map(rep=>{state.reputation=rep;return scoutProbabilityDetails(a).prestigeBonus});
     a.scoutPreferences.prestigeSchool=false;a.scoutPreferences.earlyCompetition=true;
     const p=deepClone(state.players[0]);state.players=[49,49.5,50,48].map((time,i)=>({...deepClone(p),id:'peer-'+i,year:i===3?4:2,bestTimes:{fr100:time}}));
     state.recruits=[];for(const high of state.world)high.scouted=false;
@@ -248,7 +248,7 @@ test('CPU enrollment prefers strong and prestigious universities, observes avail
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const a=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));
-    state.universities=[35,80,160,280].map((rep,i)=>({id:'destination-'+i,name:'進路大学'+i,reputation:rep}));
+    state.universities=[50,150,300,500].map((rep,i)=>({id:'destination-'+i,name:'進路大学'+i,reputation:rep}));
     state.world=[];a.scoutPreferences={prestigeSchool:false};
     const counts=[0,0,0,0];for(let i=0;i<6000;i++)counts[+chooseCpuUniversityForRecruit(a).slice(-1)]++;
     state.world=Array.from({length:8},(_,i)=>({...deepClone(a),id:'full-'+i,category:'university',grade:1,organization:'進路大学3'}));
@@ -271,7 +271,7 @@ test('unscouted freshmen favor specialty talent at strong and prestigious school
     for(const k of ['fr_speed','fr_stamina','fr_turn','start'])specialist.stats[k]=160;
     const balanced={...deepClone(specialist),id:'balanced-freshman',stats:Object.fromEntries(STATS.map(k=>[k,160]))};
     const before=JSON.stringify([low,specialist,balanced]),rows=[],n=10000;
-    for(const rep of [35,159,160,279,280,600]){
+    for(const rep of [50,299,300,499,500,1000]){
       state.reputation=rep;state.rngSeed=5914;let talented=0;
       for(let i=0;i<n;i++){
         const pool=[low,specialist],pick=pickGeneralFreshman(pool);
@@ -281,7 +281,7 @@ test('unscouted freshmen favor specialty talent at strong and prestigious school
       rows.push({rep,rate:talented/n});
     }
     const emptySeed=state.rngSeed,empty=pickGeneralFreshman([])===null&&state.rngSeed===emptySeed;
-    const oldRng=rng;state.reputation=280;rng=()=>0;const first=pickGeneralFreshman([low,specialist]);
+    const oldRng=rng;state.reputation=500;rng=()=>0;const first=pickGeneralFreshman([low,specialist]);
     rng=()=>.999999999;const last=pickGeneralFreshman([low,specialist]);rng=oldRng;
     return {rows,empty,edges:first.id===low.id&&last.id===specialist.id,
       specialist:overallStatValue(specialist)<80&&Math.abs(recruitAbility(specialist)-160)<1e-9,
@@ -299,7 +299,7 @@ test('higher specialty ability increasingly favors elite CPU destinations withou
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const template=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));
-    state.universities=[35,80,160,280].map((rep,i)=>({id:'talent-destination-'+i,name:'能力進路大学'+i,reputation:rep}));state.world=[];
+    state.universities=[50,150,300,500].map((rep,i)=>({id:'talent-destination-'+i,name:'能力進路大学'+i,reputation:rep}));state.world=[];
     const rows=[],n=10000;
     for(const level of [80,120,160]){
       const a={...deepClone(template),specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,level])),scoutPreferences:{prestigeSchool:false}};
@@ -318,7 +318,7 @@ test('season rollover draws only the remaining own places and allocates CPU plac
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const original=deepClone(state),rows=[],realPick=pickGeneralFreshman,realChoose=chooseCpuUniversityForRecruit;
-    for(const [rep,signedCount] of [[35,0],[160,2],[280,2],[280,8]]){
+    for(const [rep,signedCount] of [[50,0],[300,2],[500,2],[500,8]]){
       state=deepClone(original);state.reputation=rep;
       const board=refreshScoutBoard(),signed=signedCount?board.slice(-signedCount).map(a=>a.id):[];
       state.recruits=signed;signed.forEach(id=>state.world.find(a=>a.id===id).scouted=true);

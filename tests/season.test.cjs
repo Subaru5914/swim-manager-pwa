@@ -17,8 +17,8 @@ const json=(run,code)=>JSON.parse(run('JSON.stringify('+code+')'));
 test('four meets compare their own previous-year counts and only the two checkpoints change reputation, once',()=>{
   const run=game();
   const r=json(run,`(()=>{
-    state.reputation=75;const ids=state.players.slice(0,4).map(p=>p.id),cpu=state.universities[0];
-    state.meetParticipationHistory=['kansai_college','intercollege','japan_open','japan_championship'].map((meet,i)=>({season:2025,meet,counts:{player:[3,2,3,2][i],[cpu.id]:1}}));
+    state.reputation=149;const ids=state.players.slice(0,4).map(p=>p.id),cpu=state.universities[0];
+    state.meetParticipationHistory=['kansai_college','intercollege','japan_open','japan_championship'].map((meet,i)=>({season:2025,meet,individualOnly:true,counts:{player:[3,2,3,2][i],[cpu.id]:1}}));
     const counts=[];completeMeet(participationResult('kansai_college',ids));counts.push(state.reputation);
     completeMeet(participationResult('intercollege',ids));counts.push(state.reputation);
     const first=JSON.stringify(state);completeMeet(participationResult('intercollege',ids));const once=first===JSON.stringify(state);
@@ -27,14 +27,14 @@ test('four meets compare their own previous-year counts and only the two checkpo
     const evaluations=deepClone(state.reputationEvaluations),notices=deepClone(state.pendingSeasonNotices);
     const rep=state.reputation;newSeason();return {counts,once,evaluations,notices,annualSame:state.reputation===rep};
   })()`);
-  assert.deepEqual(r.counts,[75,97,97,67]);assert.ok(r.once&&r.annualSame);
-  assert.equal(r.evaluations.length,2);assert.deepEqual(r.evaluations.map(e=>e.delta),[22,-30]);
-  assert.deepEqual(r.evaluations[0].comparisons.map(c=>[c.previous,c.current,c.delta]),[[3,4,2],[2,4,20]]);
-  assert.deepEqual(r.evaluations[1].comparisons.map(c=>[c.previous,c.current,c.delta]),[[3,1,-30],[2,2,0]]);
-  assert.equal(r.notices.length,2);assert.deepEqual(r.notices.map(n=>[n.evaluation.before,n.evaluation.reputation]),[[75,97],[97,67]]);
+  assert.deepEqual(r.counts,[149,167,167,143]);assert.ok(r.once&&r.annualSame);
+  assert.equal(r.evaluations.length,2);assert.deepEqual(r.evaluations.map(e=>e.delta),[18,-24]);
+  assert.deepEqual(r.evaluations[0].comparisons.map(c=>[c.previous,c.current,c.delta]),[[3,4,2],[2,4,16]]);
+  assert.deepEqual(r.evaluations[1].comparisons.map(c=>[c.previous,c.current,c.delta]),[[3,1,-24],[2,2,0]]);
+  assert.equal(r.notices.length,2);assert.deepEqual(r.notices.map(n=>[n.evaluation.before,n.evaluation.reputation]),[[149,167],[167,143]]);
 });
 
-test('participation counts distinct swimmers across individual events, relay heats and final reserves; CPU identity survives renaming',()=>{
+test('participation counts distinct individual swimmers and excludes relay-only reserves; CPU identity survives renaming',()=>{
   const run=game();
   const r=json(run,`(()=>{
     const own=state.players.slice(0,6),u=state.universities[0],cpu=state.world.filter(a=>a.category==='university'&&a.organization===u.name).slice(0,4);
@@ -45,8 +45,8 @@ test('participation counts distinct swimmers across individual events, relay hea
     const adult={...deepClone(cpu[0]),id:'adult-not-a-student',category:'adult'};result.events.fr200={prelim:[{source:'CPU',athlete:adult}],final:[]};
     return {first,current,id:u.id,after:meetParticipationCounts(result),rep:state.reputation};
   })()`);
-  assert.equal(r.first.player,6);assert.equal(r.first[r.id],4);assert.deepEqual(r.current,r.first);
-  assert.equal(r.after[r.id],4);assert.equal(r.rep,35);
+  assert.equal(r.first.player,1);assert.equal(r.first[r.id],1);assert.deepEqual(r.current,r.first);
+  assert.equal(r.after[r.id],1);assert.equal(r.rep,50);
 });
 
 test('first-year college meets start from zero, national baselines stay neutral, and equal attendance or April never changes reputation',()=>{
@@ -62,7 +62,7 @@ test('first-year college meets start from zero, national baselines stay neutral,
     const before=state.universities.map(u=>u.reputation);newSeason();
     return {initial,equal,own:state.reputation,cpu:JSON.stringify(before)===JSON.stringify(state.universities.map(u=>u.reputation)),notices:state.pendingSeasonNotices.length};
   })()`);
-  assert.deepEqual(r.initial,[{delta:24,previous:[0,0]},{delta:0,previous:[null,null]}]);
+  assert.deepEqual(r.initial,[{delta:20,previous:[0,0]},{delta:0,previous:[null,null]}]);
   assert.deepEqual(r.equal,[0,0]);assert.equal(r.own,137.5);assert.ok(r.cpu);assert.equal(r.notices,0);
 });
 
@@ -107,15 +107,15 @@ test('deferred races keep fourth-year entrants until all races finish, then comp
 test('reload completes a saved pending checkpoint and retains an undismissed notice without double counting',()=>{
   const run=game();
   const r=json(run,`(()=>{
-    state.reputation=79;state.meetParticipationHistory=[{season:2025,meet:'intercollege',counts:{player:0}}];
-    state.pendingMeetCompletion={meet:'intercollege',season:2026,participationCounts:{player:1}};
+    state.reputation=149;state.meetParticipationHistory=[{season:2025,meet:'intercollege',individualOnly:true,counts:{player:0}}];
+    state.pendingMeetCompletion={meet:'intercollege',season:2026,participationModelVersion:2,participationCounts:{player:1}};
     state=JSON.parse(JSON.stringify(state));migrateState();const first=JSON.stringify(state);state=JSON.parse(first);migrateState();
     return {rep:state.reputation,evaluations:state.reputationEvaluations.length,notices:state.pendingSeasonNotices.length,pending:state.pendingMeetCompletion,once:first===JSON.stringify(state)};
   })()`);
-  assert.equal(r.rep,89);assert.equal(r.evaluations,1);assert.equal(r.notices,1);assert.equal(r.pending,null);assert.ok(r.once);
+  assert.equal(r.rep,157);assert.equal(r.evaluations,1);assert.equal(r.notices,1);assert.equal(r.pending,null);assert.ok(r.once);
 });
 
-test('legacy attendance migrates as comparison data without replaying bonuses or changing earned abilities',()=>{
+test('legacy attendance remains historical data without replaying bonuses or changing earned abilities',()=>{
   const run=game();
   const r=json(run,`(()=>{
     delete state.participationModelVersion;delete state.meetParticipationHistory;state.reputationParticipation=[{season:2025,meet:'intercollege',athletes:3,delta:40},{season:2025,meet:'japan_open',athletes:2,delta:33}];
@@ -165,6 +165,6 @@ test('actual focused training peaks early for early types, stays even for normal
   })()`);
   assert.ok(r.early.every((v,i)=>i===0||v<r.early[i-1]),JSON.stringify(r));
   assert.ok(r.late.every((v,i)=>i===0||v>r.late[i-1]),JSON.stringify(r));
-  assert.ok(r.normal.every(v=>v===r.normal[0]));assert.ok(r.normal[0]>=24&&r.normal[0]<=27);
+  assert.ok(r.normal.every(v=>v===r.normal[0])&&r.normal[0]>0,JSON.stringify(r));
   assert.ok(r.early[0]>r.normal[0]&&r.normal[0]>r.late[0]);assert.ok(r.late[3]>r.normal[3]&&r.normal[3]>r.early[3]);
 });

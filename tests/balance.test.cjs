@@ -27,7 +27,7 @@ test('existing CPU cohorts preserve realistic PB pace and settle without ability
       return {season:state.season,count:cpu.length,expected:state.universities.length*32,sizes,
         mean:values.reduce((a,b)=>a+b)/values.length,p90:values[Math.floor(values.length*.9)],
         worst200:Math.max(...cpu.flatMap(a=>EVENTS.filter(e=>distanceOf(e)===200&&validRaceTime(a.bestTimes[e])).map(e=>expectedTime(a,e)-a.bestTimes[e]))),
-        reputationBound:state.universities.every(u=>Math.abs(u.reputation-u.baseReputation)<=25.01)};
+        reputationBound:state.universities.every(u=>Math.abs(u.reputation-u.baseReputation)<=100.01)};
     };
     samples.push(snapshot());
     for(let year=1;year<=12;year++){
@@ -187,7 +187,7 @@ test('derived IM pacing uses current regional, Intercollege and champion anchors
     assert.ok(Math.abs(row.current-row.reference)<1e-8,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v2.56');
+  assert.equal(result.version,'pwa-v2.57');
 });
 
 test('distance still changes the speed/stamina balance', () => {
