@@ -187,7 +187,7 @@ test('derived IM pacing uses current regional, Intercollege and champion anchors
     assert.ok(Math.abs(row.current-row.reference)<1e-8,JSON.stringify(row));
   }
   assert.equal(result.preserved,true);assert.equal(result.records,true);
-  assert.equal(result.version,'pwa-v2.81');
+  assert.equal(result.version,'pwa-v2.82');
 });
 
 test('distance still changes the speed/stamina balance', () => {
@@ -283,7 +283,7 @@ test('prodigy stats are random and capped at low A, including already strong arr
   assert.ok(maxima.size > 100);
 });
 
-test('eight focused turns at max facilities add about 8 from C125 and 3 from B150, with E through S progressively slower', () => {
+test('eight focused turns at max facilities follow the revised C/B rates, with E through S progressively slower', () => {
   const run = game();
   const rows = JSON.parse(run(`JSON.stringify([60,80,100,125,150,175,188].map(value=>{
     let gains=[];
@@ -299,8 +299,8 @@ test('eight focused turns at max facilities add about 8 from C125 and 3 from B15
   for (let i = 1; i < rows.length; i++) assert.ok(rows[i].mean < rows[i - 1].mean);
   assert.ok(rows[1].mean >= 16 && rows[1].mean <= 17, JSON.stringify(rows));
   assert.ok(rows[2].mean >= 11 && rows[2].mean <= 13, JSON.stringify(rows));
-  assert.ok(rows[3].mean >= 7.8 && rows[3].mean <= 8.2, JSON.stringify(rows));
-  assert.ok(rows[4].mean >= 2.9 && rows[4].mean <= 3.1, JSON.stringify(rows));
+  assert.ok(rows[3].mean >= 5.7 && rows[3].mean <= 6.0, JSON.stringify(rows));
+  assert.ok(rows[4].mean >= 2.3 && rows[4].mean <= 2.5, JSON.stringify(rows));
   assert.ok(rows[5].mean < 1.1 && rows[6].mean < .1);
   console.log('8-turn growth:', rows.map(row => `${row.value}: +${row.mean.toFixed(2)}`).join(', '));
 });
