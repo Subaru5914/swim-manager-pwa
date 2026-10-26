@@ -30,10 +30,10 @@ test('all top tens, PB source results, Japan information and reputation inputs s
   save.recordRankings.japan['4x100fr']=[{members:[{id:p.id}],time:200,event:'4x100fr'}];
   save.teamTop10.fr100=[{athleteId:p.id,time:51}];save.recordBook.fr100={athleteId:p.id,time:51};
   save.meetHistory=[{season:2027,slot:20,meet:'joint_record'},{season:2026,meet:'world_championship'},{season:2028,meet:'joint_record'}];
-  save.teamScoreHistory=[{season:2026},{season:2028}];
+  save.teamScoreHistory=[{season:2026,meet:'intercollege',scores:{自大学:83,他大学:95}},{season:2028,meet:'kansai_college',scores:{自大学:105,他大学:100}}];
   const original=copy(save),plan=History.plan(save,{triggerBytes:1,targetBytes:1});plan.apply(save);
   assert.deepEqual(p.raceHistory,original.players[0].raceHistory.slice(0,-1));
-  assert.deepEqual(save.meetHistory,original.meetHistory.slice(0,-1));assert.deepEqual(save.teamScoreHistory,[original.teamScoreHistory[1]]);
+  assert.deepEqual(save.meetHistory,original.meetHistory.slice(0,-1));assert.deepEqual(save.teamScoreHistory,original.teamScoreHistory);
   for(const field of ['recordRankings','teamTop10','recordBook','japanTeam','japanTeamHistory','trainingPlans','trainingFocus','meetParticipationHistory','reputationParticipation','reputationEvaluations','completedMeetKeys','pointLog'])assert.deepEqual(save[field],original[field],field);
   assert.deepEqual(p.stats,original.players[0].stats);assert.deepEqual(p.bestTimes,original.players[0].bestTimes);
 });
