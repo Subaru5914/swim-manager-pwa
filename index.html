@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.67</title>
+<title>大学競泳監督シミュレーション PWA版 v2.68</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1024,7 +1024,7 @@ nav .nav-action:hover{background:#edf6ff}
   .top10-table-wrap{width:94%!important;max-width:94%!important}
 }
 /* Shared player detail typography and the approved C layout. */
-.modal-player-detail{width:min(940px,calc(var(--game-vw)*94));max-width:940px;max-height:calc(var(--game-vh)*90);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.modal-player-detail{width:min(980px,calc(var(--game-vw)*94));max-width:980px;max-height:calc(var(--game-vh)*90);-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .modal-player-detail .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,168px));gap:4px}
 .modal-player-detail .stat-detail-row{font-weight:650}
 .modal-player-detail .stat-detail-row[class*="rank-"]{width:100%;max-width:168px;grid-template-columns:minmax(0,1fr) auto;column-gap:6px}
@@ -1035,26 +1035,28 @@ nav .nav-action:hover{background:#edf6ff}
 .modal-player-detail .detail-stats-pb{grid-template-columns:364px minmax(0,1fr);gap:8px}
 .modal-player-detail .detail-stat-section{grid-row:1;grid-column:1;container:detail-stats / inline-size}
 .modal-player-detail .detail-pb-section{grid-row:1;grid-column:2;overflow-x:auto}
-.modal-player-detail .detail-pb-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-width:520px;column-gap:6px}
-.modal-player-detail .pb-detail-row{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:2px;min-height:36px;padding:3px 0;font-size:18px;line-height:1.2;white-space:nowrap}
-.modal-player-detail .pb-with-standard{display:grid;grid-template-columns:7.2ch 96px;gap:2px;font-size:19px;line-height:1.25}
+.modal-player-detail .detail-pb-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-width:548px;column-gap:6px}
+.modal-player-detail .pb-detail-row{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:2px;min-height:36px;padding:3px 0;font-size:19px;line-height:1.2;white-space:nowrap}
+.modal-player-detail .pb-with-standard{display:grid;grid-template-columns:7.2ch 102px;gap:2px;font-size:20px;line-height:1.25}
 .modal-player-detail .pb-with-standard>b{text-align:right}
-.modal-player-detail .pb-standard-tag{justify-self:start;font-size:15px;padding:1px 2px;line-height:1.2}
+.modal-player-detail .pb-standard-tag{justify-self:start;font-size:16px;padding:1px 2px;line-height:1.2}
 @media(pointer:fine){
-  .modal-player-detail .stat-detail-row{padding-left:5px;padding-right:5px}
-  @media(max-width:990px){
+  .modal-player-detail .detail-stat-section{overflow-x:auto}
+  .modal-player-detail .detail-stat-grid{grid-template-columns:repeat(2,180px);width:364px}
+  .modal-player-detail .stat-detail-row{width:180px;min-width:180px;max-width:180px;padding-left:5px;padding-right:5px}
+  @media(max-width:1040px){
     .modal-player-detail .detail-stats-pb{grid-template-columns:minmax(0,1fr)}
     .modal-player-detail .detail-stat-section{grid-row:2;grid-column:1}
     .modal-player-detail .detail-pb-section{grid-row:1;grid-column:1}
   }
 }
 @media(pointer:coarse){
-  .modal-player-detail{width:calc(var(--game-vw)*94)!important;max-width:760px!important}
-  .modal-player-detail .detail-stats-pb{grid-template-columns:minmax(0,1fr) 404px}
-  .modal-player-detail .detail-pb-grid{min-width:404px;column-gap:5px}
-  .modal-player-detail .pb-detail-row{min-height:0;padding:2px 0;font-size:14px}
-  .modal-player-detail .pb-with-standard{font-size:15px;grid-template-columns:7.2ch 78px}
-  .modal-player-detail .pb-standard-tag{font-size:12px}
+  .modal-player-detail{width:calc(var(--game-vw)*94 + 28px)!important;max-width:min(788px,calc(var(--game-vw)*100 - 4px))!important}
+  .modal-player-detail .detail-stats-pb{grid-template-columns:minmax(0,1fr) 432px}
+  .modal-player-detail .detail-pb-grid{min-width:432px;column-gap:5px}
+  .modal-player-detail .pb-detail-row{min-height:0;padding:2px 0;font-size:15px}
+  .modal-player-detail .pb-with-standard{font-size:16px;grid-template-columns:7.2ch 84px}
+  .modal-player-detail .pb-standard-tag{font-size:13px}
   .modal-player-detail>.row:nth-child(2){margin:4px 0!important}
   .modal-player-detail .detail-stat-section>h3,.modal-player-detail .detail-pb-section>h3{margin:6px 0}
   @container detail-stats (max-width:240px){
@@ -1095,7 +1097,7 @@ nav .nav-action:hover{background:#edf6ff}
 .relay-members{line-height:1.35}
 .standards-table th:not(:first-child),.standards-table td:not(:first-child){width:17%}
 @media (orientation:landscape) and (max-width:950px) and (max-height:500px) and (pointer:coarse), (orientation:portrait) and (max-height:950px) and (max-width:500px) and (pointer:coarse){
-  .modal-player-detail{width:calc(var(--game-vw) * 94)!important;max-width:760px!important;max-height:calc(var(--game-vh) * 90)!important}
+  .modal-player-detail{width:calc(var(--game-vw)*94 + 28px)!important;max-width:min(788px,calc(var(--game-vw)*100 - 4px))!important;max-height:calc(var(--game-vh) * 90)!important}
   .modal-player-detail .detail-stat-grid{grid-template-columns:repeat(2,minmax(0,140px));gap:3px}
   .modal-player-detail .stat-detail-row{max-width:140px}
   .modal-player-detail .stat-detail-value{grid-template-columns:19px 3ch;gap:3px}
@@ -1485,6 +1487,10 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 #scoutTable .scout-status{font-size:11px;line-height:1.25;margin-top:2px}
 #scoutTable .scout-preferences{line-height:1.25}
 
+#rosterTable .pb-with-standard{font-size:16px}
+.scouting-guide{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#f7faff;font-size:12px;line-height:1.6}
+.scouting-guide p{margin:0 0 6px}.scouting-guide p:last-child{margin-bottom:0}
+@media(pointer:coarse){#rosterTable .pb-with-standard{font-size:13px}}
 @media(pointer:coarse){
   #rosterTable>table{width:max-content!important;min-width:100%!important;table-layout:auto!important}
   #rosterTable>table :is(th,td){width:auto!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important}
@@ -1519,7 +1525,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.67</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.68</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1716,8 +1722,11 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
       <label>並び順 <select id="scoutSortMode"><option value="default">肩書・ランキング順</option><option value="pb">種目別・PBが速い順</option></select></label>
     </div>
 
-
-
+    <div id="scoutingGuide" class="scouting-guide">
+      <p><b>接触と競合</b>：接触は5pt・同じ選手に月1回。複数の大学が接触すると競合になり、「競合状況」で各大学の志望度と打診状況を確認できます。志望度は成功率ではありません。</p>
+      <p><b>早期内定</b>：他大学の接触がなければ、志望度50以上で内定を打診すると確定します。競合時は11月末・1月末に判定し、打診校の中で最も高い志望度が70以上、次点との差が12以上なら早期内定します（打診校が1校なら70以上）。</p>
+      <p><b>最終内定</b>：3月末、志望度40以上の打診校から志望度に応じて抽選します。志望度が最も高い大学に必ず進学するわけではありません。内定打診は無料で、内定と打診は計8名まで。確定後は他大学へ移りません。</p>
+    </div>
     <div id="scoutingNotices" class="notice" hidden></div>
     <div id="scoutTable" class="table-wrap" style="margin-top:10px"></div>
   </div>
@@ -1751,9 +1760,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.67"></script>
-<script src="./save-history.js?version=v2.67"></script>
-<script src="./cloud-sync.js?version=v2.67"></script>
+<script src="./local-save.js?version=v2.68"></script>
+<script src="./save-history.js?version=v2.68"></script>
+<script src="./cloud-sync.js?version=v2.68"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -2273,7 +2282,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.67";
+  state.version="pwa-v2.68";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -4729,7 +4738,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.67",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.68",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     if(nameSettings.universityProfiles)s.universities=deepClone(nameSettings.universityProfiles);
@@ -8967,6 +8976,14 @@ function renderRivals(){
   content.querySelectorAll("[data-favorite-rival]").forEach(b=>b.onclick=()=>toggleFavoriteRival(b.dataset.favoriteRival));
   content.querySelectorAll("[data-rival-athlete]").forEach(b=>b.onclick=()=>showRivalPlayerDetail(b.dataset.rivalAthlete));
 }
+function detailStatRowsHtml(p,interactive=false){
+  return DETAIL_STATS.map(k=>{
+    const value=Math.round(displayStatValue(p,k)),trainable=interactive&&!DERIVED_STATS.includes(k);
+    const tag=trainable?"button":"div",control=trainable?` type="button" role="radio" data-detail-focus="${k}"`:"";
+    const title=DERIVED_STATS.includes(k)?' title="4泳法の平均にIM適性を反映。4泳法の練習で向上します。"':"";
+    return `<${tag} class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"${control}${title}><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></${tag}>`;
+  }).join("");
+}
 function showRivalPlayerDetail(id,{fromFavorites=false,returnScrollTop=0}={}){
   const p=fromFavorites?favoriteRivalRows().find(row=>row.entry.id===id)?.athlete:state.world.find(a=>a.id===id&&!a.retired&&a.category==="university"&&state.universities.some(u=>u.name===a.organization));
   if(!p){if(fromFavorites)showFavoriteRivals({scrollTop:returnScrollTop});return}
@@ -8985,9 +9002,7 @@ function showRivalPlayerDetail(id,{fromFavorites=false,returnScrollTop=0}={}){
   };
   const label=p.year||p.category==="university"?gradeBadge(p.year??p.grade,`大${p.year??p.grade??"—"}`):`<span class="tag">社会人 ${esc(athleteGradeLabel(p))}</span>`;
   const back=fromFavorites?'<button id="backToFavoriteRivals">← お気に入り一覧</button>':"";
-  const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${label}</h2>${back}<button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${DETAIL_STATS.map(k=>{
-    const value=Math.round(displayStatValue(p,k));return `<div class="stat-detail-row ${statRankClass(value)}" data-stat="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value">${statRankLabel(value)}</span></div>`;
-  }).join("")}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span>${personalBestHtml(e,p.bestTimes?.[e],"未計測")}</div>`).join("")}</div>${rivalMainResultsHtml(p)}</section></div>`);
+  const overall=overallStatValue(p),m=showModal(`<div class="row"><h2 style="margin-right:auto">${esc(p.name)} ${label}</h2>${back}<button id="x">閉じる</button></div><div class="row rival-detail-meta"><b>${esc(p.organization)}</b>${specialtyTag(p.specialty,"専門 ")}<span>総合 ${statRankLabel(overall)}</span></div><div class="detail-stats-pb"><section class="detail-stat-section"><h3>ステータス</h3><div class="detail-stat-grid">${detailStatRowsHtml(p)}</div></section><section class="detail-pb-section"><h3>PB</h3><div class="detail-pb-grid">${EVENTS.map(e=>`<div class="pb-detail-row" data-rival-pb="${e}"><span>${EVENT_LABEL[e]}</span>${personalBestHtml(e,p.bestTimes?.[e],"未計測")}</div>`).join("")}</div>${rivalMainResultsHtml(p)}</section></div>`);
   m.classList.add("modal-player-detail","modal-rival-player");m.querySelector("#x").onclick=returnToList;
   if(fromFavorites)m.querySelector("#backToFavoriteRivals").onclick=returnToList;
   restoreAfterLayout();
@@ -9200,11 +9215,7 @@ function showPlayerDetail(id){
         <h3>ステータス</h3>
         <p class="small muted">ステータスを押して重点練習を1項目選択</p>
         <div id="detailTrainingNote" class="small" style="margin-bottom:6px"></div>
-        <div class="detail-stat-grid" role="radiogroup" aria-label="練習する能力を1つ選択">${DETAIL_STATS.map(k=>{
-          let v=Math.round(displayStatValue(p,k));
-          if(DERIVED_STATS.includes(k))return`<div class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" title="4泳法の平均にIM適性を反映。4泳法の練習で向上します。"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></div>`;
-          return`<button type="button" role="radio" class="stat-detail-row ${statRankClass(v)}" data-stat="${k}" data-detail-focus="${k}"><span class="stat-detail-label">${STAT_LABEL[k]}</span><span class="stat-detail-value"><span class="stat-rank-badge ${statRankClass(v)}">${statRank(v)}</span><span class="stat-number">${v}</span></span></button>`;
-        }).join("")}</div>
+        <div class="detail-stat-grid" role="radiogroup" aria-label="練習する能力を1つ選択">${detailStatRowsHtml(p,true)}</div>
         <p class="small muted">IM能力は4泳法の練習で向上します。メンタルが高いほど、大会で好調・絶好調になりやすくなります。</p>
       </div>
       <div class="detail-pb-section">
