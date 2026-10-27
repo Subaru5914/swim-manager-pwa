@@ -7051,13 +7051,22 @@ function setCollegeAdmissionChoice(id,target){
   if(!Object.keys(context.notice.choices).length)delete context.notice.choices;
   return{ok:true};
 }
+function confirmCollegeEnrollmentPBs(){
+  const backup=state.pendingEnrollmentTop10;
+  if(backup?.season===state.season&&backup.universityId===controlledUniversityId()&&state.slot===1)state.teamTop10=deepClone(backup.book);
+  const otherFreshmen=new Set((state.world||[]).filter(a=>a.category==="university"&&a.grade===1).map(a=>a.id));
+  for(const [event,rows]of Object.entries(state.teamTop10||{}))state.teamTop10[event]=rows.filter(r=>!(r.teamPBOnly&&r.season===state.season&&otherFreshmen.has(r.athleteId)));
+  registerTeamPersonalBests(state.players.filter(a=>a.year===1),{meet:"enrollment_pb",grade:1});
+  delete state.pendingEnrollmentTop10;
+  state.pendingCollegeAdmissions=null;
+}
 function applyCollegeAdmissionChoices(){
   const context=collegeAdmissionContext(),error=collegeAdmissionError(context);
-  if(state.scoutingAdmissionsMode==="competition"&&context){state.pendingCollegeAdmissions=null;return{ok:true,changed:0}}
+  if(state.scoutingAdmissionsMode==="competition"&&context){confirmCollegeEnrollmentPBs();return{ok:true,changed:0}}
   if(error)return{ok:false,msg:error};
   const {notice,universities,byName,freshmen,defaults,choices,fixed}=context;
   const changed=[...choices].filter(([id,target])=>target!==defaults.get(id)).length;
-  if(!changed){state.pendingCollegeAdmissions=null;return{ok:true,changed:0}}
+  if(!changed){confirmCollegeEnrollmentPBs();return{ok:true,changed:0}}
   if(notice.toSeason!==state.season||state.slot!==1)return{ok:false,msg:"進学先を変更できるのは年度初めです。"};
   // Keep the automatic intake sizes, including legacy overflow cohorts, while
   // allowing at most eight listed prospects per campus. Ordinary entrants fill
@@ -7113,7 +7122,7 @@ function applyCollegeAdmissionChoices(){
   updateCpuRankedSpecialties();initializeCpuDevelopment();
   if(selectedTrainingId&&!state.players.some(a=>a.id===selectedTrainingId))selectedTrainingId=null;
   state.pendingFreshmenWelcome=freshmanWelcomeRows(own);
-  state.pendingCollegeAdmissions=null;
+  confirmCollegeEnrollmentPBs();
   return{ok:true,changed};
 }
 function sortedCollegeAdmissionRows(rows,mode,context=collegeAdmissionContext()){
@@ -7377,12 +7386,14 @@ function newSeason(){
   state.reputation=enrollmentRep;
 
   state.season++;state.slot=1;
+  state.pendingEnrollmentTop10={season:state.season,universityId:controlledUniversityId(),book:deepClone(state.teamTop10)};
   registerTeamPersonalBests(incoming,{meet:"enrollment_pb",grade:1});
   normalizeMeetFormBoosts();
   addMiddleSchoolCohort();maintainWorldPopulation({deferDevelopment:true});prepareCpuMeetPopulation();
   finalizeGeneratedPBs();refreshRecordRankings();migrateCpuRaceConsistency();ensureSpecialtyPBs();updateSchoolPersonalBests(progressingPBs);refreshRecordBook();refreshScoutBoard();
   updateCpuRankedSpecialties({measureSchoolPBs:true,preservedPBs:progressingPBs});refreshScoutBoard();initializeCpuDevelopment();
   saveCollegeAdmissionsNotice(graduatingLeaders,endingSeason,{signedIds:readyScoutIds,playerProfiles});
+  if(!state.pendingCollegeAdmissions)delete state.pendingEnrollmentTop10;
   if(state.pendingCollegeAdmissions)state.pendingCollegeAdmissions.confirmed=Object.fromEntries(committedDestinations);
   initializeScoutingCompetition();
   state.pendingSeasonRetirements=retiring.length?{season:endingSeason,rows:retiring}:null;

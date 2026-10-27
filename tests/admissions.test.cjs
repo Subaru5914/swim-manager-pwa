@@ -44,16 +44,17 @@ test('draft selections do not change affiliations or clocks; the ninth choice is
   const before=protectedData(),blocked=setCollegeAdmissionChoice('b0','U1'),first=setCollegeAdmissionChoice('a0','U3'),eighth=setCollegeAdmissionChoice('b0','U1'),ninth=setCollegeAdmissionChoice('b1','U1');
   const retained=protectedData()===before,choices=Object.fromEntries(collegeAdmissionContext().choices),count=collegeAdmissionContext().counts.get('U1');
   delete state.pendingCollegeAdmissions.choices;const reset=protectedData()===before&&collegeAdmissionContext().choices.get('a0')==='U1';
-  const result=applyCollegeAdmissionChoices();return{blocked,first,eighth,ninth,retained,count,choices,reset,result,untouched:before===protectedData(),closed:state.pendingCollegeAdmissions===null};
+  const result=applyCollegeAdmissionChoices(),prior=JSON.parse(before),after=JSON.parse(protectedData()),historical=prior.splice(4,1)[0];after.splice(4,1);
+  return{blocked,first,eighth,ninth,retained,count,choices,reset,result,untouched:JSON.stringify(prior)===JSON.stringify(after)&&Object.entries(historical).every(([e,rows])=>rows.every(h=>state.teamTop10[e].some(r=>JSON.stringify(r)===JSON.stringify(h)))),closed:state.pendingCollegeAdmissions===null};
  })()`);
  assert.ok(!r.blocked.ok&&r.first.ok&&r.eighth.ok&&!r.ninth.ok&&r.retained&&r.reset&&r.untouched&&r.closed);assert.equal(r.count,8);assert.equal(r.choices.a0,'U3');assert.equal(r.choices.b0,'U1');assert.deepEqual(r.result,{ok:true,changed:0});
 });
 test('confirming CPU choices reallocates ordinary freshmen without changing swimmers, records, university sizes or entry rules',()=>{
  const run=fixture(),r=run(`(()=>{
-  const before=JSON.stringify(identities()),records=JSON.stringify([state.teamTop10,state.recordRankings]),seed=state.rngSeed;
+  const before=JSON.stringify(identities()),records=JSON.stringify(state.recordRankings),historical=JSON.stringify(state.teamTop10.fr100[0]),seed=state.rngSeed;
   setCollegeAdmissionChoice('a0','U3');setCollegeAdmissionChoice('b0','U1');const result=applyCollegeAdmissionChoices();
   const byId=new Map(activeAthletes().map(a=>[a.id,a])),entries=buildCpuCollegeEntries('intercollege');
-  return{result,preserved:before===JSON.stringify(identities()),records:records===JSON.stringify([state.teamTop10,state.recordRankings]),seed:seed===state.rngSeed,
+  return{result,preserved:before===JSON.stringify(identities()),records:records===JSON.stringify(state.recordRankings)&&state.teamTop10.fr100.some(h=>JSON.stringify(h)===historical),seed:seed===state.rngSeed,
    affiliations:[byId.get('a0').organization,byId.get('b0').organization],sizes:state.universities.map(u=>state.world.filter(a=>a.organization===u.name).length),own:state.players.length,
    entries:entries.fr100.map(id=>({id,organization:byId.get(id).organization})),welcome:state.pendingFreshmenWelcome.length,again:applyCollegeAdmissionChoices()};
  })()`);
@@ -92,4 +93,16 @@ test('drafts survive serialization and old pending notices can change affiliatio
   return{draft,result,preserved:before===JSON.stringify(identities()),own:state.players.map(a=>a.id),cpu:state.world.find(a=>a.id==='p0').organization};
  })()`);
  assert.ok(r.result.ok&&r.preserved);assert.equal(r.draft.p0,'U3');assert.equal(r.draft.a0,'player');assert.equal(r.cpu,'丙大学');assert.equal(r.own.length,8);assert.ok(r.own.includes('a0'));
+});
+
+test('confirmed enrollment PBs follow the final own roster and restore a historic tenth place displaced by a provisional entrant',()=>{
+ const run=fixture(),r=run(`(()=>{
+  state.teamTop10.fr100=Array.from({length:10},(_,i)=>({kind:'individual',event:'fr100',athleteId:'old-'+i,name:'歴代卒業生'+i,time:50+i*.1,season:2025,meet:'intercollege',stage:'決勝'}));
+  for(const a of activeAthletes())a.bestTimes.fr100=55;state.players[0].bestTimes.fr100=48;state.world.find(a=>a.id==='a0').bestTimes.ba100=55;
+  const original=JSON.stringify(state.teamTop10.fr100);state.pendingEnrollmentTop10={season:state.season,universityId:controlledUniversityId(),book:deepClone(state.teamTop10)};
+  registerTeamPersonalBests(state.players,{meet:'enrollment_pb',grade:1});const displaced=!state.teamTop10.fr100.some(h=>h.athleteId==='old-9');
+  setCollegeAdmissionChoice('p0','U3');setCollegeAdmissionChoice('a0','player');state=JSON.parse(JSON.stringify(state));for(const a of activeAthletes())attachMedleyStats(a);
+  const result=applyCollegeAdmissionChoices();return{result,displaced,restored:original===JSON.stringify(state.teamTop10.fr100),ba:state.teamTop10.ba100,departed:Object.values(state.teamTop10).flat().some(h=>h.athleteId==='p0'),pending:state.pendingEnrollmentTop10??null};
+ })()`);
+ assert.ok(r.result.ok&&r.displaced&&r.restored);assert.equal(r.departed,false);assert.equal(r.ba[0].athleteId,'a0');assert.equal(r.ba[0].time,55);assert.equal(r.ba[0].meet,'enrollment_pb');assert.equal(r.pending,null);
 });
