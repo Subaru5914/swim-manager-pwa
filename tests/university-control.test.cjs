@@ -58,13 +58,19 @@ test('inactive managed schools retain results and fixed training room; a running
  assert.ok(r.first.ok&&r.noRenewal&&r.recorded&&r.medal&&r.clean&&r.unchanged,JSON.stringify(r));assert.equal(r.blocked.ok,false);
 });
 
-test('mixed name generation uses 0.1 percent and preserves unique domestic names without changing swimmer abilities',()=>{
+test('expanded domestic name pools keep rare surname weights and 0.1 percent mixed names without changing swimmer abilities',()=>{
  const r=game()(`(()=>{
   const used=new Set(),before=JSON.stringify(state.players),n=100000;let mixed=0;
   for(let i=0;i<n;i++){const name=newName(used),[last,first]=name.split(' ');if(MIXED_LAST.includes(last)||MIXED_FIRST.includes(first))mixed++}
-  return{n,mixed,unique:used.size,rate:MIXED_NAME_RATE,unchanged:before===JSON.stringify(state.players)};
+  const surnames=new Set([...used].map(name=>name.split(' ')[0])),givenNames=new Set([...used].map(name=>name.split(' ')[1]));
+  return{n,mixed,unique:used.size,rate:MIXED_NAME_RATE,unchanged:before===JSON.stringify(state.players),
+   common:['木下','原','大島','佐久間','細川','河原'].every(name=>surnames.has(name))&&['正樹','浩平','祐司','健司','将生'].every(name=>givenNames.has(name)),
+   weights:['木下','原','大島','小鳥遊','西園寺'].map(name=>WEIGHTED_LAST.filter(value=>value===name).length),
+   pools:[FIRST.length,LAST.length],distinct:FIRST.length===new Set(FIRST).size&&LAST.length===new Set(LAST).size};
  })()`);
  assert.equal(r.rate,.001);assert.equal(r.unique,r.n);assert.ok(r.mixed>=65&&r.mixed<=140,JSON.stringify(r));assert.ok(r.unchanged);
+ assert.ok(r.common&&r.distinct);assert.deepEqual(r.weights,[3,3,3,1,1]);
+ console.log('Name pool sizes:',JSON.stringify(r.pools),'mixed names in sample:',r.mixed);
 });
 
 test('meet result snapshots preserve official clocks and entry PBs, omit animations, and relink live athletes and histories',()=>{
