@@ -112,8 +112,8 @@ test('legacy relay appearances recover saved totals once, keep real history auth
 test('relay history retains selected graduate splits and is idempotent while only the first leg registers an individual PB',()=>{
   const run=game();
   const result=run(`(()=>{
-    const members=Array.from({length:4},(_,i)=>({id:'JPN-relay-'+i,name:'代表選手'+i,category:'university',grade:4,age:22,organization:'代表大学',bestTimes:{fr100:60},raceHistory:[],standardAchievements:{fr100:[]},standardAchievementVersion:1}));
-    state.japanTeam={year:2027,selectedSeason:2026,athletes:members.map((a,i)=>({id:a.id,snapshot:a,ownAtSelection:i===2}))};
+    const members=Array.from({length:4},(_,i)=>({id:'JPN-relay-'+i,name:'代表選手'+i,category:'university',grade:4,age:22,organization:i===2?state.playerUniversity:'代表大学',bestTimes:{fr100:60},raceHistory:[],standardAchievements:{fr100:[]},standardAchievementVersion:1}));
+    state.japanTeam={year:2027,selectedSeason:2026,athletes:members.map((a,i)=>({id:a.id,snapshot:a,ownAtSelection:i===2,universityId:i===2?controlledUniversityId():'U08'}))};
     state.season=2027;state.slot=36;
     const team={organization:'日本',members,rank:3,heatLane:5,race:{total:210,legs:[52,53,54,51]}};
     const before=JSON.stringify(members.slice(1).map(a=>[a.bestTimes,a.standardAchievements]));

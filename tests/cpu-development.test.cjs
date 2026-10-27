@@ -13,7 +13,7 @@ test('v2.03 migration preserves growth, IM aptitude, retained PBs and the next r
  const legacy=old('(state=createState(),migrateState(),deepClone(state))'),run=game();run(`state=${JSON.stringify(legacy)};migrateStartAbilities();trimGraduatingCohort();true`);
  const before=run('deepClone(state)');run('migrateState();true');
  const migrated=run(`(()=>{const first=JSON.stringify(state),seed=state.rngSeed;migrateState();return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed}})()`);
- assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.88');
+ assert.ok(migrated.stable);assert.equal(migrated.state.version,'pwa-v2.89');
  for(const k of ['season','slot','points','reputation','playerUniversity','rngSeed','trainingFocus','facilities','recruits'])assert.deepEqual(migrated.state[k],before[k],k);
  for(const after of [migrated.state])for(const group of ['world','players']){
   assert.equal(after[group].length,before[group].length);
@@ -82,8 +82,9 @@ test('a real April rollover keeps all surviving abilities and transition PBs, in
   newSeason();const errors=[];for(const a of [...state.players,...state.world]){const b=prior.get(a.id);if(!b)continue;if(JSON.stringify(a.stats)!==b.stats||JSON.stringify(a.imAptitude||{})!==b.apt)errors.push(a.id+' ability');
     if(b.category!==a.category)for(const[e,t]of Object.entries(b.pb))if(validRaceTime(a.bestTimes[e])&&a.bestTimes[e]!==t)errors.push(a.id+' '+e+' PB');
   }
+  const entries=Object.values(state.teamTop10).flat().filter(h=>h.meet==='enrollment_pb'),enrollment=entries.length>0&&entries.every(h=>h.season===state.season&&h.teamPBOnly&&state.players.some(a=>a.year===1&&a.id===h.athleteId&&a.bestTimes[h.event]===h.time));
   const first=JSON.stringify(state),seed=state.rngSeed;state=JSON.parse(first);migrateState();
-  return{errors,firstYears:state.players.filter(a=>a.year===1).length,stable:first===JSON.stringify(state)&&seed===state.rngSeed};
+  return{errors,enrollment,firstYears:state.players.filter(a=>a.year===1).length,stable:first===JSON.stringify(state)&&seed===state.rngSeed};
  })()`);
- assert.deepEqual(r.errors,[]);assert.equal(r.firstYears,8);assert.ok(r.stable);
+ assert.deepEqual(r.errors,[]);assert.equal(r.firstYears,8);assert.ok(r.enrollment);assert.ok(r.stable);
 });
