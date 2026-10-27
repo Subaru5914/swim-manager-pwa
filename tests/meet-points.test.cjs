@@ -11,15 +11,15 @@ function game(){return vm.compileFunction(source.slice(0,source.indexOf('documen
  awardMeetGrowth=()=>null;refreshRecordBook=()=>{};refreshScoutBoard=()=>{};selectJapanTeam=()=>null;
  return code=>JSON.parse(JSON.stringify(eval(code)))`,[])()}
 
-test('only the three college entry-limit meets earn final-place currency; preliminaries, CPU swimmers and malformed clocks earn none',()=>{
+test('only the four college tournament meets earn final-place currency; preliminaries, CPU swimmers and malformed clocks earn none',()=>{
  const r=game()(`(()=>{const outcomes=[];
-  for(const meet of ['kansai_college','intercollege','teijimayama_championship','japan_open','japan_championship','joint_record','world_championship','team_trial']){
+  for(const meet of ['spring_kansai','kansai_college','intercollege','teijimayama_championship','japan_open','japan_championship','joint_record','world_championship','team_trial']){
    const m=result(meet);m.events.fr100={prelim:[row('own',40,true)],final:[row('own',null,true),row('cpu',49),row('own',50,true)]};
    const before=JSON.stringify([m,state.rngSeed,state.players]),reward=finalMeetPointReward(m);
    outcomes.push({meet,points:reward?.points??null,unchanged:before===JSON.stringify([m,state.rngSeed,state.players])});
   }return outcomes;
  })()`);
- for(const x of r){assert.equal(x.points,['kansai_college','intercollege','teijimayama_championship'].includes(x.meet)?10:null,x.meet);assert.ok(x.unchanged)}
+ for(const x of r){assert.equal(x.points,['spring_kansai','kansai_college','intercollege','teijimayama_championship'].includes(x.meet)?10:null,x.meet);assert.ok(x.unchanged)}
 });
 
 test('every individual final and one relay team earn their place once; tied places share the occupied point pool and use official hundredths',()=>{

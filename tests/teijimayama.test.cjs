@@ -22,7 +22,7 @@ test('Teijimayama runs every November second-week late turn with all 15 individu
   assert.equal(r.events.length,15);assert.deepEqual(r.days,[['im400','ba200','fr100','fly50'],['fr200','fly200','br100','ba50','4x100fr'],['ba100','im200','fr400','br50','4x100medley'],['fr50','fly100','br200','4x200fr']]);
   assert.ok(r.college&&r.eligibleWithoutPB&&r.eligibleSlow);assert.equal(r.restricted,false);assert.equal(r.scoring,false);assert.ok(r.standards.every(s=>s===null));
   assert.equal(r.kansai.length,12);assert.deepEqual(r.inter,r.kansai);
-  assert.deepEqual(r.normalCollegeEligibility,[false,false]);assert.deepEqual(r.comparison,{meet,current:0,previous:null,delta:0});
+  assert.deepEqual(r.normalCollegeEligibility,[false,false]);assert.deepEqual(r.comparison,{meet,current:null,previous:null,delta:0});
 });
 
 test('regional-only CPU entries use PB order and enforce both three-entry limits without any qualifying time',()=>{
@@ -74,9 +74,10 @@ test('a real full regional tournament keeps every entry, daily prelim-first orde
     const ids=own.slice(0,3).map(a=>a.id),selections=Object.fromEntries(EVENTS.map(e=>[e,SPRINT_EVENTS.includes(e)?[senior.id,...ids]:[]]));
     const relay=Object.fromEntries(RELAYS.map(kind=>[kind,own.slice(0,4).map(a=>a.id)]));
     const rep=state.reputation,scoreHistory=JSON.stringify(state.teamScoreHistory),seniors=state.players.filter(a=>a.year===4).map(a=>a.id);
-    const originalBuilder=buildCpuCollegeEntries;let selected;
+    const originalBuilder=buildCpuCollegeEntries,originalSeeder=seedRaceHeats,seedClocks=new Map();let selected;
+    seedRaceHeats=(entrants,event,meet)=>{const heats=originalSeeder(entrants,event,meet);for(const row of heats.flat())seedClocks.set(row.athlete.id+':'+event,entrySeedTime(row,event));return heats};
     buildCpuCollegeEntries=target=>selected=originalBuilder(target);rng=()=>.5;gauss=()=>0;
-    const result=executeMeet(meet,selections,relay,{deferRelayFinalEntries:true});buildCpuCollegeEntries=originalBuilder;
+    const result=executeMeet(meet,selections,relay,{deferRelayFinalEntries:true});buildCpuCollegeEntries=originalBuilder;seedRaceHeats=originalSeeder;
     const errors=[],counts={},organizations={},schools=new Set(meetUniversities(meet));
     for(const [e,field] of Object.entries(result.events)){
       const cpu=field.prelim.filter(row=>row.source==='CPU').map(row=>row.athlete.id).sort();
@@ -84,7 +85,7 @@ test('a real full regional tournament keeps every entry, daily prelim-first orde
       if(!field.heats.length||field.heats.some(h=>h.length>8)||field.heats.length!==Math.ceil(field.prelim.length/8))errors.push('heats '+e);
       for(const heat of field.heats){
         const seeded=[...heat].sort((a,b)=>SEEDED_LANES.indexOf(a.heatLane)-SEEDED_LANES.indexOf(b.heatLane));
-        if(seeded.some((row,i)=>i&&row.entryPB<seeded[i-1].entryPB)||JSON.stringify(seeded.map(row=>row.heatLane))!==JSON.stringify(SEEDED_LANES.slice(0,heat.length)))errors.push('PB lanes '+e);
+        if(seeded.some((row,i)=>i&&seedClocks.get(row.athlete.id+':'+e)<seedClocks.get(seeded[i-1].athlete.id+':'+e))||JSON.stringify(seeded.map(row=>row.heatLane))!==JSON.stringify(SEEDED_LANES.slice(0,heat.length)))errors.push('PB lanes '+e);
       }
       for(const row of [...field.prelim,...field.final]){
         if((row.athlete.year??row.athlete.grade)===4)errors.push('senior individual '+e);
@@ -120,11 +121,11 @@ test('a real full regional tournament keeps every entry, daily prelim-first orde
     completeMeet(result);
     const ownBefore=JSON.stringify(state.players),topBefore=JSON.stringify(state.teamTop10);state=deepClone(state);migrateState();
     return{errors,events:Object.keys(result.events),relays:result.relays.length,teamScores:result.teamScores,scoreHistory:JSON.stringify(state.teamScoreHistory)===scoreHistory,
-      reputation:state.reputation===rep,seniors:JSON.stringify(state.players.filter(a=>a.year===4).map(a=>a.id))===JSON.stringify(seniors),points:state.points,
+      reputation:state.reputation===rep,seniors:JSON.stringify(state.players.filter(a=>a.year===4).map(a=>a.id))===JSON.stringify(seniors),points:state.points,entryPoints:result.entryPoints,finalPoints:result.finalPointReward?.points||0,
       ownSaved:JSON.stringify(state.players)===ownBefore,topSaved:JSON.stringify(state.teamTop10)===topBefore,history:state.meetHistory.at(-1).meet,
       ownHistory:own[0].raceHistory.filter(h=>h.meet===meet).length,record:SPRINT_EVENTS.every(e=>state.recordRankings.university[e].some(row=>row.meet===meet)),cleared:activeRaceMeetContext===null};
   })()`);
   assert.deepEqual(r.errors,[]);assert.equal(r.events.length,15);assert.equal(r.relays,3);assert.deepEqual(r.teamScores,{});
   for(const key of ['scoreHistory','reputation','seniors','ownSaved','topSaved','record','cleared'])assert.ok(r[key],key);
-  assert.equal(r.points,9);assert.equal(r.history,meet);assert.ok(r.ownHistory>=6);
+  assert.equal(r.entryPoints,9);assert.ok(r.finalPoints>0);assert.equal(r.points,r.entryPoints+r.finalPoints);assert.equal(r.history,meet);assert.ok(r.ownHistory>=6);
 });

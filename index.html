@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v2.89</title>
+<title>大学競泳監督シミュレーション PWA版 v2.90</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1548,7 +1548,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v2.89</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v2.90</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1784,9 +1784,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v2.89"></script>
-<script src="./save-history.js?version=v2.89"></script>
-<script src="./cloud-sync.js?version=v2.89"></script>
+<script src="./local-save.js?version=v2.90"></script>
+<script src="./save-history.js?version=v2.90"></script>
+<script src="./cloud-sync.js?version=v2.90"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -1828,23 +1828,23 @@ const REPUTATION_LIMIT=1000;
 const REPUTATION_SCALE=[0,50,150,300,500,1000];
 const REPUTATION_STRENGTH_SCALE=[0,30,80,160,280,600];
 const MONTHS=[4,5,6,7,8,9,10,11,12,1,2,3];
-const MEETS={"4-4-後半":"team_trial","5-4-後半":"team_trial","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-2-後半":"world_championship","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","11-2-後半":"teijimayama_championship","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
-const MEET_LABEL={team_trial:"自チーム記録会",kansai_college:"関西カレッジ",intercollege:"インカレ",teijimayama_championship:"帝嶋山選手権",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",world_championship:"世界大会",initial_pb:"初期PB",cpu_training:"練習記録会"};
+const MEETS={"4-4-後半":"team_trial","5-4-後半":"spring_kansai","6-4-後半":"team_trial","7-3-後半":"kansai_college","8-2-後半":"world_championship","8-4-後半":"team_trial","9-1-後半":"intercollege","10-4-後半":"team_trial","11-2-後半":"teijimayama_championship","12-1-後半":"japan_open","1-2-後半":"joint_record","2-2-後半":"joint_record","3-3-後半":"japan_championship"};
+const MEET_LABEL={team_trial:"自チーム記録会",spring_kansai:"春季関西選手権",kansai_college:"関西カレッジ",intercollege:"インカレ",teijimayama_championship:"帝嶋山選手権",japan_open:"ジャパンオープン",joint_record:"合同記録会",japan_championship:"日本選手権",world_championship:"世界大会",initial_pb:"初期PB",cpu_training:"練習記録会"};
 const RIVAL_PODIUM_MEETS=["kansai_college","intercollege","japan_open","japan_championship"];
-const TEAM_PODIUM_MEETS=["kansai_college","world_championship","intercollege","teijimayama_championship","japan_open","japan_championship"];
+const TEAM_PODIUM_MEETS=["spring_kansai","kansai_college","world_championship","intercollege","teijimayama_championship","japan_open","japan_championship"];
 const TEAM_PODIUM_DISPLAY_MEETS=["world_championship","japan_championship","japan_open","intercollege","kansai_college"];
 const JOINT_RECORD_NAMES={1:"Higashikata CUP",2:"ダイナミオープン"};
 const RESTRICTED=new Set(["kansai_college","intercollege","japan_open","japan_championship"]);
 const RELAY_MEETS=new Set(["kansai_college","intercollege","teijimayama_championship","joint_record","world_championship"]);
 const TEAM_SCORE_MEETS=new Set(["kansai_college","intercollege"]);
 const OPEN_AGE_MEETS=new Set(["japan_open","joint_record","japan_championship"]);
-const COLLEGE_ENTRY_LIMIT_MEETS=new Set(["kansai_college","intercollege","teijimayama_championship"]);
+const COLLEGE_ENTRY_LIMIT_MEETS=new Set(["spring_kansai","kansai_college","intercollege","teijimayama_championship"]);
 const FINAL_RANK_POINTS=Object.freeze([12,10,8,6,4,3,2,1]);
 const RECORD_MEETS=new Set(["team_trial","joint_record"]);
 const UNLIMITED_STANDARD_MEETS=new Set(["japan_open","japan_championship"]);
 const RELAYS=["4x100fr","4x200fr","4x100medley"];
 const RELAY_LABEL={"4x100fr":"4×100m フリーリレー","4x200fr":"4×200m フリーリレー","4x100medley":"4×100m メドレーリレー"};
-const FOUR_DAY_MEETS=new Set(["kansai_college","intercollege","teijimayama_championship","japan_open","japan_championship","world_championship"]);
+const FOUR_DAY_MEETS=new Set(["spring_kansai","kansai_college","intercollege","teijimayama_championship","japan_open","japan_championship","world_championship"]);
 const FOUR_DAY_EVENTS=[
   ["im400","ba200","fr100","fly50"],
   ["fr200","fly200","br100","ba50","4x100fr"],
@@ -2453,7 +2453,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v2.89";
+  state.version="pwa-v2.90";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -4631,7 +4631,7 @@ function awardFinalMeetPoints(result){
 function finalMeetPointRewardHtml(result){
   const reward=result.finalPointReward;if(!reward)return "";
   const entry=result.entryPoints??0,total=round2(entry+reward.points);
-  return `<div class="notice" data-final-point-reward><b>大会獲得ポイント ＋${total}pt</b><br><span data-entry-point-total>出場 ${entry}pt</span> ＋ <span data-final-point-total>決勝順位 ${reward.points}pt</span><br><span class="small">出場は1選手×1種目＝1pt。決勝1〜8位：${FINAL_RANK_POINTS.join("・")}pt。リレーは1チーム分、同着は該当順位のポイントを等分します。</span><details><summary>獲得ポイントの内訳</summary><p class="small">出場ポイント：${entry}pt（1選手×1種目＝1pt）</p>${reward.awards.length?`<div class="table-wrap"><table><thead><tr><th>種目</th><th>選手・チーム</th><th>決勝順位</th><th>獲得pt</th></tr></thead><tbody>${reward.awards.map(row=>`<tr><td>${EVENT_LABEL[row.event]||RELAY_LABEL[row.event]}</td><td>${esc(row.name)}</td><td>${row.rank}位</td><td>${round2(row.points)}pt</td></tr>`).join("")}</tbody></table></div>`:'<p class="small">決勝でのポイント獲得はありませんでした。</p>'}</details></div>`;
+  return `<div class="notice" data-final-point-reward><b>大会獲得ポイント ＋${total}pt</b><br><span data-entry-point-total>出場 ${entry}pt</span> ＋ <span data-final-point-total>決勝順位 ${reward.points}pt</span><br><span class="small">出場は1選手×1種目＝1pt。決勝1〜8位：${FINAL_RANK_POINTS.join("・")}pt。${RELAY_MEETS.has(result.meet)?"リレーは1チーム分、":""}同着は該当順位のポイントを等分します。</span><details><summary>獲得ポイントの内訳</summary><p class="small">出場ポイント：${entry}pt（1選手×1種目＝1pt）</p>${reward.awards.length?`<div class="table-wrap"><table><thead><tr><th>種目</th><th>選手・チーム</th><th>決勝順位</th><th>獲得pt</th></tr></thead><tbody>${reward.awards.map(row=>`<tr><td>${EVENT_LABEL[row.event]||RELAY_LABEL[row.event]}</td><td>${esc(row.name)}</td><td>${row.rank}位</td><td>${round2(row.points)}pt</td></tr>`).join("")}</tbody></table></div>`:'<p class="small">決勝でのポイント獲得はありませんでした。</p>'}</details></div>`;
 }
 function completeMeet(result){
   if(result.completed)return;
@@ -4993,7 +4993,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v2.89",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v2.90",balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     if(nameSettings.universityProfiles)s.universities=deepClone(nameSettings.universityProfiles);
@@ -5050,7 +5050,7 @@ function meetMonthLabel(meet,slot=null){
   if(meet==="enrollment_pb")return "4月入学時PB";
   let month=null;
   if(slot!=null&&Number.isInteger(+slot)&&+slot>=1&&+slot<=96)month=slotDate(+slot).month;
-  if(!month)month={team_trial:4,joint_record:1,kansai_college:7,intercollege:9,teijimayama_championship:11,japan_open:12,japan_championship:3,world_championship:8}[meet]||"";
+  if(!month)month={team_trial:4,spring_kansai:5,joint_record:1,kansai_college:7,intercollege:9,teijimayama_championship:11,japan_open:12,japan_championship:3,world_championship:8}[meet]||"";
   return `${month?month+"月":""}${meetLabel(meet,slot)}`;
 }
 function athleteGradeLabel(a){
@@ -6076,6 +6076,8 @@ function ensureStandardAchievements(a){
   a.standardAchievementVersion=1;return a.standardAchievements=cleared;
 }
 function meetIndividualEvents(meet){return meet==="kansai_college"||meet==="intercollege"?SPECIALTY_EVENTS:EVENTS}
+function collegeEventEntryLimit(meet){return meet==="spring_kansai"?Infinity:3}
+function collegeAthleteEntryLimit(meet){return meet==="spring_kansai"?Infinity:3}
 function meetGradeEligible(a,meet){return meet!=="teijimayama_championship"||Number(a.year??a.grade)!==4}
 function playerMeetRoster(meet){return state.players.filter(p=>meetGradeEligible(p,meet))}
 function filterMeetEntryGrades(meet,selections,relaySel){
@@ -6086,7 +6088,7 @@ function filterMeetEntryGrades(meet,selections,relaySel){
 }
 function qualified(p,meet,e){if(!meetGradeEligible(p,meet)||!meetIndividualEvents(meet).includes(e))return false;let s=standardFor(meet,e);return s==null||(validRaceTime(p.bestTimes?.[e])&&p.bestTimes[e]<=s)}
 function universityName(id){if(id===controlledUniversityId())return state.playerUniversity;return state.universities.find(x=>x.id===id)?.name||id}
-function meetUniversities(meet){if(meet==="kansai_college"||meet==="teijimayama_championship")return[state.playerUniversity,...state.kansaiIds.map(universityName)];if(meet==="intercollege")return[state.playerUniversity,...state.interIds.map(universityName)];return[state.playerUniversity,...state.universities.map(x=>x.name)]}
+function meetUniversities(meet){if(["spring_kansai","kansai_college","teijimayama_championship"].includes(meet))return[state.playerUniversity,...state.kansaiIds.map(universityName)];if(meet==="intercollege")return[state.playerUniversity,...state.interIds.map(universityName)];return[state.playerUniversity,...state.universities.map(x=>x.name)]}
 function allowedCpu(a,meet){if(a.retired||!meetGradeEligible(a,meet))return false;if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet))return a.category==="university"&&meetUniversities(meet).includes(a.organization);if(OPEN_AGE_MEETS.has(meet))return["middle","high","university","adult"].includes(a.category);return false}
 function updateResultHistory(a,e,t,meet,stage,rank){
   let old=a.bestTimes?.[e];
@@ -6171,7 +6173,29 @@ function buildRankedCpuCollegeEntries(meet){
   }
   return byEvent;
 }
+function springKansaiEntryCandidates(a,roster){
+  const events=meetIndividualEvents("spring_kansai"),main=events.includes(a.specialty)?a.specialty:bestSpecialtyByAbility(a);
+  const time=(swimmer,event)=>validRaceTime(swimmer.bestTimes?.[event])?swimmer.bestTimes[event]:expectedTime(swimmer,event);
+  const rank=new Map(events.map(event=>[event,1+roster.filter(other=>time(other,event)<time(a,event)).length]));
+  // Rank this swimmer's events within their own university. Estimated clocks
+  // let an unmeasured event be entered without creating a PB before the race.
+  const strongest=events.filter(e=>e!==main).sort((x,y)=>rank.get(x)-rank.get(y)||abilityValue(a,y)-abilityValue(a,x)||events.indexOf(x)-events.indexOf(y)).slice(0,3);
+  return{main,candidates:[...new Set([...events.filter(e=>e!==main&&strokeForEvent(e)===strokeForEvent(main)),...strongest])]};
+}
+function buildSpringKansaiCpuEntries(){
+  const entries=Object.fromEntries(EVENTS.map(e=>[e,[]])),rosters=new Map();
+  for(const a of state.world)if(allowedCpu(a,"spring_kansai")){
+    if(!rosters.has(a.organization))rosters.set(a.organization,[]);
+    rosters.get(a.organization).push(a);
+  }
+  for(const roster of rosters.values())for(const a of roster){
+    const {main,candidates}=springKansaiEntryCandidates(a,roster);
+    for(const event of [main,...shuffle([...candidates]).slice(0,2)])entries[event].push(a.id);
+  }
+  return entries;
+}
 function buildCpuCollegeEntries(meet){
+  if(meet==="spring_kansai")return buildSpringKansaiCpuEntries();
   if(meet==="kansai_college"||meet==="intercollege")return buildRankedCpuCollegeEntries(meet);
   // Select each event's three fastest qualified PBs before resolving the
   // three-event athlete limit, then fill withdrawn slots by the next PB.
@@ -8223,16 +8247,18 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   filterMeetEntryGrades(meet,selections,relaySel);
   beginMeetSession(meet,competitionSlot,competitionSeason,"entry",selections,relaySel);
   let sortEvent=state.meetSession.sortEvent||null;
-  let ruleText=RECORD_MEETS.has(meet)
+  let ruleText=meet==="spring_kansai"
+    ?"春季関西選手権：自チームは各種目の人数・1人あたりの種目数とも制限なし。他大学は1人3種目に出場します。参加標準なし、大学1〜4年生が対象です。関西カレッジと同じ大学が参加し、50mを含む全15個人種目を予選・決勝で競います。リレー・大学対抗得点はありません。"
+    :RECORD_MEETS.has(meet)
     ?`記録会：各選手が個人${EVENTS.length}種目から自由に選択できます。個人種目数の上限はありません。`
     :COLLEGE_ENTRY_LIMIT_MEETS.has(meet)
       ?`${MEET_LABEL[meet]}：各大学1種目3人まで、1人3種目まで（リレーは別枠）。${RESTRICTED.has(meet)?"参加標準記録を満たす種目のみ選択できます。":"参加標準記録はありません。関西カレッジと同じ大学が参加し、大学対抗得点は集計しません。"}`
       :"参加標準記録を満たしていれば、1人が何種目でもエントリーできます。";
   if(meet==="teijimayama_championship")ruleText+=" 出場対象は自チーム・他大学とも大学1〜3年生です。";
-  if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet))ruleText+=` 出場は1選手×1種目＝1ptを大会開始時に獲得します。さらに決勝1〜8位で${FINAL_RANK_POINTS.join("・")}ptを大会終了時に獲得します。リレーは1チーム分、同着は該当順位分を等分します。`;
+  if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet))ruleText+=` 出場は1選手×1種目＝1ptを大会開始時に獲得します。さらに決勝1〜8位で${FINAL_RANK_POINTS.join("・")}ptを大会終了時に獲得します。${RELAY_MEETS.has(meet)?"リレーは1チーム分、":""}同着は該当順位分を等分します。`;
 
   const formContext={meet,slot:competitionSlot,season:competitionSeason};
-  const compactRule=RECORD_MEETS.has(meet)?"種目数自由":COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"各種目3人・1人3種目（リレー別）":"標準突破種目のみ・種目数自由";
+  const compactRule=meet==="spring_kansai"?"自チームは人数・種目数自由・リレーなし":RECORD_MEETS.has(meet)?"種目数自由":COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"各種目3人・1人3種目（リレー別）":"標準突破種目のみ・種目数自由";
   let m=showModal(`<div class="row"><h2 style="margin-right:auto">${meetLabel(meet,competitionSlot)} エントリー</h2><span id="entryCompactCount" class="entry-mobile-only"></span>${entryFormPointsHtml()}${RESTRICTED.has(meet)?'<button id="std">参加標準</button>':""}</div>
     <div class="notice small">${ruleText}${RESTRICTED.has(meet)?'<br>緑：標準突破 ／ 赤：未突破 ／ 灰：PBなし（未突破・PBなしは選択できません）':""}<br>${MEET_FORM_BOOST_COST}ptで調子＋1段階（この大会中・絶好調まで）。</div>
     <div id="entryStatGuide" class="entry-stat-guide"><div class="muted entry-desktop-guide">種目名でPBの速い順、選手で学年順。IMは4泳法の総合値を表示。表は上下・左右にスクロールできます。</div><div class="muted entry-mobile-guide">${compactRule}／調子＋1 ${MEET_FORM_BOOST_COST}pt</div></div>
@@ -8251,8 +8277,8 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
     let p=state.players.find(x=>x.id===pid);if(!p||!meetGradeEligible(p,meet))return{ok:false,reason:"この学年は出場できません"};
     if(RESTRICTED.has(meet)&&!qualified(p,meet,e))return{ok:false,reason:`標準 ${fmt(standardFor(meet,e))}`};
     if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
-      if(eventSelectedCount(e)>=3&&!selections[e].includes(pid))return{ok:false,reason:"種目3人上限"};
-      if(athleteSelectedCount(pid)>=3&&!selections[e].includes(pid))return{ok:false,reason:"1人3種目上限"};
+      if(eventSelectedCount(e)>=collegeEventEntryLimit(meet)&&!selections[e].includes(pid))return{ok:false,reason:"種目3人上限"};
+      if(athleteSelectedCount(pid)>=collegeAthleteEntryLimit(meet)&&!selections[e].includes(pid))return{ok:false,reason:"1人3種目上限"};
     }
     return{ok:true,reason:""};
   }
@@ -8260,7 +8286,7 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   function render(){
     tbody.innerHTML=sortedEntryRoster(playerMeetRoster(meet),sortEvent).map(p=>`<tr data-athlete-id="${p.id}">
       <td style="position:sticky;left:0;background:white;z-index:2"><div class="entry-athlete-name"><b>${esc(p.name)}</b>${gradeBadge(p.year)}</div><div class="small muted">専門 ${EVENT_LABEL[ensurePlayerSpecialty(p)]}</div><div class="entry-athlete-form">調子 ${meetFormHtml(p,meet,competitionSlot,competitionSeason)} ${meetFormBoostButtonHtml(p,meet,competitionSlot,competitionSeason)}</div><div class="entry-common-stats">${entryStatHtml("スタート",p.stats.start,"start")}</div></td>
-      <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)?"/3":""}</td>
+      <td><b>${athleteSelectedCount(p.id)}</b>${COLLEGE_ENTRY_LIMIT_MEETS.has(meet)&&Number.isFinite(collegeAthleteEntryLimit(meet))?"/3":""}</td>
       ${meetEvents.map(e=>{
         let selected=selections[e].includes(p.id),status=canSelect(p.id,e);
         let stats=entryEventStats(p,e);
@@ -8298,8 +8324,8 @@ function openMeetEntry(meet,competitionSlot=state.slot,competitionSeason=state.s
   if(m.querySelector("#relayBtn"))m.querySelector("#relayBtn").onclick=editRelay;
   m.querySelector("#confirmEntry").onclick=()=>{
     if(COLLEGE_ENTRY_LIMIT_MEETS.has(meet)){
-      for(let e of EVENTS)if(selections[e].length>3){alert(`${EVENT_LABEL[e]}が3人を超えています`);return}
-      for(let p of state.players)if(athleteSelectedCount(p.id)>3){alert(`${p.name}が3種目を超えています`);return}
+      for(let e of EVENTS)if(selections[e].length>collegeEventEntryLimit(meet)){alert(`${EVENT_LABEL[e]}が3人を超えています`);return}
+      for(let p of state.players)if(athleteSelectedCount(p.id)>collegeAthleteEntryLimit(meet)){alert(`${p.name}が3種目を超えています`);return}
     }
     closeModal();
     showEntryConfirmation(meet,deepClone(selections),deepClone(relaySel),competitionSlot,competitionSeason);
@@ -8729,7 +8755,7 @@ function executeMeetWithForm(meet,selections,relaySel,options={}){
       let kept=[];
       for(let id of selections[e]){
         let p=state.players.find(x=>x.id===id);
-        if(!p||!qualified(p,meet,e)||kept.length>=3||(used[id]||0)>=3)continue;
+        if(!p||!qualified(p,meet,e)||kept.length>=collegeEventEntryLimit(meet)||(used[id]||0)>=collegeAthleteEntryLimit(meet)||kept.includes(id))continue;
         kept.push(id);used[id]=(used[id]||0)+1;
       }
       selections[e]=kept;
