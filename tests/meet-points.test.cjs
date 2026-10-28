@@ -11,7 +11,7 @@ function game(){return vm.compileFunction(source.slice(0,source.indexOf('documen
  awardMeetGrowth=()=>null;refreshRecordBook=()=>{};refreshScoutBoard=()=>{};selectJapanTeam=()=>null;
  return code=>JSON.parse(JSON.stringify(eval(code)))`,[])()}
 
-test('only the four college tournament meets earn final-place currency; preliminaries, CPU swimmers and malformed clocks earn none',()=>{
+test('only the three capped college tournament meets earn final-place currency; spring fixed rewards, preliminaries, CPU swimmers and malformed clocks earn none',()=>{
  const r=game()(`(()=>{const outcomes=[];
   for(const meet of ['spring_kansai','kansai_college','intercollege','teijimayama_championship','japan_open','japan_championship','joint_record','world_championship','team_trial']){
    const m=result(meet);m.events.fr100={prelim:[row('own',40,true)],final:[row('own',null,true),row('cpu',49),row('own',50,true)]};
@@ -19,7 +19,7 @@ test('only the four college tournament meets earn final-place currency; prelimin
    outcomes.push({meet,points:reward?.points??null,unchanged:before===JSON.stringify([m,state.rngSeed,state.players])});
   }return outcomes;
  })()`);
- for(const x of r){assert.equal(x.points,['spring_kansai','kansai_college','intercollege','teijimayama_championship'].includes(x.meet)?10:null,x.meet);assert.ok(x.unchanged)}
+ for(const x of r){assert.equal(x.points,['kansai_college','intercollege','teijimayama_championship'].includes(x.meet)?10:null,x.meet);assert.ok(x.unchanged)}
 });
 
 test('every individual final and one relay team earn their place once; tied places share the occupied point pool and use official hundredths',()=>{
@@ -57,12 +57,42 @@ test('a completed pending snapshot recovers its award without races, while old s
 test('real meet execution adds college entry currency to final-place rewards and preserves national and winter currency',()=>{
  const r=game()(`(()=>{const reports=[];runRelays=()=>[];
   runEvent=(meet,event,ids)=>({prelim:ids.map(id=>row(id,50,true)),final:ids.map(id=>row(id,49,true)),heats:[]});
-  for(const [meet,slot,expected]of [['kansai_college',28,13],['intercollege',44,13],['teijimayama_championship',60,13],['japan_open',64,1],['japan_championship',94,1],['joint_record',76,30]]){
+  for(const [meet,slot,expected]of [['spring_kansai',16,30],['kansai_college',28,13],['intercollege',44,13],['teijimayama_championship',60,13],['japan_open',64,1],['japan_championship',94,1],['joint_record',76,30]]){
    state.slot=slot;const before=state.points,entries=Object.fromEntries(EVENTS.map(e=>[e,e==='fr100'?['own']:[]]));markJointScouts=()=>{};
    const m=executeMeetWithForm(meet,entries,{}),after=state.points;completeMeet({...m,completed:false});reports.push({meet,gain:after-before,expected,once:after===state.points,history:m.historyEntry.pointsAfter===state.points});
   }return reports;
  })()`);
  for(const x of r){assert.equal(x.gain,x.expected,x.meet);assert.ok(x.once&&x.history,x.meet)}
+});
+
+test('spring Kansai pays exactly 30 for zero, single or unlimited entries and any final rank, once across saved race and completion checkpoints',()=>{
+ const r=game()(`(()=>{const reports=[];runRelays=()=>[];
+  for(const [i,mode]of ['none','one','all'].entries()){
+   state.season=2026+i;state.slot=16;
+   runEvent=(meet,event,ids)=>({prelim:ids.map(id=>row(id,50,true)),final:ids.map(id=>row(id,49,true)),heats:[]});
+   const entries=Object.fromEntries(EVENTS.map(e=>[e,mode==='all'?['own','reserve']:mode==='one'&&e==='fr100'?['own']:[]])),before=state.points;
+   const m=executeMeetWithForm('spring_kansai',entries,{}, {deferRelayFinalEntries:true}),starting=state.points-before,pending=deepClone(state.pendingMeetCompletion);
+   const packed=packMeetResult(m);state=JSON.parse(JSON.stringify(state));const restored=unpackMeetResult(JSON.parse(JSON.stringify(packed)));completeMeet(restored);
+   const gain=state.points-before,history=deepClone(state.meetHistory.at(-1));state.points-=5;const snapshot=JSON.stringify(state);completeMeet({...restored,completed:false});
+   reports.push({mode,starting,gain,pending,history,once:snapshot===JSON.stringify(state),reward:restored.fixedPointReward,rankReward:finalMeetPointReward(restored),html:finalMeetPointRewardHtml(restored),logs:state.pointLog.filter(p=>p.meet==='spring_kansai'&&p.season===state.season).map(p=>[p.kind,p.points])});
+  }return reports;
+ })()`);
+ for(const x of r){assert.equal(x.starting,30,x.mode);assert.equal(x.gain,30,x.mode);assert.ok(x.once,x.mode);assert.equal(x.reward.points,30);assert.equal(x.history.fixedPointReward.points,30);assert.equal(x.history.entryPoints,0);assert.equal(x.rankReward,null);assert.equal(x.pending.fixedPointReward.points,30);assert.deepEqual(x.logs,[['fixed_meet',30]]);assert.match(x.html,/大会獲得ポイント ＋30pt/);assert.match(x.html,/1大会30pt固定/);assert.doesNotMatch(x.html,/data-entry-point-total|data-final-point-total|決勝順位/)}
+});
+
+test('an unfinished spring meet settles earlier entry payments to a total of 30; completed meets and another university retain their balance',()=>{
+ const r=game()(`(()=>{const outcomes=[];
+  for(const [i,paid]of [4,72].entries()){
+   state.season=2026+i;state.slot=16;const before=state.points,m=result('spring_kansai',16);m.season=state.season;m.entryPoints=paid;m.events.fr100={prelim:[row('own',50,true)],final:[row('own',49,true)]};
+   awardMeetEntryPoints('spring_kansai',paid,m.season,m.slot);m.historyEntry={season:m.season,slot:m.slot,meet:m.meet,entryPoints:paid,pointsAfter:state.points};state.meetHistory.push(m.historyEntry);
+   const protectedData=JSON.stringify([state.players,state.rngSeed]);completeMeet(m);const once=JSON.stringify(state);completeMeet({...m,completed:false});
+   outcomes.push({paid,gain:state.points-before,delta:state.pointLog.at(-1).points,history:m.historyEntry,once:once===JSON.stringify(state),protected:protectedData===JSON.stringify([state.players,state.rngSeed])});
+  }
+  const before=JSON.stringify(state),completed=result('spring_kansai',16);completed.completed=true;completeMeet(completed);
+  const other=result('spring_kansai',17);other.pointUniversityId='another-university';awardFinalMeetPoints(other);
+  return{outcomes,untouched:before===JSON.stringify(state)};
+ })()`);
+ assert.ok(r.untouched);for(const x of r.outcomes){assert.equal(x.gain,30);assert.equal(x.delta,30-x.paid);assert.equal(x.history.fixedPointReward.points,30);assert.equal(x.history.entryPoints,0);assert.ok(x.once&&x.protected)}
 });
 
 test('individual entries earn one per athlete and event even without a final, and saves and duplicate requests never award entry points twice',()=>{
