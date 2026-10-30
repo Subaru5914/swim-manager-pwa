@@ -7,7 +7,7 @@ function game(input=html){
     function own(i,year=2){return attachMedleyStats({id:'own-'+i,name:'表彰選手'+i,category:'university',year,age:18+year,organization:state.playerUniversity,specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,120])),imAptitude:{speed:0,stamina:0},bestTimes:{fr100:65},raceHistory:[],accolades:[]})}
     return code=>JSON.parse(JSON.stringify(eval(code)))`,['globalThis','SaveHistory'])({crypto:{getRandomValues:a=>{a[0]=5914;return a}}},SaveHistory);
 }
-function minimal(){const run=game();run(`state={season:2026,slot:43,rngSeed:5914,playerUniversity:'自大学',players:[],world:[],retiredArchive:[],japanTeamHistory:[],teamTop10:{},recordRankings:{},recordBook:{},trainingPlans:{},trainingFocus:{},lastTrainingGains:[],teamPodiumHistory:[],teamPodiumHistoryVersion:1};true`);return run}
+function minimal(){const run=game();run(`state={season:2026,slot:43,rngSeed:5914,playerUniversity:'自大学',universities:[],players:[],world:[],retiredArchive:[],japanTeamHistory:[],teamTop10:{},recordRankings:{},recordBook:{},trainingPlans:{},trainingFocus:{},lastTrainingGains:[],teamPodiumHistory:[],teamPodiumHistoryVersion:1};true`);return run}
 test('major-meet medals include only own actual A-final podiums and corrected places, without changing athletes or race RNG',()=>{
   const run=minimal(),r=run(`(()=>{
     const p=own(0),cpu={...own(1),organization:'他大学'},adult={...own(2),year:null,category:'adult',alumni:true,organization:'社会人'};state.players=[p];state.world=[cpu,adult];
@@ -21,7 +21,7 @@ test('major-meet medals include only own actual A-final podiums and corrected pl
     recordAthleteMainResult(p,{season:2026,slot:43,meet:'japan_open',event:'fr100',stage:'決勝',rank:4,time:61});
     return{first,corrected,remaining:state.teamPodiumHistory,protected:protectedData===JSON.stringify([...state.players,...state.world].map(a=>[a.stats,a.bestTimes,a.raceHistory]).concat(state.rngSeed))};
   })()`);
-  assert.equal(r.first.length,6);assert.ok(r.first.every(x=>x.athleteId==='own-0'&&x.rank===2&&x.gradeAtRecord===2));assert.equal(r.corrected.rank,1);assert.equal(r.corrected.time,59);assert.equal(r.remaining.length,5);assert.ok(!r.remaining.some(x=>x.meet==='japan_open'));assert.ok(r.protected);
+  assert.equal(r.first.length,7);assert.ok(r.first.every(x=>x.athleteId==='own-0'&&x.rank===2&&x.gradeAtRecord===2));assert.equal(r.corrected.rank,1);assert.equal(r.corrected.time,59);assert.equal(r.remaining.length,6);assert.ok(!r.remaining.some(x=>x.meet==='japan_open'));assert.ok(r.protected);
 });
 test('relay medals save one result with the actual final lineup, each lap and frozen grades; prelims and CPU teams do not add medals',()=>{
   const run=minimal(),r=run(`(()=>{
@@ -52,7 +52,7 @@ test('representative medals distinguish own swimmers from other universities and
 });
 test('legacy migration restores current, graduated, deleted and national medalists without fabricating prelim medals or missing relay swimmers',()=>{
   const run=minimal(),r=run(`(()=>{
-    delete state.teamPodiumHistoryVersion;state.season=2028;const p=own(0,3),alumni={...own(1),year:null,category:'adult',grade:null,age:24,alumni:true,graduationSeason:2026,organization:'社会人'},retired={id:'deleted',name:'引退選手',organization:state.playerUniversity,season:2026,age:22,bestTimes:{},accolades:[],raceHistory:[]};
+    delete state.teamPodiumHistoryVersion;state.season=2028;const p=own(0,3),alumni={...own(1),year:null,category:'adult',grade:null,age:24,alumni:true,almaMater:state.playerUniversity,graduationSeason:2026,organization:'社会人'},retired={id:'deleted',name:'引退選手',organization:state.playerUniversity,season:2026,age:22,bestTimes:{},accolades:[],raceHistory:[]};
     const medal={season:2026,slot:43,meet:'intercollege',stage:'A決勝',rank:1,time:60,schoolCategory:'university',gradeAtRecord:1};
     p.raceHistory=[{...medal,event:'im200',rank:4},{...medal,event:'fr100'},{...medal,event:'ba100',stage:'予選'},{...medal,event:'br100',stage:'B決勝'},{...medal,event:'fly100',schoolCategory:'high',gradeAtRecord:3}];
     alumni.accolades=[{...medal,event:'br100',kind:'podium',gradeAtRecord:4},{...medal,event:'ba100',kind:'podium',schoolCategory:'adult',gradeAtRecord:null}];
@@ -83,7 +83,7 @@ test('2030 rival medals remain on rival profiles without entering the own-team p
   }
   return{own:state.teamPodiumHistory,rival:rivalMainResults(cpu)};
  })()`);
- assert.equal(r.own.length,4);assert.ok(r.own.every(row=>row.athleteId==='own-0'));assert.equal(r.rival.length,4);
+ assert.equal(r.own.length,5);assert.ok(r.own.every(row=>row.athleteId==='own-0'));assert.equal(r.rival.length,5);
 });
 
 test('existing mixed 2030 podium saves remove identifiable rivals across careers while keeping deleted own medalists and all underlying results',()=>{

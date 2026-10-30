@@ -19,14 +19,16 @@ test('national CPU top fifties span realistic fields at every distance and use t
       const sample=a.filter(p=>validRaceTime(p.bestTimes[event])&&!(p.accolades||[]).some(t=>t.event===event)).slice(0,12);
       const clocks=sample.map(p=>{const own=attachMedleyStats(deepClone(p)),saved=JSON.stringify(p);
         state.rngSeed=5914;const cpu=raceTarget(p,event);state.rngSeed=5914;const player=raceTarget(own,event);
-        return {same:cpu===player,unchanged:saved===JSON.stringify(p),ratio:p.bestTimes[event]/expectedTime(p,event)};
+        return {same:cpu===player,unchanged:saved===JSON.stringify(p),gap:p.bestTimes[event]-expectedTime(p,event)};
       });
-      return {category,event,d,first:times[0],span:times[49]-times[0],maxBin:Math.max(...Object.values(bins)),clocks};
+      return {category,event,d,first:times[0],span:times[49]-times[0],maxBin:Math.max(...Object.values(bins)),clocks,
+        low:Math.min(...MEET_FORM_TIME_RANGES[d].map(r=>r[0]))-RACE_EXECUTION_RANGE[d],
+        high:Math.max(...MEET_FORM_TIME_RANGES[d].map(r=>r[1]))+RACE_EXECUTION_RANGE[d]+PRELIMINARY_TIME_DELAY[d][1]};
     }))`);
     for(const row of rows){
       assert.ok(row.span>=({50:.7,100:1.8,200:4,400:9}[row.d])-1e-9,JSON.stringify({seed,...row}));
       if(row.d===200)assert.ok(row.maxBin<=20,JSON.stringify({seed,...row}));
-      assert.ok(row.clocks.every(c=>c.same&&c.unchanged&&c.ratio>=.97&&c.ratio<=1.026),JSON.stringify(row));
+      assert.ok(row.clocks.every(c=>c.same&&c.unchanged&&c.gap>=row.low-.025&&c.gap<=row.high+.025),JSON.stringify(row));
     }
   }
 });

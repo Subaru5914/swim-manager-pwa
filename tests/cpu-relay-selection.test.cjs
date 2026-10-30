@@ -61,7 +61,7 @@ test('actual college relay heats and finals retain distinct lineups, PB seeding,
 
 test('relay ten-best refresh repairs unreachable CPU laps once and preserves own history, abilities, PBs and live randomness',()=>{
  const run=game(true),r=run(`(()=>{
-   const u=state.universities.find(u=>u.reputation>=280),members=bestRelayMembers(state.world.filter(a=>a.organization===u.name&&a.category==='university'),'4x100medley');
+   const u=[...state.universities].sort((a,b)=>b.reputation-a.reputation)[0],members=bestRelayMembers(state.world.filter(a=>a.organization===u.name&&a.category==='university'),'4x100medley');
    const bad={kind:'relay',event:'4x100medley',organization:u.name,time:150,legs:[30,40,40,40],members:members.map(a=>({id:a.id,name:a.name})),season:2024,slot:28,meet:'kansai_college',stage:'決勝'};
    const own={...deepClone(bad),organization:state.playerUniversity,members:state.players.slice(0,4).map(a=>({id:a.id,name:a.name}))};
    const archived={...deepClone(bad),organization:'過去大学',members:[0,1,2,3].map(i=>({id:'old'+i,name:'卒業選手'}))};

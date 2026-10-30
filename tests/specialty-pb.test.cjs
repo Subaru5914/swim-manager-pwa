@@ -60,7 +60,7 @@ test('v2.02 data automatically fills specialties, preserving measured clocks, ba
     const first=JSON.stringify(state),seed=state.rngSeed,all=[...state.players,...state.world.filter(a=>!a.retired)],fields=highSchoolScoutRankings();migrateState();
     return{state:deepClone(state),stable:first===JSON.stringify(state)&&seed===state.rngSeed,missing:all.filter(a=>!validRaceTime(a.bestTimes[a.specialty])).map(a=>a.id),extra:EVENTS.some(e=>fields.get(e).rows.slice(50).some(a=>a.specialty!==e))};
   })()`);
-  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.94');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
+  assert.equal(before.version,'pwa-v2.02');assert.equal(r.state.version,'pwa-v2.95');assert.deepEqual(r.missing,[]);assert.ok(r.stable&&!r.extra);
   for(const k of ['rngSeed','season','slot','points','reputation','playerUniversity','facilities','trainingFocus','recruits'])assert.deepEqual(r.state[k],before[k]);
   for(const group of ['players','world'])for(let i=0;i<before[group].length;i++){
     const a=r.state[group][i],b=before[group][i];assert.equal(a.id,b.id);for(const k of ['stats','imAptitude','accolades','raceHistory','potentialType'])assert.deepEqual(a[k],b[k],a.id+' '+k);
@@ -72,7 +72,7 @@ test('fresh generation, reset and international generation keep specialty PBs re
   const run=game(),r=run(`(()=>{
     state=createState();migrateState();const ownCounts=state.players.map(p=>Object.keys(p.bestTimes).length),foreign=ensureInternationalWorld(2027).athletes;
     const all=[...state.players,...state.world,...foreign],missing=all.filter(a=>!validRaceTime(a.bestTimes[a.specialty])).map(a=>a.id),invalid=[];
-    for(const a of all){const e=a.specialty,d=distanceOf(e),pb=a.bestTimes[e],base=expectedTime(a,e),normal=MEET_FORM_TIME_RANGES[d][2],r=RACE_EXECUTION_RANGE[d];if(pb<base+normal[0]-r-.025||pb>base+normal[1]+r+.025)invalid.push(a.id)}
+    for(const a of all){const e=a.specialty,d=distanceOf(e),pb=a.bestTimes[e],base=expectedTime(a,e),ranges=MEET_FORM_TIME_RANGES[d],r=RACE_EXECUTION_RANGE[d];if(pb<base+Math.min(...ranges.map(r=>r[0]))-r-.025||pb>base+Math.max(...ranges.map(r=>r[1]))+r+PRELIMINARY_TIME_DELAY[d][1]+.025)invalid.push(a.id)}
     const f=foreign[0],seed=state.rngSeed,expected=coherentCpuPB(f,f.specialty);delete f.bestTimes[f.specialty];ensureInternationalWorld(2027);const foreignRng=state.rngSeed===seed;
     state=createState();migrateState();return{ownCounts,missing,invalid,foreign:foreign.length,restored:f.bestTimes[f.specialty],expected,foreignRng,reset:state.players.every(p=>Object.keys(p.bestTimes).length===1&&validRaceTime(p.bestTimes[p.specialty]))&&state.world.every(a=>validRaceTime(a.bestTimes[a.specialty]))};
   })()`);

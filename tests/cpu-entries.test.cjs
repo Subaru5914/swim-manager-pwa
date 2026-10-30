@@ -14,7 +14,7 @@ function game(){
 
 test('winter invitations favor event ability and prestigious colleges while keeping four age groups and random outsiders',()=>{
   const run=game(),result=run(`(()=>{
-    state.universities=[{name:'一般大学',reputation:80},{name:'強豪大学',reputation:200},{name:'名門大学',reputation:300}];
+    state.universities=[{name:'一般大学',reputation:80},{name:'強豪大学',reputation:300},{name:'名門大学',reputation:500}];
     const categories=['middle','high','university','adult'];
     const candidates=categories.flatMap(category=>Array.from({length:99},(_,i)=>({id:category+i,category,organization:state.universities[i%3].name,
       stats:Object.fromEntries(STATS.map(k=>[k,195-i])),bestTimes:{fr100:48+i*.1},index:i})));

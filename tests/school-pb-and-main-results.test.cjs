@@ -19,7 +19,7 @@ test('annual PB checks compare all unmeasured swimmers together, retain fifty pl
       ${reversed?'state.world.reverse();':''}
       const result=updateSchoolPersonalBests(),rows=EVENTS.map(e=>ranking(e,'high',50)),ids=rows.map(rows=>rows.map(a=>a.id).sort());
       const protectedStats=JSON.stringify(state.world.slice().sort((a,b)=>+a.id.slice(7)-+b.id.slice(7)).map(a=>[a.id,a.stats]))===before;
-      const clock=state.world.filter(a=>a.id==='school-50'||a.id==='school-51').every(a=>EVENTS.every(e=>a.bestTimes[e]===coherentCpuPB(a,e)));
+      const clock=state.world.filter(a=>a.id==='school-50'||a.id==='school-51').every(a=>validRaceTime(a.bestTimes[a.specialty])&&EVENTS.every(e=>!validRaceTime(a.bestTimes[e])||a.bestTimes[e]===coherentCpuPB(a,e)));
       return{result,ids,counts:rows.map(rows=>rows.length),protectedStats,rng:seed===state.rngSeed,clock,lowMissing:state.world.filter(a=>+a.id.slice(7)>=52).every(a=>Object.keys(a.bestTimes).length===1&&validRaceTime(a.bestTimes[a.specialty]))};
     })()`);
     assert.ok(r.result.highRegistered>0&&r.protectedStats&&r.rng&&r.clock&&r.lowMissing);assert.deepEqual(r.counts,Array(15).fill(50));results.push(r.ids);

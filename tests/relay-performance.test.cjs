@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').matc
 const load=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+`
  function relayAthlete(id){return attachMedleyStats({id,name:id,year:2,category:'university',age:20,grade:2,organization:'検証大学',stats:Object.fromEntries(STATS.map(k=>[k,138])),imAptitude:{speed:0,stamina:0},bestTimes:{},raceHistory:[],accolades:[]})}
  return code=>JSON.parse(JSON.stringify(eval(code)))`,[]);
-function game(){const run=load();run(`(state={season:2026,slot:44,rngSeed:5914,players:[],world:[],playerUniversity:'自大学',recordRankings:{},teamTop10:{},retiredArchive:[]},true)`);return run}
+function game(){const run=load();run(`(state={season:2026,slot:44,rngSeed:5914,players:[],world:[],universities:[],playerUniversity:'自大学',recordRankings:{},teamTop10:{},retiredArchive:[]},true)`);return run}
 test('relay ranges retain each form\'s fastest limit and execution draws while favoring faster, form-dependent laps',()=>{
  const run=game(),rows=run(`(()=>{
   const p=relayAthlete('correction');let form=0;athleteMeetForm=()=>MEET_FORMS[form+2];

@@ -8,7 +8,7 @@ function game(full=false){
   const context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
   vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
   const run=code=>vm.runInContext(code,context);
-  run(full?'state=createState()':`state={season:2027,slot:36,players:[{id:'P1',name:'代表 一郎',organization:'試験大学',year:2,category:'university'}],world:[{id:'C1',name:'代表 二郎',organization:'他大学',grade:3,category:'university'}],retiredArchive:[],japanTeamHistory:[],meetHistory:[],recordRankings:{japan:{}}};
+  run(full?'state=createState()':`state={season:2027,slot:36,playerUniversity:'試験大学',universities:[{id:'U1',name:'他大学'}],players:[{id:'P1',name:'代表 一郎',organization:'試験大学',year:2,category:'university'}],world:[{id:'C1',name:'代表 二郎',organization:'他大学',grade:3,category:'university'}],retiredArchive:[],japanTeamHistory:[],meetHistory:[],recordRankings:{japan:{}}};
     state.japanTeam={year:2027,selectedSeason:2026,selectedSlot:95,individual:{fr100:['P1','C1']},additionalIndividual:{},relays:{},selectionTimes:{fr100:{P1:47.5,C1:47.6}},athletes:[{id:'P1',ownAtSelection:true,snapshot:deepClone(state.players[0])},{id:'C1',ownAtSelection:false,snapshot:deepClone(state.world[0])}]};`);
   return run;
 }

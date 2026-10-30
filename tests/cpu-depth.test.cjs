@@ -73,7 +73,8 @@ test('every corrected NPC event has a reachable PB, independent stroke variation
     }
     return{bad,badCount,maxBias:Math.max(...bias),schools};
   })()`);
-  assert.equal(r.badCount,0,JSON.stringify(r.bad));assert.ok(r.maxBias<=20.006);assert.ok(r.schools.middle>=1000&&r.schools.high>=990&&r.schools.adult>=288);
+  assert.equal(r.badCount,0,JSON.stringify(r.bad));assert.ok(r.maxBias<=20.006);
+  assert.deepEqual(r.schools,{middle:960,high:960,adult:288});
 });
 test('an incoming class cannot accumulate an unrealistically fast relay and never weakens returning or owned swimmers',()=>{
   const run=game(),r=run(`(()=>{

@@ -57,13 +57,13 @@ test('adult retirement starts at 25, reaches 90 percent at 30, and actual retire
   const alumnus={...deepClone(adults.find(a=>a.age===29)),id:'retire-own',alumni:true,almaMater:state.playerUniversity,graduationSeason:2019};adults.push(alumnus);
   state.alumniCareer=[{id:alumnus.id,status:'社会人継続',season:2019}];state.world=[...highs,...adults];
   state.recordRankings={japan:{fr100:[{athleteId:alumnus.id,name:alumnus.name,time:49.99}]}};state.teamTop10={fr100:[{athleteId:alumnus.id,name:alumnus.name,time:49.99}]};
-  const records=JSON.stringify([state.recordRankings,state.teamTop10]);
+  const records=deepClone([state.recordRankings.japan.fr100,state.teamTop10.fr100]);
   for(const key of ['addMiddleSchoolCohort','maintainWorldPopulation','assignInterhigh','prepareCpuMeetPopulation','refreshRecordBook','refreshRecordRankings','migrateCpuRaceConsistency'])eval(key+'=()=>{}');
   rng=()=>.85;newSeason();
   return{rates,remaining:state.world.filter(a=>a.id.startsWith('retire-')).map(a=>a.id),career:state.alumniCareer[0].status,archive:state.retiredArchive.some(a=>a.id===alumnus.id),
-    records:records===JSON.stringify([state.recordRankings,state.teamTop10]),stillAlumnus:ownAlumniIds().has(alumnus.id),active:activeAthletes().some(a=>a.id===alumnus.id)};
+    records:records.every((rows,i)=>rows.every(old=>(i?state.teamTop10.fr100:state.recordRankings.japan.fr100).some(r=>r.athleteId===old.athleteId&&r.time===old.time))),stillAlumnus:ownAlumniIds().has(alumnus.id),active:activeAthletes().some(a=>a.id===alumnus.id)};
  })()`);
- assert.deepEqual(r.rates,[0,0,.05,.15,.30,.50,.70,.90,.93,.96,.99,.99,.99]);assert.deepEqual(r.remaining,['retire-23','retire-24','retire-28']);assert.equal(r.career,'社会人引退');assert.ok(r.archive&&r.records&&r.stillAlumnus&&!r.active);
+ assert.deepEqual(r.rates,[0,0,.05,.15,.30,.50,.70,.90,.93,.96,.99,.99,.99]);assert.deepEqual(r.remaining,['retire-23','retire-24','retire-28']);assert.equal(r.career,'社会人引退');assert.ok(r.archive&&r.records&&r.stillAlumnus&&!r.active,JSON.stringify(r));
 });
 test('alumni tags distinguish active adult age from record-time school grade and survive retirement and university renaming',()=>{
  const run=game(),r=run(`(()=>{

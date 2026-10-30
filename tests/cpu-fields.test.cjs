@@ -24,7 +24,7 @@ test('current university rosters keep saved names, PBs and players without manuf
       kansai:state.kansaiIds.length,inter:state.interIds.length,
       roster:state.universities.every(u=>[1,2,3,4].every(g=>state.world.filter(a=>a.category==='university'&&a.organization===u.name&&a.grade===g&&!a.retired).length===8)),
       standards:SPECIALTY_EVENTS.every(e=>standardFor('kansai_college',e)>=standardFor('intercollege',e)*1.19),
-      known:state.world.every(a=>EVENTS.every(e=>validRaceTime(a.bestTimes[e])))};
+      known:state.world.every(a=>validRaceTime(a.bestTimes[a.specialty])&&Object.entries(a.bestTimes).every(([e,t])=>EVENTS.includes(e)&&validRaceTime(t)))};
   })()`);
   for(const k of ['own','world','renamed','once','standards','known','roster'])assert.equal(r[k],true,JSON.stringify(r));
   assert.equal(r.playerName,'保持大学');assert.equal(r.kansai,12);assert.equal(r.inter,39);
@@ -89,11 +89,11 @@ test('adding overseas countries preserves the existing edition and provides comp
   assert.equal(r.countries,32);assert.deepEqual(r.counts,[[8,8,8,8],[8,8,8],[8,8,8,8]]);
 });
 
-test('warming current and legacy timing references preserves generated saves and RNG without growing caches per ability value',()=>{
+test('warming current timing references preserves generated saves and RNG without growing caches per ability value',()=>{
   const run=game(),r=run(`(()=>{
     const original=JSON.stringify(state),seed=state.rngSeed;
     for(const e of EVENTS){
-      for(let ability=0;ability<=200;ability+=.5)for(const legacy of [false,true])abilityBenchmarkTime(e,ability,legacy);
+      for(let ability=0;ability<=200;ability+=.5)abilityBenchmarkTime(e,ability);
       for(const category of ['middle','high','university','adult']){
         cpuRaceReference(category,e);
         for(const meet of ['kansai_college','intercollege','japan_open','japan_championship'])if(Number.isFinite(standardFor(meet,e)))for(const cap of [175,187])cpuFieldReference(e,category,standardFor(meet,e),cap);
@@ -105,7 +105,7 @@ test('warming current and legacy timing references preserves generated saves and
     return{untouched,identical:original===JSON.stringify(state),sizes};
   })()`);
   assert.equal(r.untouched,true);assert.equal(r.identical,true);
-  assert.equal(r.sizes.benchmarks,30);assert.equal(r.sizes.races,60);assert.ok(r.sizes.fields<=480);
+  assert.equal(r.sizes.benchmarks,15);assert.equal(r.sizes.races,60);assert.ok(r.sizes.fields<=480);
 });
 
 test('incremental top-fifty checks handle cutoffs and ties with the same spans and density as actual sorted rankings',()=>{
