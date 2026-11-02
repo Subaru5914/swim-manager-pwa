@@ -43,14 +43,14 @@ test('only own first-year college attendance uses zero; CPU first records and mi
   state.meetParticipationHistory.push(attendance(2027,'intercollege',{player:2,local:3}));
   return {own,cpu,second:reputationComparison(2027,'intercollege','local'),unrecorded:reputationComparison(2028,'japan_open','player')};
  })()`);
- assert.deepEqual(r.own.map(r=>r.previous),[0,0,null,null]);assert.deepEqual(r.own.map(r=>r.delta),[6,24,0,0]);
- assert.ok(r.cpu.every(r=>r.previous===null&&r.delta===0));assert.equal(r.second.delta,-8);assert.equal(r.unrecorded.delta,0);
+ assert.deepEqual(r.own.map(r=>r.previous),[0,0,null,null]);assert.deepEqual(r.own.map(r=>r.delta),[0,18,0,0]);
+ assert.ok(r.cpu.every(r=>r.previous===null&&r.delta===0));assert.equal(r.second.delta,-9);assert.equal(r.unrecorded.delta,0);
 });
 
 test('both checkpoints apply the same reduced weights to own and CPU teams, excluding non-Kansai regional attendance',()=>{
  const r=game()(`(()=>{
   state.season=2027;state.reputation=490;
-  for(const [meet,previous,current]of [['kansai_college',5,5],['intercollege',8,11],['japan_open',3,4],['japan_championship',2,1]]){
+  for(const [meet,previous,current]of [['kansai_college',5,7],['intercollege',8,11],['japan_open',3,4],['japan_championship',2,1]]){
    state.meetParticipationHistory.push(attendance(2026,meet,{player:previous,local:previous,other:previous}),attendance(2027,meet,{player:current,local:current,other:current}));
   }
   const early=settleUniversityReputations(2027,'kansai_college');
@@ -60,8 +60,9 @@ test('both checkpoints apply the same reduced weights to own and CPU teams, excl
   return {early,inter,national,again,stable,
    own:state.reputation,cpu:state.universities.map(u=>u.reputation),label:reputationLabel(state.reputation),excluded:reputationComparison(2027,'kansai_college','other')};
  })()`);
- assert.equal(r.early,null);assert.equal(r.inter.delta,24);assert.equal(r.national.delta,-6);assert.equal(r.own,508);assert.equal(r.label,'名門');
- assert.deepEqual(r.cpu,[508,268]);assert.equal(r.again,null);assert.ok(r.stable);assert.equal(r.excluded.delta,0);assert.equal(r.excluded.eligible,false);
+ assert.equal(r.early,null);assert.equal(r.inter.comparisons[0].delta,0);assert.equal(r.inter.cpuChanges[0].comparisons[0].delta,0);
+ assert.equal(r.inter.delta,18);assert.equal(r.national.delta,-7);assert.equal(r.own,501);assert.equal(r.label,'名門');
+ assert.deepEqual(r.cpu,[501,261]);assert.equal(r.again,null);assert.ok(r.stable);assert.equal(r.excluded.delta,0);assert.equal(r.excluded.eligible,false);
 });
 
 test('CPU fixed initial bases bound decades of participation changes and survive renaming without promoting every school',()=>{
@@ -109,5 +110,77 @@ test('relay-inclusive legacy histories and pending checkpoints never cause false
   state=JSON.parse(JSON.stringify(state));const first=JSON.stringify(state);initializeReputationHistory();migrateUniversityReputationScale();
   return{legacy,firstFlags,baseline,earned,stable:first===JSON.stringify(state),history:state.meetParticipationHistory.filter(r=>r.season>=2029).every(r=>r.individualOnly)};
  })()`);
- assert.equal(r.legacy,310);assert.deepEqual(r.firstFlags,[false,false]);assert.equal(r.baseline,310);assert.equal(r.earned,340);assert.ok(r.stable&&r.history);
+ assert.equal(r.legacy,310);assert.deepEqual(r.firstFlags,[false,false]);assert.equal(r.baseline,310);assert.equal(r.earned,328);assert.ok(r.stable&&r.history);
+});
+
+test('gains and 1.5-times larger losses apply per individual participant to own and CPU universities',()=>{
+ const r=game()(`(()=>{
+  return Object.keys(REPUTATION_WEIGHTS).map(meet=>{
+   const changes=[-2,-1,0,1,2].map(change=>{
+    state.meetParticipationHistory=[attendance(2026,meet,{player:5,local:5}),attendance(2027,meet,{player:5+change,local:5+change})];
+    return ['player','local'].map(id=>reputationComparison(2027,meet,id).delta);
+   });return{meet,changes};
+  });
+ })()`);
+ const expected={kansai_college:[0,0,0,0,0],intercollege:[-18,-9,0,6,12],japan_open:[-24,-12,0,8,16],japan_championship:[-30,-15,0,10,20]};
+ for(const row of r)assert.deepEqual(row.changes,expected[row.meet].map(delta=>[delta,delta]),row.meet);
+});
+
+test('own saved reputation replays gains and losses, updates history and pending notices, and preserves other universities and earned data',()=>{
+ const r=game()(`(()=>{
+  const comparison=(meet,previous,current,delta)=>({meet,previous,current,delta});
+  const cpu={id:'local',before:490,reputation:520,delta:30,comparisons:[comparison('intercollege',5,8,30)]};
+  state.reputation=86;state.players=[{id:'own',stats:{fr_speed:100},bestTimes:{fr100:55}}];state.world=[{id:'other',bestTimes:{fr100:54}}];state.points=123;
+  state.reputationEvaluations=[
+   {season:2026,meet:'intercollege',before:50,reputation:84,delta:34,comparisons:[comparison('kansai_college',0,5,10),comparison('intercollege',0,3,24)],cpuChanges:[deepClone(cpu)],reputationScaleVersion:2},
+   {season:2026,meet:'japan_championship',before:84,reputation:90,delta:6,comparisons:[comparison('japan_open',2,4,24),comparison('japan_championship',3,2,-18)],cpuChanges:[deepClone(cpu)],reputationScaleVersion:2},
+   {season:2027,meet:'intercollege',before:90,reputation:86,delta:-4,comparisons:[comparison('kansai_college',5,7,4),comparison('intercollege',3,2,-8)],cpuChanges:[deepClone(cpu)],reputationScaleVersion:2}];
+  state.pendingSeasonNotices=[{season:2027,meet:'intercollege',evaluation:{before:90,reputation:86,delta:-4},retired:[]}];
+  const before=JSON.stringify([state.universities,state.players,state.world,state.points,state.rngSeed,state.reputationEvaluations.map(r=>r.cpuChanges)]);
+  migrateOwnReputationWeights();const saved=JSON.stringify(state);state=JSON.parse(saved);migrateOwnReputationWeights();
+  return{rep:state.reputation,rows:state.reputationEvaluations.map(r=>[r.before,r.reputation,r.delta]),originals:state.reputationEvaluations.map(r=>r.reputationRecalculationOriginal.reputation),notice:state.pendingSeasonNotices[0].evaluation,summary:state.ownReputationRecalculation,
+   unchanged:before===JSON.stringify([state.universities,state.players,state.world,state.points,state.rngSeed,state.reputationEvaluations.map(r=>r.cpuChanges)]),stable:saved===JSON.stringify(state)};
+ })()`);
+ assert.equal(r.rep,60);assert.deepEqual(r.rows,[[50,68,18],[68,69,1],[69,60,-9]]);assert.deepEqual(r.originals,[84,90,86]);
+ assert.deepEqual(r.notice,{before:69,reputation:60,delta:-9});assert.equal(r.summary.delta,-26);assert.equal(r.summary.evaluations,3);assert.ok(r.unchanged&&r.stable);
+});
+
+test('recalculation replays upper and lower caps at each checkpoint instead of subtracting nominal points',()=>{
+ const r=game()(`(()=>{
+  const evaluation=(season,before,reputation,meet,previous,current,delta)=>({season,meet,before,reputation,delta:reputation-before,reputationScaleVersion:2,comparisons:[{meet,previous,current,delta}]});
+  state.reputation=940;state.reputationEvaluations=[evaluation(2026,990,1000,'kansai_college',0,10,20),evaluation(2027,1000,1000,'intercollege',0,2,16),{...evaluation(2027,1000,940,'japan_championship',5,3,-36),comparisons:[{meet:'japan_open',previous:5,current:3,delta:-24},{meet:'japan_championship',previous:5,current:3,delta:-36}]}];
+  migrateOwnReputationWeights();const upper=state.reputation,rows=state.reputationEvaluations.map(r=>r.reputation);
+  delete state.ownReputationWeightsVersion;state.reputation=24;state.reputationEvaluations=[evaluation(2026,5,0,'intercollege',2,0,-16),evaluation(2027,0,24,'japan_open',0,2,24)];
+  migrateOwnReputationWeights();return{upper,rows,lower:state.reputation};
+ })()`);
+ assert.equal(r.upper,946);assert.deepEqual(r.rows,[990,1000,946]);assert.equal(r.lower,16);
+});
+
+test('unknown attendance, historical scales, unrelated reputation changes and absent histories are preserved',()=>{
+ const r=game()(`(()=>{
+  state.reputation=200;state.reputationEvaluations=[{season:2025,meet:'intercollege',before:79,reputation:89,delta:10,reputationScaleVersion:1,comparisons:[{meet:'intercollege',previous:0,current:1,delta:10}]},
+   {season:2025,meet:'japan_championship',before:100,reputation:116,delta:16,reputationScaleVersion:2,comparisons:[{meet:'intercollege',previous:0,current:2,delta:16}]},
+   {season:2026,meet:'intercollege',before:150,reputation:160,delta:10,reputationScaleVersion:2},
+   {season:2027,meet:'intercollege',before:176,reputation:192,delta:16,reputationScaleVersion:2,comparisons:[{meet:'intercollege',previous:1,current:3,delta:16}]}];
+  const old=JSON.stringify(state.reputationEvaluations[0]);migrateOwnReputationWeights();const rep=state.reputation,legacy=old===JSON.stringify(state.reputationEvaluations[0]),original=state.reputationEvaluations[2].reputationRecalculationOriginal;
+  delete state.ownReputationWeightsVersion;state.reputation=250;state.reputationEvaluations=[];migrateOwnReputationWeights();const empty=state.reputation,summary=state.ownReputationRecalculation;
+  delete state.ownReputationWeightsVersion;state.controlledUniversityId='local';state.playerUniversityProfile={baseReputation:50};state.reputation=260;
+  state.reputationEvaluations=[{season:2026,meet:'intercollege',universityId:'PLAYER',reputationScaleVersion:2,cpuChanges:[{id:'local',before:250,reputation:260,delta:10,comparisons:[]}]}];migrateOwnReputationWeights();
+  return{rep,legacy,original,empty,summary,unknownCpu:state.reputation};
+ })()`);
+ assert.equal(r.rep,192);assert.ok(r.legacy);assert.deepEqual(r.original,{before:150,reputation:160,delta:10});assert.equal(r.empty,250);assert.equal(r.summary.evaluations,0);assert.equal(r.unknownCpu,260);
+});
+
+test('current university identity selects its own history through past CPU roles without changing other teams or repeating after a switch',()=>{
+ const r=game()(`(()=>{
+  state.controlledUniversityId='local';state.playerUniversityProfile={id:'local',baseReputation:300,strength:80};state.reputation=355;
+  const comparison=(meet,previous,current,delta)=>({meet,previous,current,delta});
+  state.reputationEvaluations=[{season:2026,meet:'intercollege',universityId:'PLAYER',reputationScaleVersion:2,before:50,reputation:80,delta:30,comparisons:[comparison('intercollege',0,3,30)],cpuChanges:[{id:'local',before:300,reputation:320,delta:20,comparisons:[comparison('kansai_college',0,2,4),comparison('intercollege',0,2,16)]},{id:'other',before:250,reputation:270,delta:20,comparisons:[]}]},
+   {season:2026,meet:'japan_championship',universityId:'local',reputationScaleVersion:2,before:320,reputation:350,delta:30,comparisons:[comparison('japan_open',0,1,12),comparison('japan_championship',0,1,18)],cpuChanges:[]}];
+  const ownOther=JSON.stringify([state.reputationEvaluations[0].before,state.reputationEvaluations[0].reputation,state.reputationEvaluations[0].comparisons,state.reputationEvaluations[0].cpuChanges[1],state.universities]);
+  migrateOwnReputationWeights();const rep=state.reputation,changed=state.reputationEvaluations[0].cpuChanges[0].reputation;
+  const preserved=ownOther===JSON.stringify([state.reputationEvaluations[0].before,state.reputationEvaluations[0].reputation,state.reputationEvaluations[0].comparisons,state.reputationEvaluations[0].cpuChanges[1],state.universities]);
+  state.controlledUniversityId='PLAYER';state.reputation=80;const first=JSON.stringify(state);migrateOwnReputationWeights();return{rep,changed,preserved,stable:first===JSON.stringify(state)};
+ })()`);
+ assert.equal(r.rep,335);assert.equal(r.changed,312);assert.ok(r.preserved&&r.stable);
 });
