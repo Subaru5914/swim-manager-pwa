@@ -2,7 +2,9 @@
 
 HTML / JavaScriptだけで動作する大学競泳部の育成シミュレーションです。
 
-コードを初めて読む方向けに、[JavaScript初心者向けコード解説](./JAVASCRIPT_BEGINNER_GUIDE_JA.md)を用意しています。選手データ・練習・レース／PB・画面表示・保存の流れを、実コードと学習用の例で説明しています。
+初めてJavaScriptを書く方は、[基礎の基礎：最初の1行から書いてみる](./JAVASCRIPT_FIRST_STEPS_JA.md)から始めてください。[練習用HTML](./examples/javascript-first-steps.html)をダウンロードすると、ブラウザで入力と実行を試せます。
+
+基本の書き方を学んだ後は、[ゲームのメインコード解説](./JAVASCRIPT_BEGINNER_GUIDE_JA.md)へ進めます。選手データ・練習・レース／PB・画面表示・保存の流れを、実コードと学習用の例で説明しています。
 
 ## v2.95 の変更
 

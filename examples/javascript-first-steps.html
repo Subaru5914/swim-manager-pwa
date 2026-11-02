@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JavaScript はじめの一歩・練習ノート</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182b44;font-family:system-ui,sans-serif;line-height:1.8}main{max-width:1120px;margin:auto;padding:24px 18px 48px}h1{font-size:clamp(23px,4vw,32px);line-height:1.5;margin:6px 0 12px}h2{font-size:20px;margin:0 0 12px}p{margin:8px 0 16px}.eyebrow{color:#275fb0;font-weight:700}.intro,.card{background:white;border:1px solid #d6dfeb;border-radius:12px;padding:20px;margin:16px 0}.intro p:last-child{margin-bottom:0}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}label{font-weight:700}select,button,textarea{font:inherit}select{max-width:100%;padding:9px;border:1px solid #9faec4;border-radius:7px;background:white}button{padding:9px 15px;border:1px solid #a5b5ca;border-radius:7px;background:white;color:#173052;cursor:pointer}button.primary{background:#1b5cc4;color:white;border-color:#1b5cc4}button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e19920;outline-offset:3px}.columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.columns .card{margin:0;min-width:0}textarea{display:block;width:100%;min-height:310px;resize:vertical;padding:15px;border:1px solid #a5b5ca;border-radius:7px;color:#142c49;background:#f9fbff;font:16px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto}.help{font-size:14px;color:#52627a}.concept{font-weight:700}.output{min-height:150px;background:#13243a;color:#f4f7ff;border-radius:7px;padding:15px;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace}.output.error{background:#fff2f1;color:#8e211c;border:1px solid #efc3bf}.expected{background:#f0f5ff;border-radius:7px;padding:12px;white-space:pre-wrap;margin:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.status{color:#52627a;min-height:28px;margin:10px 0}.steps{padding-left:24px}.steps li{margin:5px 0}code{background:#eaf0f9;border-radius:4px;padding:2px 5px}footer{margin-top:20px;color:#52627a;font-size:14px}iframe[hidden]{display:none}@media(max-width:740px){main{padding:16px 12px 32px}.columns{grid-template-columns:1fr}.card,.intro{padding:16px}textarea{min-height:260px}.toolbar select{width:100%}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">JavaScript はじめの一歩</div>
+<h1>書く → 実行する → 結果を見る</h1>
+<p>最初は「1. 文字を表示する」だけで十分です。例の1行をそのまま入力し、次に文字を一つ変えてみましょう。</p>
+<section class="intro" aria-label="使い方">
+<ol class="steps"><li>下の入力欄にコードを書きます。最初から入力例が入っています。</li><li>「実行する」を押すと、右側（スマホは下側）に結果が出ます。</li><li>文字や数字を一つ変え、もう一度実行します。</li></ol>
+<p class="help">入力するのはJavaScriptだけです。<code>&lt;script&gt;</code> は不要です。記号・英字は半角にし、最初はPCのChromeまたはEdgeで使ってください。このファイルはダウンロードして開けば、通信せずに練習できます。</p>
+</section>
+<section class="card">
+<div class="toolbar"><label for="lesson">練習する項目</label><select id="lesson"></select><button id="previous" type="button">← 前へ</button><button id="next" type="button">次へ →</button></div>
+<p class="concept" id="concept"></p><p id="explanation"></p><p id="challenge"></p>
+</section>
+<div class="columns">
+<section class="card"><h2><label for="codeInput">ここにコードを書く</label></h2><textarea id="codeInput" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editorHelp"></textarea><p id="editorHelp" class="help">全部を消して書き直しても構いません。「入力例に戻す」で戻せます。</p><div class="toolbar"><button id="run" class="primary" type="button">実行する</button><button id="restore" type="button">入力例に戻す</button><button id="stop" type="button" disabled>止める</button></div><p class="help">Ctrl＋Enter（Macは⌘＋Enter）でも実行できます。毎回、新しい状態で最初の行から実行します。</p></section>
+<section class="card"><h2>実行した結果</h2><pre class="output" id="output" aria-live="polite">まだ実行していません。</pre><p id="status" class="status" role="status"></p><h2>入力例をそのまま実行すると</h2><pre class="expected" id="expected"></pre><p class="help">結果の文字列には、コードで書いた引用符は表示されません。</p></section>
+</div>
+<footer>このページはJavaScriptの基本練習用です。HTMLを操作する <code>document</code> や <code>alert()</code> は練習欄では使いません。解説ファイルの「HTMLファイルで動かす」へ進んでから扱います。入力内容はページを閉じると消えます。</footer>
+</main>
+<script>
+'use strict';
+const lessons=[
+ {title:'1. 文字を表示する',concept:'まずは、この1行をそのまま書きます。',explanation:'console.log は「結果の欄へ表示する」ための命令です。( ) の中に表示したいものを書き、文字は半角の " " で囲みます。最後の ; は命令の区切りです。',challenge:'やってみよう：「こんにちは」を「水泳が好きです」に変えて実行します。',code:'console.log("こんにちは");',expected:'こんにちは'},
+ {title:'2. 上から順に実行する',concept:'命令を2行書くと、上から順に動きます。',explanation:'Enterキーで改行して、もう1行書きます。一つの命令ごとに ; を付けます。// で始まる部分は説明用のコメントで、実行されません。',challenge:'やってみよう：3行目に console.log("おやすみ"); を追加します。',code:'console.log("おはよう");\nconsole.log("こんにちは");\n// この行は説明なので、結果に出ません。',expected:'おはよう\nこんにちは'},
+ {title:'3. 数字を計算する',concept:'計算する数字は、引用符で囲まずに書きます。',explanation:'+ は足し算、- は引き算、* は掛け算、/ は割り算です。掛け算は × ではなく半角の * を使います。',challenge:'やってみよう：30 + 5 を 30 + 10 に変えます。',code:'console.log(30 + 5);\nconsole.log(30 - 5);\nconsole.log(6 * 5);\nconsole.log(30 / 5);',expected:'35\n25\n30\n6'},
+ {title:'4. 文字と数字の違い',concept:'"30" は文字、30 は数字です。',explanation:'数字同士の + は足し算です。片方が文字だと、+ は文字をつなぐ動きになります。「どちらを書いているか」を引用符で見分けます。',challenge:'やってみよう："30" の引用符を外すと、結果がどう変わるか見ます。',code:'console.log(30 + 5);\nconsole.log("30" + 5);\nconsole.log("水泳" + "太郎");',expected:'35\n305\n水泳太郎'},
+ {title:'5. letで値に名前を付ける',concept:'let 名前 = 最初の値; の順番で書きます。',explanation:'let points = 30; で、points という名前に30を入れます。console.log(points); は文字の「points」ではなく、その中身を表示します。',challenge:'やってみよう：最初の30を50に変えます。',code:'let points = 30;\nconsole.log(points);\nconsole.log("points");',expected:'30\npoints'},
+ {title:'6. 値を変更する',concept:'作った変数には、名前 = 新しい値; で入れ直します。',explanation:'points = points + 5; は「今のpointsに5を足し、その結果をpointsに入れる」です。= は同じかどうかの比較ではありません。2回目には let を付けません。',challenge:'やってみよう：足す数を5から10に変えます。',code:'let points = 30;\npoints = points + 5;\nconsole.log(points);',expected:'35'},
+ {title:'7. constで名前を付ける',concept:'入れ直さない値には const を使います。',explanation:'const の書く順番はletと同じです。constで作った名前には、後から別の値を入れ直せません。まずは固定の文字列で試します。',challenge:'やってみよう：選手名を好きな名前に変えます。',code:'const playerName = "水泳 太郎";\nconsole.log(playerName);',expected:'水泳 太郎'},
+ {title:'8. 条件を比べる',concept:'比べた結果は true（はい）か false（いいえ）です。',explanation:'>= は「以上」、< は「より小さい」、=== は「値と種類が同じ」です。比較の === は、値を入れる = と用途が違います。',challenge:'やってみよう：pointsを3に変えて、1行目の結果を見ます。',code:'let points = 30;\nconsole.log(points >= 5);\nconsole.log(points < 5);\nconsole.log(5 === "5");',expected:'true\nfalse\nfalse'},
+ {title:'9. ifで処理を分ける',concept:'if (条件) { 条件に合うときの命令 } と書きます。',explanation:'( ) には条件、{ } には実行する命令を書きます。else の { } には、条件に合わないときの命令を書きます。行の先頭の空白は、まとまりを見やすくします。',challenge:'やってみよう：pointsを3にして、別の文章が出ることを確かめます。',code:'let points = 30;\nif (points >= 5) {\n  console.log("スカウトできます");\n} else {\n  console.log("ポイントが足りません");\n}',expected:'スカウトできます'},
+ {title:'10. functionで処理をまとめる',concept:'関数を作ることと、使うことは別です。',explanation:'function sayHello() { ... } で処理に名前を付けます。sayHello(); と書くと、その処理が実行されます。定義だけでは中の命令は動きません。',challenge:'やってみよう：最後の sayHello(); をもう1行増やします。',code:'function sayHello() {\n  console.log("こんにちは");\n}\n\nsayHello();',expected:'こんにちは'},
+ {title:'11. 関数へ値を渡す・返す',concept:'( ) に値を渡し、returnで答えを返します。',explanation:'addFive(30) の30が、関数の currentPoints に入ります。return の計算結果を、呼び出した場所で受け取れます。result に35が入ります。',challenge:'やってみよう：addFive(30) を addFive(50) に変えます。',code:'function addFive(currentPoints) {\n  return currentPoints + 5;\n}\n\nlet result = addFive(30);\nconsole.log(result);',expected:'35'},
+ {title:'12. 配列で一覧を作る',concept:'[ ] の中に値を並べ、, で区切ります。',explanation:'配列の順番は0から数えます。names[0] は1人目、names[1] は2人目です。.length は個数を調べます。',challenge:'やってみよう：3人目の名前を , で区切って追加します。',code:'const names = ["太郎", "次郎"];\nconsole.log(names[0]);\nconsole.log(names[1]);\nconsole.log(names.length);',expected:'太郎\n次郎\n2'},
+ {title:'13. オブジェクトで項目をまとめる',concept:'{ 項目名: 値, 項目名: 値 } と書きます。',explanation:'一人の選手の名前・学年・能力をまとめます。中では = ではなく : を使います。player.name は、その選手のnameを読む書き方です。',challenge:'やってみよう：yearを2に変え、player.yearを表示する行を追加します。',code:'const player = {\n  name: "水泳 太郎",\n  year: 1,\n  speed: 100\n};\nconsole.log(player.name);\nplayer.speed = player.speed + 1;\nconsole.log(player.speed);',expected:'水泳 太郎\n101'},
+ {title:'14. 一覧を一つずつ処理する',concept:'for (const 名前 of 一覧) { 命令 } と書きます。',explanation:'namesから一つずつ値を取り出して、nameに入れます。{ } の中を人数分繰り返します。ゲームでも選手を一人ずつ処理するときに使います。',challenge:'やってみよう：配列に3人目を加え、結果が1行増えることを確認します。',code:'const names = ["太郎", "次郎"];\nfor (const name of names) {\n  console.log(name);\n}',expected:'太郎\n次郎'},
+ {title:'15. 回数を決めて繰り返す',concept:'for (最初の値; 続ける条件; 1回ごとの変更) と書きます。',explanation:'iは0から始まり、i < 3 の間だけ動きます。i++ はiを1増やす書き方です。表示される値は0・1・2の3個です。',challenge:'やってみよう：i < 3 を i < 5 に変えます。',code:'for (let i = 0; i < 3; i++) {\n  console.log(i);\n}',expected:'0\n1\n2'},
+ {title:'16. ゲームに似た小さな処理',concept:'今までの書き方を組み合わせます。',explanation:'stateは、この例では自分で付けた変数名です。中にポイントと選手の一覧を入れ、選手を一人ずつ成長させます。練習用の簡単な例で、ゲーム本体の成長式ではありません。',challenge:'やってみよう：選手を1人増やし、同じ処理が使えることを確認します。',code:'const state = {\n  points: 30,\n  players: [\n    { name: "太郎", speed: 100 },\n    { name: "次郎", speed: 110 }\n  ]\n};\n\nfor (const player of state.players) {\n  player.speed = player.speed + 1;\n  console.log(player.name + "の能力: " + player.speed);\n}',expected:'太郎の能力: 101\n次郎の能力: 111'}
+];
+const lessonSelect=document.getElementById('lesson'),codeInput=document.getElementById('codeInput'),output=document.getElementById('output'),status=document.getElementById('status'),runButton=document.getElementById('run'),stopButton=document.getElementById('stop');
+let current=0,activeFrame=null,timer=null,runToken=null;
+const drafts=new Map();
+lessons.forEach((lesson,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=lesson.title;lessonSelect.append(option)});
+function stopRun(message=''){
+ clearTimeout(timer);timer=null;if(activeFrame){activeFrame.remove();activeFrame=null}runToken=null;stopButton.disabled=true;runButton.disabled=false;if(message)status.textContent=message;
+}
+function selectLesson(index){
+ drafts.set(current,codeInput.value);stopRun();current=index;lessonSelect.value=String(index);const lesson=lessons[index];
+ codeInput.value=drafts.has(index)?drafts.get(index):lesson.code;
+ document.getElementById('concept').textContent=lesson.concept;document.getElementById('explanation').textContent=lesson.explanation;document.getElementById('challenge').textContent=lesson.challenge;document.getElementById('expected').textContent=lesson.expected;
+ document.getElementById('previous').disabled=index===0;document.getElementById('next').disabled=index===lessons.length-1;output.textContent='まだ実行していません。';output.classList.remove('error');status.textContent='';
+}
+const workerSource=`'use strict';
+function format(value){if(typeof value==='string')return value;if(value===undefined)return 'undefined';if(typeof value==='number'||typeof value==='boolean'||typeof value==='bigint'||value===null)return String(value);try{return JSON.stringify(value,null,2)}catch{return String(value)}}
+self.onmessage=function(event){
+ let count=0;const write=function(level,args){if(++count>100)throw new RangeError('表示が100回を超えました。繰り返す回数を小さくしてください。');const text=args.map(format).join(' ');self.postMessage({kind:'output',level:level,text:text.length>4000?text.slice(0,4000)+'…':text})};
+ console.log=function(...args){write('log',args)};console.info=function(...args){write('log',args)};console.warn=function(...args){write('log',args)};console.error=function(...args){write('error',args)};
+ try{new Function('"use strict";\\n'+event.data)();self.postMessage({kind:'done'})}
+ catch(error){self.postMessage({kind:'error',name:error.name,message:error.message})}
+};`;
+function sandboxBootstrap(payload){
+ const send=message=>parent.postMessage({...message,token:payload.token},'*');
+ try{
+  const url=URL.createObjectURL(new Blob([payload.worker],{type:'text/javascript'}));const worker=new Worker(url);URL.revokeObjectURL(url);
+  worker.onmessage=event=>{send(event.data);if(event.data.kind==='done'||event.data.kind==='error')worker.terminate()};
+  worker.onerror=event=>{send({kind:'error',name:'実行エラー',message:event.message||'入力内容を確認してください。'});worker.terminate()};worker.postMessage(payload.code);
+ }catch(error){send({kind:'error',name:error.name,message:error.message})}
+}
+function runCode(){
+ stopRun();output.textContent='';output.classList.remove('error');status.textContent='実行しています…';runButton.disabled=true;stopButton.disabled=false;runToken=String(Date.now())+'-'+Math.random();
+ const payload={token:runToken,code:codeInput.value,worker:workerSource};const encoded=JSON.stringify(payload).replace(/</g,'\\u003c');
+ activeFrame=document.createElement('iframe');activeFrame.hidden=true;activeFrame.setAttribute('sandbox','allow-scripts');activeFrame.setAttribute('aria-hidden','true');activeFrame.srcdoc='<!doctype html><meta charset="utf-8"><script>('+sandboxBootstrap.toString()+')('+encoded+');<'+'/script>';document.body.append(activeFrame);
+ timer=setTimeout(()=>{output.classList.add('error');output.textContent+=(output.textContent?'\n':'')+'実行を止めました。繰り返しの条件を確認してください。';stopRun('3秒を超えたため停止しました。')},3000);
+}
+window.addEventListener('message',event=>{
+ if(!activeFrame||event.source!==activeFrame.contentWindow||event.data?.token!==runToken)return;const data=event.data;
+ if(data.kind==='output'){if(data.level==='error')output.classList.add('error');output.textContent+=(output.textContent?'\n':'')+data.text}
+ if(data.kind==='error'){
+  const tips={SyntaxError:'記号の閉じ忘れ、全角の記号、引用符の組を確認しましょう。',ReferenceError:'名前のつづりと、その名前をlet・constで作ったかを確認しましょう。',TypeError:'constへの入れ直しや、値の扱い方を確認しましょう。',RangeError:'繰り返す回数や表示する内容を小さくしてみましょう。'};
+  output.classList.add('error');output.textContent+=(output.textContent?'\n':'')+data.name+': '+data.message+'\n'+(tips[data.name]||'入力例に戻して、一つずつ変更してみましょう。');stopRun('書き直して、もう一度実行できます。');
+ }
+ if(data.kind==='done'){if(!output.textContent)output.textContent='表示する命令がありません。console.log(...) を書くと結果が出ます。';stopRun('実行が終わりました。')}
+});
+lessonSelect.onchange=()=>selectLesson(Number(lessonSelect.value));document.getElementById('previous').onclick=()=>selectLesson(current-1);document.getElementById('next').onclick=()=>selectLesson(current+1);runButton.onclick=runCode;stopButton.onclick=()=>stopRun('実行を止めました。');document.getElementById('restore').onclick=()=>{stopRun();codeInput.value=lessons[current].code;drafts.delete(current);output.textContent='入力例に戻しました。「実行する」を押してください。';output.classList.remove('error');status.textContent=''};
+codeInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();runCode()}});
+codeInput.value=lessons[0].code;selectLesson(0);window.addEventListener('pagehide',()=>stopRun());
+</script>
+</body>
+</html>
