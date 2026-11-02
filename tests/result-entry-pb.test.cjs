@@ -47,3 +47,61 @@ test('saved rows without entry PB recover previous PB, preserve an unmeasured en
  })()`);
  assert.match(r.normal,/>50\.00</);assert.match(r.unmeasured,/>-</);assert.match(r.unknown,/>-</);assert.match(r.swimOff,/>48\.50</);
 });
+
+test('a relay lead-off PB updates only later individual comparisons, including finals faster or slower than that split',()=>{
+ const r=game()(`(()=>{
+  return [53,55].map(finalTime=>{
+   const event='ba100',own=swimmer('own',event,60,56,finalTime),members=[own,...Array.from({length:3},(_,i)=>swimmer('leg'+i,event,60,60,60))];state.players=members;state.world=[];
+   const individual=runEvent('intercollege',event,[own.id],{}),team={organization:state.playerUniversity,members,prelimRank:1,race:{total:220,legs:[54,56,55,55]}};
+   recordRelayResult('4x100medley',team,'intercollege','予選');
+   const result={meet:'intercollege',season:2026,slot:43,events:{[event]:individual},relays:[['4x100medley',[],{prelim:[team],heats:[[team]]}]]};
+   const protectedData=JSON.stringify([state.players.map(a=>[a.stats,a.bestTimes]),state.rngSeed,state.teamTop10,state.recordRankings]);
+   refreshMeetPBComparisons(result);const first=JSON.stringify(result);refreshMeetPBComparisons(result);
+   const restored=unpackMeetResult(JSON.parse(JSON.stringify(packMeetResult(result))));
+   return{finalTime,pre:individual.prelim[0].entryPB,final:individual.final[0].entryPB,finalPB:individual.final[0].achievement.pb,lead:team.leadOffAchievement,
+    history:own.raceHistory.filter(h=>h.event===event).map(h=>h.pb),restored:restored.events[event].final[0].entryPB,
+    stable:first===JSON.stringify(result),unchanged:protectedData===JSON.stringify([state.players.map(a=>[a.stats,a.bestTimes]),state.rngSeed,state.teamTop10,state.recordRankings])};
+  });
+ })()`);
+ for(const row of r){assert.equal(row.pre,60);assert.equal(row.final,54);assert.equal(row.finalPB,row.finalTime<54);assert.equal(row.lead.previousPB,56);assert.ok(row.lead.pb);assert.deepEqual(row.history,[true,row.finalTime<54]);assert.equal(row.restored,54);assert.ok(row.stable&&row.unchanged)}
+});
+
+test('all lead-off strokes propagate to later single-day finals while flying legs, equal splits and earlier races never overwrite PB comparisons',()=>{
+ const r=game()(`(()=>{
+  return RELAYS.map(kind=>{
+   const event=relayLegEvent(kind,0),own=swimmer(kind,event,120,118,117),members=[own,...Array.from({length:3},(_,i)=>swimmer(kind+'leg'+i,event,120,118,117))];state.players=members;state.world=[];
+   const race=runEvent('joint_record',event,[own.id],{}),team={organization:state.playerUniversity,members,prelimRank:1,race:{total:400,legs:[116,90,95,99]}};
+   recordRelayResult(kind,team,'joint_record','予選');
+   const result={meet:'joint_record',season:2026,slot:43,events:{[event]:race},relays:[[kind,[],{prelim:[team],heats:[[team]]}]]};refreshMeetPBComparisons(result);
+   const earlier=race.prelim[0].entryPB,later=race.final[0].entryPB,pb=race.final[0].achievement.pb,other=members.slice(1).map(a=>a.bestTimes[event]);
+   team.race.legs[0]=118;refreshMeetPBComparisons(result);const equal=race.final[0].entryPB;
+   return{kind,earlier,later,pb,other,equal};
+  });
+ })()`);
+ for(const row of r){assert.equal(row.earlier,120);assert.equal(row.later,116);assert.equal(row.pb,false);assert.deepEqual(row.other,[120,120,120]);assert.equal(row.equal,118)}
+});
+
+test('four-day freestyle relays after the individual event keep the completed preliminary and final comparisons unchanged',()=>{
+ const r=game()(`(()=>{
+  return ['4x100fr','4x200fr'].map(kind=>{
+   const event=relayLegEvent(kind,0),own=swimmer(kind,event,120,118,117),members=[own,...Array.from({length:3},(_,i)=>swimmer('leg'+i,event,120,118,117))];state.players=members;
+   const race=runEvent('intercollege',event,[own.id],{}),team={organization:state.playerUniversity,members,prelimRank:1,race:{total:470,legs:[116,118,118,118]}};
+   recordRelayResult(kind,team,'intercollege','予選');refreshMeetPBComparisons({meet:'intercollege',season:2026,slot:43,events:{[event]:race},relays:[[kind,[],{prelim:[team],heats:[[team]]}]]});
+   return{pre:race.prelim[0].entryPB,final:race.final[0].entryPB,finalPB:race.final[0].achievement.pb,lead:team.leadOffAchievement};
+  });
+ })()`);
+ for(const row of r){assert.equal(row.pre,120);assert.equal(row.final,118);assert.ok(row.finalPB&&row.lead.pb);assert.equal(row.lead.previousPB,117)}
+});
+
+test('a deferred relay final rebuilds later PB snapshots from the committed lineup and survives saved rows with separate heat objects',()=>{
+ const r=game()(`(()=>{
+  const event='ba100',own=swimmer('own',event,60,56,55),members=[own,...Array.from({length:3},(_,i)=>swimmer('leg'+i,event,60,60,60))];state.players=members;
+  const race=runEvent('joint_record',event,[own.id],{}),pre={organization:state.playerUniversity,members,prelimRank:1,race:{total:225,legs:[57,56,56,56]}},fin={organization:state.playerUniversity,members,rank:1,race:{total:215,legs:[53,54,54,54]}};
+  recordRelayResult('4x100medley',pre,'joint_record','予選');
+  const result={meet:'joint_record',season:2026,slot:43,events:{[event]:race},relays:[['4x100medley',[fin],{prelim:[pre],heats:[[pre]],finalEntryPending:true}]]};
+  refreshMeetPBComparisons(result);const pending=race.final[0].entryPB;
+  const saved=unpackMeetResult(JSON.parse(JSON.stringify(packMeetResult(result))));saved.relays[0][2].finalEntryPending=false;recordRelayResult('4x100medley',saved.relays[0][1][0],'joint_record','決勝');refreshMeetPBComparisons(saved);
+  return{pending,final:saved.events[event].final[0].entryPB,pre:saved.events[event].prelim[0].entryPB,heat:saved.events[event].heats[0][0].entryPB,pb:own.bestTimes[event],lateFinal:saved.relays[0][1][0].leadOffAchievement};
+ })()`);
+ assert.equal(r.pending,56);assert.equal(r.final,56,'a relay final after the individual final must not change its earlier comparison');assert.equal(r.pre,60);assert.equal(r.heat,60);assert.equal(r.pb,53);assert.equal(r.lateFinal.previousPB,55);assert.ok(r.lateFinal.pb);
+});
