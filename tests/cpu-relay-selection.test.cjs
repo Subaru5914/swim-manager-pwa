@@ -28,7 +28,49 @@ test('deep relay rosters can rest two first choices, while a bubble team keeps i
      worst:cpuRelayTimeBounds(t.members,'4x100fr').high,cutoff:entries.filter(e=>e.organization!==t.organization).map(e=>cpuRelayTimeBounds(e.members,'4x100fr').low).sort((a,b)=>a-b)[7]-.3}))};
  })()`);
  assert.ok(r.unchanged);assert.equal(r.rows[0].rest.length,2);assert.equal(r.rows[1].rest.length,0);
- for(const row of r.rows){assert.equal(new Set(row.ids).size,4);assert.deepEqual(row.final,[0,1,2,3].map(i=>row.org+'p'+i));if(row.rest.length)assert.ok(row.worst<=row.cutoff)}
+ for(const row of r.rows){assert.equal(new Set(row.ids).size,4);assert.deepEqual(row.final,[0,2,3,1].map(i=>row.org+'p'+i));if(row.rest.length)assert.ok(row.worst<=row.cutoff)}
+});
+
+test('CPU freestyle order places the fastest PB first and second fastest last without changing member selection, medley order or calibration',()=>{
+ const r=game()(`(()=>{
+  expectedTime=(a,e)=>1000-a.bestTimes[e];
+  const roster=Array.from({length:8},(_,i)=>({id:'p'+i,bestTimes:{fr100:50+i,fr200:120-i,ba100:60+i,br100:65+i,fly100:55+i}})),before=JSON.stringify(roster),seed=state.rngSeed;
+  return{rows:RELAYS.map(kind=>{const selected=bestRelayMembers(roster,kind);return{kind,selected:selected.map(a=>a.id),ordered:orderCpuFreestyleRelay(selected,kind).map(a=>a.id),calibration:bestRelayMembers(roster,kind,false).map(a=>a.id)}}),unchanged:before===JSON.stringify(roster)&&seed===state.rngSeed};
+ })()`);
+ assert.ok(r.unchanged);assert.deepEqual(r.rows[0].ordered,['p0','p2','p3','p1']);assert.deepEqual(r.rows[1].ordered,['p7','p5','p4','p6']);assert.deepEqual(r.rows[2].ordered,r.rows[2].selected);
+ for(const row of r.rows)assert.deepEqual(row.ordered.slice().sort(),row.selected.slice().sort());
+ assert.deepEqual(r.rows[0].calibration,['p7','p6','p5','p4']);assert.deepEqual(r.rows[1].calibration,['p0','p1','p2','p3']);
+});
+
+test('safe deep rosters can reserve two, three or four main swimmers in every relay and keep fast freestyle ends in both rounds',()=>{
+ const r=game()(`(()=>{
+  expectedTime=(a,e)=>a.bestTimes[e];reactionTime=(a,e,takeover=false)=>takeover?.2:.7;
+  return RELAYS.flatMap(kind=>[6,7,8].map(size=>{
+   const event=relayLegEvent(kind,0),base=kind==='4x200fr'?110:50,rosters=new Map(),entries=[];
+   for(let n=0;n<10;n++){
+    const organization='u'+n,roster=Array.from({length:n===0?size:8},(_,i)=>({id:organization+'p'+i,bestTimes:Object.fromEntries(EVENTS.map(e=>[e,base+(n?20:0)+i*.05]))}));
+    rosters.set(organization,roster);entries.push({organization,members:bestRelayMembers(roster,kind)});
+   }
+   const before=JSON.stringify(entries),seed=state.rngSeed,planned=cpuRelayPreliminaryEntries(entries,kind,rosters)[0];
+   return{kind,size,rest:planned.reservedIds,ids:planned.members.map(a=>a.id),final:planned.finalMembers.map(a=>a.id),worst:cpuRelayTimeBounds(planned.members,kind).high,cutoff:entries.slice(1).map(e=>cpuRelayTimeBounds(e.members,kind).low).sort((a,b)=>a-b)[7]-(kind==='4x200fr'?.6:.3),unchanged:before===JSON.stringify(entries)&&seed===state.rngSeed,
+    first:planned.members[0].bestTimes[event],anchor:planned.members[3].bestTimes[event],ranked:planned.members.map(a=>a.bestTimes[event]).sort((a,b)=>a-b)};
+  }));
+ })()`);
+ for(const row of r){assert.equal(row.rest.length,row.size-4,JSON.stringify(row));assert.equal(new Set(row.ids).size,4);assert.ok(row.worst<=row.cutoff&&row.unchanged);assert.deepEqual(row.final,(row.kind==='4x100medley'?[0,1,2,3]:[0,2,3,1]).map(i=>'u0p'+i));if(row.kind!=='4x100medley'){assert.equal(row.first,row.ranked[0]);assert.equal(row.anchor,row.ranked[1])}}
+});
+
+test('resting leaves own manual entries unchanged, uses only available reserves and keeps a bubble team at full strength',()=>{
+ const r=game()(`(()=>{
+  expectedTime=(a,e)=>a.bestTimes[e];reactionTime=(a,e,takeover=false)=>takeover?.2:.7;
+  const kind='4x100fr',rosters=new Map(),entries=[];
+  for(let n=0;n<10;n++){
+   const organization=n===0?state.playerUniversity:'u'+n,base=n===1?64.9:65,roster=Array.from({length:8},(_,i)=>({id:organization+'p'+i,bestTimes:{fr100:base+i*.05}}));
+   rosters.set(organization,roster);entries.push({organization,members:n===0?roster.slice(0,4).reverse():bestRelayMembers(roster,kind)});
+  }
+  const before=JSON.stringify(entries),own=entries[0],planned=cpuRelayPreliminaryEntries(entries,kind,rosters);
+  return{own:planned[0]===own,unchanged:before===JSON.stringify(entries),bubble:planned[1].reservedIds,ids:planned[1].members.map(a=>a.id),final:planned[1].finalMembers.map(a=>a.id)};
+ })()`);
+ assert.ok(r.own&&r.unchanged);assert.deepEqual(r.bubble,[]);assert.deepEqual(r.ids,r.final);
 });
 
 test('actual college relay heats and finals retain distinct lineups, PB seeding, lap clocks and fastest final choices',()=>{
