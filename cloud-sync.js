@@ -132,6 +132,11 @@ class SwimCloudSync {
     const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
+  static async contentFingerprint(text) {
+    const save = JSON.parse(text);
+    if (save && typeof save === 'object' && !Array.isArray(save)) delete save.version;
+    return this.fingerprint(JSON.stringify(save));
+  }
   static validSave(value) {
     return value && !Array.isArray(value) && Array.isArray(value.players) && value.players.length > 0 && Array.isArray(value.world) && Number.isInteger(value.season) && Number.isInteger(value.slot) && value.slot >= 1 && value.slot <= 96 && Number.isFinite(value.points) && Number.isFinite(value.reputation) && value.facilities && value.players.every(player => player.id && player.stats && player.bestTimes);
   }
@@ -191,7 +196,7 @@ class SwimCloudSync {
     const text = this.options.getSave(), fingerprint = await SwimCloudSync.fingerprint(text);
     if (epoch !== this.epoch) return;
     this.cleanText = applied?.compacted ? null : text;
-    this.meta = { revision: remote.value.revision, fingerprint: applied?.compacted ? remote.value.fingerprint : fingerprint, dirty: !!applied?.compacted, syncedAt: Date.now() };
+    this.meta = { revision: remote.value.revision, fingerprint: applied?.compacted ? remote.value.fingerprint : fingerprint, localFingerprint: applied?.compacted ? remote.value.fingerprint : fingerprint, dirty: !!applied?.compacted, syncedAt: Date.now() };
     this.conflict = null;
     this.persistMeta();
     this.notify(applied?.compacted ? 'pending' : 'synced', applied?.compacted ? 'クラウド：整理済みデータを同期待ち' : 'クラウド：同期済み');
@@ -213,7 +218,7 @@ class SwimCloudSync {
       return;
     }
     if (!response.ok) throw new Error('クラウドに保存できません。接続とDatabaseのルールを確認してください。');
-    this.meta = { revision: value.revision, fingerprint, dirty: this.options.getSave() !== text, syncedAt: Date.now() };
+    this.meta = { revision: value.revision, fingerprint, localFingerprint: fingerprint, dirty: this.options.getSave() !== text, syncedAt: Date.now() };
     this.cleanText = text;
     this.conflict = null;
     this.persistMeta();
@@ -227,7 +232,7 @@ class SwimCloudSync {
     const epoch = this.epoch;
     try {
       const before = this.options.getSave(), fingerprint = await SwimCloudSync.fingerprint(before);
-      this.meta.dirty = fingerprint !== this.meta.fingerprint;
+      this.meta.dirty = fingerprint !== (this.meta.localFingerprint || this.meta.fingerprint);
       if (!this.meta.dirty) this.cleanText = before;
       if (!this.options.needsLocalRecovery?.() && !this.meta.dirty && this.meta.revision) {
         const response = await this.database('/revision');
@@ -242,14 +247,26 @@ class SwimCloudSync {
         if (remote.value) return this.setConflict(remote);
         throw new Error('端末セーブを読み込めませんでした。クラウドにもセーブがありません。');
       }
+      const localSave = JSON.parse(before);
+      const remoteAhead = remote.value && Number.isInteger(remote.value.season) && Number.isInteger(remote.value.slot) &&
+        (remote.value.season > localSave.season || remote.value.season === localSave.season && remote.value.slot > localSave.slot);
+      if (remoteAhead) return this.setConflict(remote);
       if (!remote.value) await this.upload(remote, epoch);
       else if (remote.value.revision === this.meta.revision) {
-        if (this.meta.dirty) await this.upload(remote, epoch);
+        if (this.meta.dirty) {
+          const remoteSave = await SwimCloudSync.decode(remote.value);
+          if (await SwimCloudSync.contentFingerprint(before) === await SwimCloudSync.contentFingerprint(JSON.stringify(remoteSave))) {
+            this.meta = { revision: remote.value.revision, fingerprint: remote.value.fingerprint, localFingerprint: fingerprint, dirty: false, syncedAt: Date.now() };
+            this.cleanText = before;
+            this.persistMeta();
+            this.notify('synced', 'クラウド：同期済み');
+          } else await this.upload(remote, epoch);
+        }
         else this.notify('synced', 'クラウド：同期済み');
       } else if (remote.value.fingerprint === fingerprint) {
         await SwimCloudSync.decode(remote.value);
         if (epoch !== this.epoch) return;
-        this.meta = { revision: remote.value.revision, fingerprint, dirty: false, syncedAt: Date.now() };
+        this.meta = { revision: remote.value.revision, fingerprint, localFingerprint: fingerprint, dirty: false, syncedAt: Date.now() };
         this.cleanText = before;
         this.persistMeta();
         this.notify('synced', 'クラウド：同期済み');

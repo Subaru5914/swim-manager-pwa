@@ -61,6 +61,26 @@ test('offline changes survive and upload automatically when the connection retur
   assert.equal((await Cloud.decode(server.saves.get(pc.client.session.uid))).slot,96);
   assert.equal(pc.client.status.kind,'synced');
 });
+test('a newer cloud month is preserved when the local save is older even if metadata says it was synced',async t=>{
+  const server=backend(),pc=await device(server,50),phone=await device(server,0);t.after(()=>{pc.client.stop();phone.client.stop()});
+  pc.current.season=2027;pc.current.slot=9;await pc.client.login('month-recovery@example.test','test-password');
+  const remote=clone(server.saves.get(pc.client.session.uid));
+  phone.client.session=clone(pc.client.session);phone.current.season=2027;phone.current.slot=8;
+  phone.client.meta={revision:remote.revision,fingerprint:remote.fingerprint,dirty:false};phone.client.persistMeta();
+  await phone.client.sync();
+  assert.equal(phone.client.status.kind,'conflict');assert.equal(phone.current.slot,8);
+  assert.deepEqual(server.saves.get(pc.client.session.uid),remote);
+  await phone.client.resolve('remote');assert.equal(phone.current.slot,9);
+  assert.equal(phone.client.status.kind,'synced');
+});
+test('an app-version-only change does not create a new cloud revision',async t=>{
+  const server=backend(),pc=await device(server,50);t.after(()=>pc.client.stop());
+  pc.current.version='pwa-v3.12';await pc.client.login('version-migration@example.test','test-password');
+  const remote=clone(server.saves.get(pc.client.session.uid));
+  pc.current.version='pwa-v3.13';pc.client.meta.localFingerprint=remote.fingerprint;pc.client.meta.fingerprint=remote.fingerprint;pc.client.persistMeta();
+  await pc.client.sync();
+  assert.equal(pc.client.status.kind,'synced');assert.deepEqual(server.saves.get(pc.client.session.uid),remote);
+});
 test('diverging devices preserve both saves until the user chooses a version',async t=>{
   const server=backend(),pc=await device(server,10),phone=await device(server,10);t.after(()=>{pc.client.stop();phone.client.stop()});
   await pc.client.login('owner@example.test','test-password');await phone.client.login('owner@example.test','test-password');
