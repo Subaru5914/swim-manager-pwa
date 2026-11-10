@@ -216,18 +216,19 @@ test('new wishes each appear about ten percent and v2 wishes migrate once withou
   for(const key of ['stable','rng','signed','own','records','athletes'])assert.equal(result[key],true,key);
 });
 
-test('existing candidate identities supply exactly eight freshmen; every other senior advances and added CPU entries leave own freshmen untouched',()=>{
+test('the full uncommitted senior cohort supplies own freshmen; every other senior advances and CPU entries leave own freshmen untouched',()=>{
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const rows=[];
     for(let year=0;year<8;year++){
-      const board=refreshScoutBoard(),before=new Map(board.map(a=>[a.id,{name:a.name,stats:deepClone(a.stats),pb:deepClone(a.bestTimes),specialty:a.specialty}]));
+      const board=refreshScoutBoard(),boardIds=new Set(board.map(a=>a.id)),before=new Map(state.world.filter(a=>a.category==='high'&&a.grade===3&&!a.retired).map(a=>[a.id,{name:a.name,stats:deepClone(a.stats),pb:deepClone(a.bestTimes),specialty:a.specialty}]));
       const signed=board.slice(0,year%3===0?8:year%3===1?2:0).map(a=>a.id);state.recruits=signed;
       signed.forEach(id=>state.world.find(a=>a.id===id).scouted=true);
       const oldIds=new Set(state.players.concat(state.world).map(a=>a.id)),seniors=state.world.filter(a=>a.category==='high'&&a.grade===3).map(a=>a.id);
       newSeason();const freshmen=state.players.filter(p=>p.year===1),freshIds=new Set(freshmen.map(p=>p.id));
       rows.push({year,count:freshmen.length,unique:freshIds.size,signed:signed.every(id=>freshIds.has(id)),candidates:freshmen.every(p=>before.has(p.id)),
         preserved:freshmen.every(p=>{const a=before.get(p.id);return a.name===p.name&&a.specialty===p.specialty&&JSON.stringify(a.stats)===JSON.stringify(p.stats)&&JSON.stringify(a.pb)===JSON.stringify(p.bestTimes)}),
+        outsideBoard:freshmen.some(p=>!boardIds.has(p.id)),
         moved:seniors.every(id=>freshIds.has(id)||state.world.some(a=>a.id===id&&a.category==='university'&&a.grade===1)),
         freshOnly:state.world.filter(a=>!oldIds.has(a.id)).every(a=>a.category==='middle'&&a.grade===1&&a.age===13),
         newCount:state.world.filter(a=>!oldIds.has(a.id)).length,expected:schoolCohortSize(),
@@ -242,6 +243,7 @@ test('existing candidate identities supply exactly eight freshmen; every other s
     assert.equal(row.newCount,row.expected);
     for(const key of ['signed','candidates','preserved','moved','freshOnly','removed','reloadNoNew'])assert.equal(row[key],true,JSON.stringify(row));
   }
+  assert.ok(result.some(row=>row.outsideBoard),JSON.stringify(result.map(({year,outsideBoard})=>({year,outsideBoard}))));
 });
 
 test('CPU enrollment prefers strong and prestigious universities, observes available places and returns no destination when all places fill',()=>{
@@ -262,37 +264,33 @@ test('CPU enrollment prefers strong and prestigious universities, observes avail
   assert.ok(result.skipsFull);assert.equal(result.overflow,null);
 });
 
-test('unscouted freshmen favor specialty talent at strong and prestigious schools, with random selection and no stat changes',()=>{
+test('reputation-weighted intake draws E/F overall ability more often at lower reputation and samples the whole uncommitted pool',()=>{
   const {run}=game();
   const result=JSON.parse(run(`JSON.stringify((()=>{
     const template=deepClone(state.world.find(a=>a.category==='high'&&a.grade===3));
-    const low={...deepClone(template),id:'ordinary-freshman',specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,80]))};
-    const specialist={...deepClone(template),id:'specialist-freshman',specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,40]))};
-    for(const k of ['fr_speed','fr_stamina','fr_turn','start'])specialist.stats[k]=160;
-    const balanced={...deepClone(specialist),id:'balanced-freshman',stats:Object.fromEntries(STATS.map(k=>[k,160]))};
-    const before=JSON.stringify([low,specialist,balanced]),rows=[],n=10000;
-    for(const rep of [50,299,300,499,500,1000]){
-      state.reputation=rep;state.rngSeed=5914;let talented=0;
-      for(let i=0;i<n;i++){
-        const pool=[low,specialist],pick=pickGeneralFreshman(pool);
-        talented+=pick.id===specialist.id;
-        if(pool.length!==1||pool[0].id===pick.id)throw new Error('duplicate general admission');
-      }
-      rows.push({rep,rate:talented/n});
+    const swimmer=(id,value)=>({...deepClone(template),id,specialty:'fr100',stats:Object.fromEntries(STATS.map(k=>[k,k==='mental'?100:value]))});
+    const f=swimmer('overall-f',45),e=swimmer('overall-e',65),d=swimmer('overall-d',85),c=swimmer('overall-c',110),excluded=swimmer('excluded',65),committed=swimmer('committed',85);
+    excluded.id='excluded';committed.id='committed';const committedDestinations=new Map([[committed.id,'school']]);
+    const wholePool=[f,e,d,c,excluded,committed].map(deepClone),before=JSON.stringify(wholePool);
+    state.world=[...wholePool,{...deepClone(d),id:'older',grade:2},{...deepClone(d),id:'retired',retired:true}];
+    const pool=uncommittedHighSchoolSeniors([excluded.id],committedDestinations).map(a=>a.id);
+    const bands=[0,50,150,300,500].map(rep=>[f,e,d,c].map(a=>reputationFreshmanAbilityWeight(a,rep)));
+    state.reputation=50;state.rngSeed=5914;const counts={F:0,E:0,D:0,C:0},n=20000;
+    for(let i=0;i<n;i++){
+      const available=[f,e,d,c],pick=pickGeneralFreshman(available),band=statRank(physicalStatValue(pick));
+      counts[band==='F'?'F':band==='E'?'E':band==='D'?'D':'C']++;
+      if(available.length!==3)throw new Error('general admission did not remove one candidate');
     }
     const emptySeed=state.rngSeed,empty=pickGeneralFreshman([])===null&&state.rngSeed===emptySeed;
-    const oldRng=rng;state.reputation=500;rng=()=>0;const first=pickGeneralFreshman([low,specialist]);
-    rng=()=>.999999999;const last=pickGeneralFreshman([low,specialist]);rng=oldRng;
-    return {rows,empty,edges:first.id===low.id&&last.id===specialist.id,
-      specialist:overallStatValue(specialist)<80&&Math.abs(recruitAbility(specialist)-160)<1e-9,
-      sameTalent:universityTalentPreference(specialist,280)===universityTalentPreference(balanced,280),
-      preserved:before===JSON.stringify([low,specialist,balanced])};
+    return{pool,bands,counts,empty,preserved:before===JSON.stringify(wholePool)};
   })())`));
-  assert.ok(result.empty&&result.edges&&result.specialist&&result.sameTalent&&result.preserved,JSON.stringify(result));
-  for(const row of result.rows.slice(0,2))assert.ok(row.rate>.48&&row.rate<.52,JSON.stringify(row));
-  for(const row of result.rows.slice(2,4))assert.ok(row.rate>.80&&row.rate<.86,JSON.stringify(row));
-  for(const row of result.rows.slice(4))assert.ok(row.rate>.85&&row.rate<.90,JSON.stringify(row));
-  assert.ok(result.rows[4].rate>result.rows[3].rate);
+  assert.deepEqual(result.pool,['overall-f','overall-e','overall-d','overall-c']);
+  assert.deepEqual(result.bands,[[4,3,1,.5],[3,2.5,1,.7],[2,1.5,1,.85],[.7,.85,1,1.2],[.45,.7,1,1.5]]);
+  assert.ok(result.empty&&result.preserved,JSON.stringify(result));
+  const total=Object.values(result.counts).reduce((sum,count)=>sum+count,0);
+  assert.equal(total,20000);assert.ok(result.counts.F>result.counts.E&&result.counts.E>result.counts.D&&result.counts.D>result.counts.C,JSON.stringify(result.counts));
+  assert.ok(result.counts.F/total>.39&&result.counts.F/total<.45,JSON.stringify(result.counts));
+  assert.ok(result.counts.E/total>.32&&result.counts.E/total<.38,JSON.stringify(result.counts));
 });
 
 test('higher specialty ability increasingly favors elite CPU destinations without excluding ordinary universities',()=>{
@@ -320,15 +318,16 @@ test('season rollover draws only the remaining own places and allocates CPU plac
     const original=deepClone(state),rows=[],realPick=pickGeneralFreshman,realChoose=chooseCpuUniversityForRecruit;
     for(const [rep,signedCount] of [[50,0],[300,2],[500,2],[500,8]]){
       state=deepClone(original);state.reputation=rep;
-      const board=refreshScoutBoard(),signed=signedCount?board.slice(-signedCount).map(a=>a.id):[];
+      const board=refreshScoutBoard(),boardIds=new Set(board.map(a=>a.id)),signed=signedCount?board.slice(-signedCount).map(a=>a.id):[];
       state.recruits=signed;signed.forEach(id=>state.world.find(a=>a.id===id).scouted=true);
-      const before=new Map(board.map(a=>[a.id,JSON.stringify([a.name,a.specialty,a.stats,a.bestTimes,a.accolades])])),draws=[],cpuOrder=[];
+      const before=new Map(state.world.filter(a=>a.category==='high'&&a.grade===3&&!a.retired).map(a=>[a.id,JSON.stringify([a.name,a.specialty,a.stats,a.bestTimes,a.accolades])])),draws=[],cpuOrder=[];
       pickGeneralFreshman=pool=>{draws.push({rep:state.reputation,size:pool.length});return realPick(pool)};
       chooseCpuUniversityForRecruit=a=>{cpuOrder.push(recruitAbility(a));return realChoose(a)};
       newSeason();const freshmen=state.players.filter(p=>p.year===1);
       rows.push({rep,signedCount,count:freshmen.length,draws,unique:new Set(freshmen.map(p=>p.id)).size,
         signed:signed.every(id=>freshmen.some(p=>p.id===id)),candidates:freshmen.every(p=>before.has(p.id)),
         preserved:freshmen.every(p=>before.get(p.id)===JSON.stringify([p.name,p.specialty,p.stats,p.bestTimes,p.accolades])),
+        outsideBoard:freshmen.some(p=>!boardIds.has(p.id)),
         cpuOrdered:cpuOrder.every((ability,i)=>i===0||ability<=cpuOrder[i-1]+1e-9),
         noDuplicates:new Set(state.players.concat(state.world).map(a=>a.id)).size===state.players.length+state.world.length});
     }
@@ -340,4 +339,5 @@ test('season rollover draws only the remaining own places and allocates CPU plac
     assert.ok(row.draws.every((draw,i)=>draw.rep===row.rep&&(i===0||draw.size===row.draws[i-1].size-1)),JSON.stringify(row));
     for(const key of ['signed','candidates','preserved','cpuOrdered','noDuplicates'])assert.equal(row[key],true,JSON.stringify(row));
   }
+  assert.ok(result.some(row=>row.outsideBoard),JSON.stringify(result.map(({rep,outsideBoard})=>({rep,outsideBoard}))));
 });
