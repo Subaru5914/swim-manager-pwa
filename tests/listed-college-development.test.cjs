@@ -10,8 +10,8 @@ function game(full=false){return vm.compileFunction(source.slice(0,source.indexO
  }
  return code=>JSON.parse(JSON.stringify(eval(code)))`,['globalThis'])({crypto:{getRandomValues:a=>{a[0]=5914;return a}}});}
 
-test('only listed enrolled athletes are marked; their reference is national and earned data, school records and RNG remain intact',()=>{
- const r=game()(`(()=>{const a=swimmer('listed'),ordinary=swimmer('ordinary'),own=swimmer('own',state.playerUniversity);own.year=1;delete own.grade;state.players=[own];state.world=[a,ordinary];
+test('listed enrolled athletes and all freshmen are marked; their reference is national and earned data, school records and RNG remain intact',()=>{
+ const r=game()(`(()=>{const a=swimmer('listed'),ordinary=swimmer('ordinary'),own=swimmer('own',state.playerUniversity);ordinary.grade=2;own.year=1;delete own.grade;state.players=[own];state.world=[a,ordinary];
   const before=JSON.stringify([state.players.map(p=>[p.stats,p.bestTimes]),state.world.map(p=>[p.stats,p.bestTimes]),state.recordRankings,state.rngSeed]);
   saveCollegeAdmissionsNotice([{id:a.id},{id:own.id},{id:'missing'}],2026);initializeCpuDevelopment();
   const first=JSON.stringify(state);markListedCollegeAdmissions(state.pendingCollegeAdmissions.rows);initializeCpuDevelopment();
@@ -21,7 +21,7 @@ test('only listed enrolled athletes are marked; their reference is national and 
 });
 
 test('a nationally strong listed freshman grows through practice after a Kansai ceiling previously held him, without an instant ability or PB change',()=>{
- const r=game()(`(()=>{const a=swimmer('candidate'),ordinary=swimmer('ordinary');state.world=[a,ordinary];ensureCpuDevelopment(a);ensureCpuDevelopment(ordinary);
+ const r=game()(`(()=>{const a=swimmer('candidate'),ordinary=swimmer('ordinary');ordinary.grade=2;state.world=[a,ordinary];ensureCpuDevelopment(a);ensureCpuDevelopment(ordinary);
   const base=expectedTime(a,'fr200'),pb=JSON.stringify(a.bestTimes),protectedData=JSON.stringify([a.stats,a.bestTimes,state.rngSeed]);
   markListedCollegeAdmissions([{id:a.id}]);ensureCpuDevelopment(a);const kept=protectedData===JSON.stringify([a.stats,a.bestTimes,state.rngSeed]),goals=[...a.cpuDevelopment.goals],floors=[...a.cpuDevelopment.floors];
   for(let turn=0;turn<96;turn++){state.rngSeed=5914+turn;applyCpuTraining(a);state.rngSeed=5914+turn;applyCpuTraining(ordinary)}
@@ -51,24 +51,25 @@ test('regional relay bounds preserve listed personal headroom while still enforc
  assert.ok(r.kept&&r.growth);assert.ok(r.time>=r.national-.04,JSON.stringify(r));assert.ok(r.time<r.regional-1,JSON.stringify(r));
 });
 
-test('actual April admissions mark exactly the listed students and retain the marker through destination edits, confirmation, reload and the second grade',()=>{
+test('actual April admissions protect every entering freshman and retain the marker through destination edits, confirmation, reload and the second grade',()=>{
  const r=game(true)(`(()=>{newSeason();const notice=state.pendingCollegeAdmissions,listed=new Set(notice.rows.map(a=>a.id)),all=[...state.players,...state.world.filter(a=>a.category==='university')];
-  const exact=all.every(a=>!!a.listedCollegeAdmission===listed.has(a.id)),own=state.players.find(a=>listed.has(a.id));state.scoutingAdmissionsMode='free';const context=collegeAdmissionContext(),target=context.universities.find(u=>u.id!=='player'&&context.counts.get(u.id)<8);
+  const freshmen=all.filter(a=>state.players.some(p=>p.id===a.id&&p.year===1)||a.category==='university'&&a.grade===1&&!a.retired),protectedFreshmen=freshmen.every(a=>!!a.listedCollegeAdmission),listedMarked=[...listed].every(id=>all.find(a=>a.id===id)?.listedCollegeAdmission),own=state.players.find(a=>listed.has(a.id));state.scoutingAdmissionsMode='free';const context=collegeAdmissionContext(),target=context.universities.find(u=>u.id!=='player'&&context.counts.get(u.id)<8);
   let bounds=0;const originalBounds=boundCpuDevelopmentRelays;boundCpuDevelopmentRelays=()=>{bounds++;return originalBounds()};
   const protectedData=JSON.stringify([own.stats,own.bestTimes,state.rngSeed]),choice=setCollegeAdmissionChoice(own.id,target.id),applied=applyCollegeAdmissionChoices(),moved=state.world.find(a=>a.id===own.id);boundCpuDevelopmentRelays=originalBounds;
   const preserved=protectedData===JSON.stringify([moved.stats,moved.bestTimes,state.rngSeed]),movedFlag=deepClone(moved.listedCollegeAdmission),cleared=!state.pendingCollegeAdmissions;
   const saved=JSON.stringify(state),signature=()=>JSON.stringify([state.players,state.world,state.rngSeed,state.recordRankings,state.teamTop10]),before=signature();state=JSON.parse(saved);migrateState();const stable=before===signature();
   const a=state.world.find(a=>a.id===own.id);a.grade=2;const stats=JSON.stringify([a.stats,a.bestTimes]);ensureCpuDevelopment(a);
-  return{exact,choice:choice.ok,applied:applied.ok,preserved,movedFlag,cleared,stable,stage:a.cpuDevelopment.listedAdmissionStage,promoted:stats===JSON.stringify([a.stats,a.bestTimes]),listed:listed.size,bounds};
+  return{protectedFreshmen,listedMarked,choice:choice.ok,applied:applied.ok,preserved,movedFlag,cleared,stable,stage:a.cpuDevelopment.listedAdmissionStage,promoted:stats===JSON.stringify([a.stats,a.bestTimes]),listed:listed.size,bounds};
  })()`);
- assert.ok(r.listed>20&&r.exact&&r.choice&&r.applied&&r.preserved&&r.cleared&&r.stable&&r.promoted&&r.bounds>0,JSON.stringify(r));assert.deepEqual(r.movedFlag,{version:1,season:2027});assert.equal(r.stage,2);
+ assert.ok(r.listed>20&&r.protectedFreshmen&&r.listedMarked&&r.choice&&r.applied&&r.preserved&&r.cleared&&r.stable&&r.promoted&&r.bounds>0,JSON.stringify(r));assert.deepEqual(r.movedFlag,{version:1,season:2027});assert.equal(r.stage,2);
 });
 
-test('a saved pending admissions list restores only its identifiable flags, and a CPU-to-player conversion retains that evidence',()=>{
+test('a saved pending admissions list restores candidate and freshman flags, and a CPU-to-player conversion retains that evidence',()=>{
  const r=game(true)(`(()=>{newSeason();const ids=new Set(state.pendingCollegeAdmissions.rows.map(a=>a.id));for(const a of [...state.players,...state.world])delete a.listedCollegeAdmission;
   const digest=()=>JSON.stringify([state.players.map(a=>[a.id,a.stats,a.bestTimes]),state.world.map(a=>[a.id,a.stats,a.bestTimes]),state.recordRankings,state.teamTop10,state.rngSeed]),before=digest();migrateState();
   const kept=before===digest(),cpu=state.world.find(a=>ids.has(a.id)&&a.category==='university'),player=worldToPlayer(cpu),flag=deepClone(cpu.listedCollegeAdmission),once=JSON.stringify(state);migrateState();
-  return{kept,flag,player:player.listedCollegeAdmission,exact:[...state.players,...state.world.filter(a=>a.category==='university')].every(a=>!!a.listedCollegeAdmission===ids.has(a.id)),stable:once===JSON.stringify(state)};
+  const all=[...state.players,...state.world.filter(a=>a.category==='university')],freshmen=all.filter(a=>state.players.some(p=>p.id===a.id&&p.year===1)||a.category==='university'&&a.grade===1&&!a.retired);
+  return{kept,flag,player:player.listedCollegeAdmission,freshmen:!!freshmen.length&&freshmen.every(a=>!!a.listedCollegeAdmission),candidates:[...ids].every(id=>all.find(a=>a.id===id)?.listedCollegeAdmission),stable:once===JSON.stringify(state)};
  })()`);
- assert.ok(r.kept&&r.exact&&r.stable);assert.deepEqual(r.flag,{version:1,season:2027});assert.deepEqual(r.player,r.flag);
+ assert.ok(r.kept&&r.freshmen&&r.candidates&&r.stable);assert.deepEqual(r.flag,{version:1,season:2027});assert.deepEqual(r.player,r.flag);
 });

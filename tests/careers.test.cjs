@@ -5,6 +5,15 @@ function game(full=false){
  const run=vm.compileFunction(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener'))+'\nreturn code=>JSON.parse(JSON.stringify(eval(code)))',['globalThis'])({crypto:{getRandomValues:a=>{a[0]=5914;return a;}}});
  run(full?'state=createState();migrateState();true':'state={season:2026,rngSeed:5914,reputation:35,players:[],world:[],alumniCareer:[]}');return run;
 }
+test('admissions require a top-50 high-school rank in any event while retaining specialty-rank display data',()=>{
+ const run=game(),r=run(`(()=>{
+  const swimmer=(id,fr100,fr200)=>({id,name:id,category:'high',grade:3,retired:false,organization:'検証高校',specialty:'fr100',bestTimes:{fr100,...(fr200?{fr200}: {})}});
+  state.world=Array.from({length:53},(_,i)=>swimmer('senior-'+i,50+i));state.world[50].bestTimes.fr200=100;
+  const leaders=graduatingHighSchoolLeaders(),secondary=leaders.find(a=>a.id==='senior-50');
+  return{count:leaders.length,hasOutside:!!secondary,secondarySpecialty:secondary?.rankedEvents[0],excluded:leaders.some(a=>a.id==='senior-51'||a.id==='senior-52')};
+ })()`);
+ assert.equal(r.count,51);assert.equal(r.hasOutside,true);assert.deepEqual(r.secondarySpecialty,{event:'fr100',rank:51,time:100});assert.equal(r.excluded,false);
+});
 test('every national-standard graduate continues without a lottery, and own graduates preserve IM aptitude, PB and the next-year age',()=>{
  const run=game(),r=run(`(()=>{
   let draws=0;rng=()=>{draws++;return .999999};
