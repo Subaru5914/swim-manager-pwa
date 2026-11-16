@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1367d1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>大学競泳監督シミュレーション PWA版 v3.15</title>
+<title>大学競泳監督シミュレーション PWA版 v3.16</title>
 <style>
 :root{--game-vw:1vw;--game-vh:1vh;--physical-width:100vw}
 
@@ -1151,6 +1151,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 .result-relay-leg[data-relay-pb="true"] .result-relay-lap{color:#735800;text-decoration:underline;text-underline-offset:3px}
 .result-relay-member .relay-pb-badge{font-size:11px;padding:1px 5px;white-space:nowrap}
 .relay-result-stage h5{font-size:13px;margin:8px 0 4px}
+.relay-final-prelim-comparison{display:grid;grid-template-columns:repeat(2,minmax(min(100%,420px),1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:4px}
+.relay-final-prelim-comparison>.relay-result-stage{min-width:0}
+.relay-final-prelim-comparison .table-wrap{max-width:100%;overflow-x:auto}
 .result-own{background:#fff1b8!important;color:#5c3510;font-weight:750}
 .result-own td:first-child{border-left:4px solid #d78913}
 .result-japan{background:#fff0f2!important;color:#8f2035;font-weight:750}
@@ -1561,7 +1564,7 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="gameViewport" class="game-viewport"><div id="gameScroll" class="game-scroll">
 <header>
   <div class="header-row">
-    <div class="title">大学競泳監督シミュレーション PWA版 v3.15</div>
+    <div class="title">大学競泳監督シミュレーション PWA版 v3.16</div>
     <div class="header-primary-actions">
       <button id="favoriteRivalsBtn" class="favorite-rivals-shortcut">★ お気に入り（0）</button>
       <button id="saveBtn" class="primary">セーブ</button>
@@ -1804,9 +1807,9 @@ header,nav,main{width:90%;max-width:1500px;margin-left:auto;margin-right:auto;pa
 <div id="modalRoot"></div>
 </div>
 
-<script src="./local-save.js?version=v3.15"></script>
-<script src="./save-history.js?version=v3.15"></script>
-<script src="./cloud-sync.js?version=v3.15"></script>
+<script src="./local-save.js?version=v3.16"></script>
+<script src="./save-history.js?version=v3.16"></script>
+<script src="./cloud-sync.js?version=v3.16"></script>
 <script>
 const UNIVERSITY_DATA = {"player_university":{"id":"PLAYER","name":"関西青陵大学"},"cpu_universities":[{"id":"U01","name":"阪神体育大学","strength":86,"region":"kansai"},{"id":"U02","name":"北摂大学","strength":83,"region":"kansai"},{"id":"U03","name":"京阪大学","strength":81,"region":"kansai"},{"id":"U04","name":"神戸中央大学","strength":79,"region":"kansai"},{"id":"U05","name":"京都西大学","strength":77,"region":"kansai"},{"id":"U06","name":"大阪湾大学","strength":75,"region":"kansai"},{"id":"U07","name":"播磨大学","strength":73,"region":"kansai"},{"id":"U08","name":"東都体育大学","strength":91,"region":"national"},{"id":"U09","name":"武蔵野体育大学","strength":88,"region":"national"},{"id":"U10","name":"湘南海洋大学","strength":87,"region":"national"},{"id":"U11","name":"中京体育大学","strength":90,"region":"national"},{"id":"U12","name":"東海スポーツ大学","strength":84,"region":"national"},{"id":"U13","name":"福岡スポーツ大学","strength":82,"region":"national"},{"id":"U14","name":"北海道北辰大学","strength":80,"region":"national"},{"id":"U15","name":"中国瀬戸大学","strength":78,"region":"national"}]};
 const STANDARDS = {"kansai_college":{"source":"game rule: relaxed regional college LCM standard","fr50":28,"fr100":61,"fr200":135,"fr400":288,"ba100":69,"ba200":151,"br100":75,"br200":163,"fly100":66,"fly200":147,"im200":151,"im400":324},"intercollege":{"source":"2025 official Intercollege LCM","fr50":23.4,"fr100":50.93,"fr200":112.38,"fr400":239.78,"ba100":57.31,"ba200":125.11,"br100":62.4,"br200":135.28,"fly100":54.52,"fly200":121.61,"im200":125.11,"im400":268.89},"japan_open":{"source":"Japan Open 2025 official LCM","fr50":22.98,"fr100":50.34,"fr200":110.37,"fr400":234.59,"ba100":56.4,"ba200":122.62,"br100":61.89,"br200":133.7,"fly100":53.74,"fly200":120.12,"im200":123.05,"im400":263.63},"japan_championship":{"source":"2025 season Japan Championships official LCM","fr50":22.82,"fr100":49.96,"fr200":109.79,"fr400":233.92,"ba100":55.67,"ba200":121.47,"br100":61.42,"br200":133.01,"fly100":53.41,"fly200":118.98,"im200":121.91,"im400":262.23}};
@@ -2059,8 +2062,17 @@ const FIRST=[
   "優誠","優太郎","優一郎","優之介","優輔","優志","友一","友二","友也","友哉","友樹","友希",
   "友貴","友輝","友人","友仁","友成","友紀","友彦","友明","友司","友治","友平","友介",
   "友輔","伸","伸一","伸二","伸明","伸宏","伸弘","伸博","伸彦","伸之","伸人","伸樹",
-  "伸治","伸司","伸和","伸幸","伸太","伸太郎","伸志","伸史","伸介","伸輔","伸平"
+  "伸治","伸司","伸和","伸幸","伸太","伸太郎","伸志","伸史","伸介","伸輔","伸平",
+  "昴","迅","瑛斗","凛太郎","風雅","瑛翔","紫月","千颯","凛久","一颯","奏琉","昴流",
+  "煌介","嵐","暁","凌真","諒真","颯一郎","瑛月","凛翔","透也","流星","耀","光輝",
+  "春翔","優月","咲人","凌央","琉雅","悠絃","蒼凛","翔馬","晴雅","柊璃","慧真","颯羽"
 ];
+// A curated subset receives a modest 1.5x draw weight to make stylish names appear a little more often.
+const COOL_FIRST_NAMES=new Set([
+  "悠真","蓮","湊","海斗","陸","颯太","翔","蒼","大和","陽斗","樹","晴","颯","怜","駿","颯真","玲央","朝陽","瑛太","煌","大翔","碧","琉生","凪","凪人","朔","絃","翠","柊","旭","律","珀","岳","伊吹","惺","蒼空","晴翔","大雅","櫂","千隼",
+  "昴","迅","瑛斗","凛太郎","風雅","瑛翔","紫月","千颯","凛久","一颯","奏琉","昴流","煌介","嵐","暁","凌真","諒真","颯一郎","瑛月","凛翔","透也","流星","耀","光輝","春翔","優月","咲人","凌央","琉雅","悠絃","蒼凛","翔馬","晴雅","柊璃","慧真","颯羽"
+]);
+const WEIGHTED_FIRST=FIRST.flatMap(name=>Array(COOL_FIRST_NAMES.has(name)?3:2).fill(name));
 const LAST=[
   "佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田","松本","井上","木村","林",
   "清水","斎藤","山口","森田","池田","橋本","阿部","石井","藤田","岡田","後藤","近藤","前田","藤原","西村","福田",
@@ -2475,7 +2487,7 @@ function migrateLegacyOrganizationNames(){
   for(let h of state.teamScoreHistory||[])if(h.scores)h.scores=renameScoreObject(h.scores);
 }
 function migrateState(){
-  state.version="pwa-v3.15";
+  state.version="pwa-v3.16";
   normalizeFavoriteRivals();
   normalizeMeetFormBoosts();
   if(!Array.isArray(state.recruits))state.recruits=[];
@@ -2570,6 +2582,7 @@ function migrateState(){
 
   restoreCpuUniversityRosters();
   maintainWorldPopulation();
+  refreshYouthAthleteNames();
   initializeCpuRaceDistributions();
   migrateSprintEvents();
   prepareCpuMeetPopulation();
@@ -3225,11 +3238,31 @@ const MIXED_LAST=["ブラウン","ウォーカー","ウィルソン","ミラー"
 function newName(used){
   const mixed=rng()<MIXED_NAME_RATE,foreignSurname=mixed&&rng()<.5;
   for(let i=0;i<1000;i++){
-    const name=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:FIRST);
+    const name=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:WEIGHTED_FIRST);
     if(!used.has(name)){used.add(name);return name}
   }
-  const base=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:FIRST);
+  const base=choice(foreignSurname?MIXED_LAST:WEIGHTED_LAST)+" "+choice(mixed&&!foreignSurname?MIXED_FIRST:WEIGHTED_FIRST);
   let suffix=2;while(used.has(base+suffix))suffix++;const name=base+suffix;used.add(name);return name;
+}
+function refreshYouthAthleteNames(){
+  if(state.youthNameRefreshVersion>=1)return false;
+  const youth=[...(state.players||[]),...(state.world||[])].filter(a=>!a.retired&&!a.alumni&&["middle","high"].includes(a.category));
+  const youthIds=new Set(youth.map(a=>a.id)),used=new Set(activeAthletes().filter(a=>!youthIds.has(a.id)&&a.name).map(a=>a.name));
+  const savedSeed=state.rngSeed,renamed=new Map();
+  for(const athlete of youth){athlete.name=newName(used);renamed.set(athlete.id,athlete.name)}
+  state.rngSeed=savedSeed;
+  if(renamed.size){
+    const seen=new WeakSet(),visit=value=>{
+      if(!value||typeof value!=="object"||seen.has(value))return;
+      seen.add(value);
+      const updated=renamed.get(value.id)||renamed.get(value.athleteId);
+      if(updated&&Object.prototype.hasOwnProperty.call(value,"name"))value.name=updated;
+      for(const child of Object.values(value))visit(child);
+    };
+    visit(state);
+  }
+  state.youthNameRefreshVersion=1;
+  return renamed.size>0;
 }
 function makeAthlete(category,org,used,age=null,grade=null,strength=65,cohortSlot=null){
   if(age==null)age={middle:Math.floor(rand(13,16)),high:Math.floor(rand(16,19)),university:Math.floor(rand(19,23)),adult:Math.floor(rand(23,30))}[category];
@@ -5159,7 +5192,7 @@ function balanceInitialTeamDepth(){
   seedTop10();
 }
 function createState(nameSettings=null){
-  let s={version:"pwa-v3.15",ownReputationWeightsVersion:REPUTATION_WEIGHTS_VERSION,balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
+  let s={version:"pwa-v3.16",youthNameRefreshVersion:1,ownReputationWeightsVersion:REPUTATION_WEIGHTS_VERSION,balanceModelVersion:BALANCE_MODEL_VERSION,season:2026,slot:1,points:0,meetFormBoosts:{},reputation:INITIAL_TEAM_REPUTATION,rngSeed:freshSeed(),serial:1000,playerUniversity:UNIVERSITY_DATA.player_university.name,universities:deepClone(UNIVERSITY_DATA.cpu_universities.concat(EXTRA_UNIVERSITIES)),organizationNames:{middle:[...MIDDLE_SCHOOLS],high:[...HIGH_SCHOOLS],adult:[...ADULT_TEAMS]},trainingFocus:{},lastTrainingGains:[],meetGrowthRewardKeys:[],pendingMeetGrowthRewards:[],kansaiIds:[],interIds:[],players:[],world:[],facilities:{},trainingPlans:{},scoutingAdmissionsMode:"competition",pendingCollegeAdmissions:null,pendingSeasonRetirements:null,japanTeamHistory:[],japanTeamHistoryVersion:1,pointLog:[],teamScoreHistory:[],meetHistory:[],recordBook:{},retiredArchive:[],teamTop10:{},teamPodiumHistory:[],teamPodiumHistoryVersion:2,favoriteRivals:[],recruits:[],scoutBoard:[],reputationParticipation:[],meetParticipationHistory:[],reputationEvaluations:[],completedMeetKeys:[],seniorRetirementSeasons:[],pendingSeasonNotices:[],participationModelVersion:2,reputationScaleVersion:2,collegeReputationBaselineVersion:2,cpuUniversityRepModelVersion:3,cpuDiversityVersion:5,cpuTeamProfiles:{},orgNameModelVersion:2,cpuUniversityRosterModelVersion:1,cpuRaceConsistencyVersion:2};
   if(nameSettings){
     if(nameSettings.playerUniversity)s.playerUniversity=nameSettings.playerUniversity;
     if(nameSettings.universityProfiles)s.universities=deepClone(nameSettings.universityProfiles);
@@ -9216,8 +9249,10 @@ function meetRelayResultsHtml([kind,finals=[],meta={}]){
   let html=`<h3>${RELAY_LABEL[kind]}</h3>`;
   if(ownPre)html+=`<div class="notice relay-own-prelim"><b>自チーム予選</b>　${ownPre.prelimRank||prelim.indexOf(ownPre)+1}位 / ${prelim.length}チーム　${ownPre.heatLane||"—"}コース　${fmt(ownPre.race.total)}${relayResultMembersHtml(ownPre.members,ownPre.race.legs,kind,ownPre.leadOffAchievement)}</div>`;
   if(ownPre&&!ownFin)html+=`<p class="muted">${(meta?.swimOffs||[]).some(group=>group.some(ownsRelayTeam))?"スイムオフの結果、":"予選の結果、"}A決勝進出ならず。</p>`;
-  if(finals.length)html+=`<div class="relay-result-stage" data-relay-event="${kind}" data-relay-stage="final"><h4>A決勝</h4>${relayResultTable(finals,kind)}</div>`;
-  if(prelim.length)html+=`<div class="relay-result-stage" data-relay-event="${kind}" data-relay-stage="prelim"><h4>予選総合</h4>${relayResultTable(prelim,kind,finals)}</div>`;
+  const finalStage=finals.length?`<div class="relay-result-stage" data-relay-event="${kind}" data-relay-stage="final"><h4>A決勝</h4>${relayResultTable(finals,kind)}</div>`:"";
+  const prelimStage=prelim.length?`<div class="relay-result-stage" data-relay-event="${kind}" data-relay-stage="prelim"><h4>予選総合</h4>${relayResultTable(prelim,kind,finals)}</div>`:"";
+  if(finalStage&&prelimStage)html+=`<div class="relay-final-prelim-comparison" role="group" aria-label="リレーのA決勝と予選の結果比較" tabindex="0">${finalStage}${prelimStage}</div>`;
+  else html+=finalStage||prelimStage;
   return html+swimOffResultsHtml(meta?.swimOffs,kind);
 }
 function showMeetResults(result,onClose){
@@ -10200,7 +10235,7 @@ function applyLoadedSave(next,render=false){
     !Number.isInteger(next.season)||next.season<1||!Number.isInteger(next.slot)||next.slot<1||next.slot>96||
     !Number.isFinite(next.points)||!Number.isFinite(next.reputation)||!object(next.facilities)||
     !next.players.every(p=>object(p)&&p.id&&object(p.stats)&&(!p.bestTimes||object(p.bestTimes))))throw new Error("ゲームのセーブ形式が正しくありません。");
-  let previous=state,previousTrainingId=selectedTrainingId;
+  let previous=state,previousTrainingId=selectedTrainingId,needsYouthNameMigration=next.youthNameRefreshVersion<1;
   try{
     state=next;migrateState();selectedTrainingId=null;
     if(render)renderAll();
@@ -10209,6 +10244,7 @@ function applyLoadedSave(next,render=false){
     if(render&&previous)renderAll();
     throw error;
   }
+  if(needsYouthNameMigration)setTimeout(()=>autoSaveNow(),0);
 }
 function loadLocal(showMessage=false){
   const loaded=s=>{
