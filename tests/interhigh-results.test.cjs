@@ -81,3 +81,14 @@ test('missing historical opponents cannot turn a weak saved swimmer into an Inte
   const stats=JSON.stringify(a.stats);repairGeneratedInterhighResults();return{main:playerMainResults(a),awards:a.accolades,stats:stats===JSON.stringify(a.stats)}})()`);
  assert.ok(r.stats);assert.deepEqual(r.main,[]);assert.deepEqual(r.awards,[]);
 });
+
+test('Interhigh places 4-8 appear in own and rival main results, while other meets remain podium-only',()=>{
+ const r=game()(`(()=>{const a=swimmer(0);a.accolades=SPECIALTY_EVENTS.slice(0,8).map((event,i)=>({
+   competitionId:'interhigh_2026',competition:'全国高校総体',meet:'全国高校総体',stage:'A_final',season:2026,slot:38,event,rank:i+1,time:50+i,schoolCategory:'high',gradeAtRecord:3
+  }));a.accolades.push({meet:'intercollege',stage:'A決勝',season:2026,slot:9,event:'im400',rank:4,time:260,schoolCategory:'university',gradeAtRecord:1});
+  const own=playerMainResults(a),rival=rivalMainResults(a),ownHtml=detailMainResultsHtml(a,true),rivalHtml=detailMainResultsHtml(a,false);
+  return{ownRanks:own.filter(h=>h.meet==='全国高校総体').map(h=>h.rank).sort((x,y)=>x-y),rivalRanks:rival.map(h=>h.rank).sort((x,y)=>x-y),otherMeetVisible:own.some(h=>h.meet==='intercollege'),ownPlaceStyle:ownHtml.includes('history-rank-place'),rivalPlaceStyle:rivalHtml.includes('history-rank-place'),interhighLabel:ownHtml.includes('インターハイ')&&rivalHtml.includes('インターハイ')};
+ })()`);
+ assert.deepEqual(r.ownRanks,[1,2,3,4,5,6,7,8]);assert.deepEqual(r.rivalRanks,[1,2,3,4,5,6,7,8]);
+ assert.ok(!r.otherMeetVisible&&r.ownPlaceStyle&&r.rivalPlaceStyle&&r.interhighLabel);
+});
