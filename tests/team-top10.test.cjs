@@ -81,3 +81,19 @@ test('relay lead-off PB flags freeze the comparison for each round, survive save
   }return cases})()`);
  for(const c of r){assert.equal(c.pre.previousPB,60);assert.equal(c.pre.time,59);assert.ok(c.pre.pb);assert.equal(c.final.previousPB,59);assert.equal(c.final.time,58);assert.ok(c.final.pb);assert.deepEqual(c.restored,c.final);assert.equal(c.equal,false);assert.equal(c.slow,false);assert.deepEqual(c.other,[60,60,60]);assert.equal(c.top,58);assert.equal((c.markup.match(/data-relay-pb="true"/g)||[]).length,1);assert.match(c.markup,/自己PB!/)}
 });
+
+test('top ten shows the recorded grade for active and retired swimmers and orders podium meets like final-result meets',()=>{
+ const r=game()(`(()=>{state.season=2028;
+  const active=swimmer('active',{year:3}),retired=swimmer('retired',{year:undefined,age:22,season:2026,reason:'大学卒業・競技終了',almaMater:state.playerUniversity,organization:state.playerUniversity});
+  state.players=[active];state.retiredArchive=[retired];state.teamTop10.fr100=[
+    {kind:'individual',event:'fr100',athleteId:active.id,name:active.name,time:49,season:2026,meet:'intercollege',stage:'決勝'},
+    {kind:'individual',event:'fr100',athleteId:retired.id,name:retired.name,time:50,season:2025,meet:'intercollege',stage:'決勝'}
+  ];
+  migrateRecordSchoolInfo();const rows=state.teamTop10.fr100;
+  return{activeGrade:rows[0].gradeAtRecord,retiredGrade:rows[1].gradeAtRecord,activeHtml:top10AthleteName(active.id,active.name,rows[0]),retiredHtml:top10AthleteName(retired.id,retired.name,rows[1]),podiumOrder:TEAM_PODIUM_DISPLAY_MEETS};
+ })()`);
+ assert.equal(r.activeGrade,1);assert.equal(r.retiredGrade,3);
+ assert.match(r.activeHtml,/大1/);assert.match(r.activeHtml,/現役 大3/);
+ assert.match(r.retiredHtml,/卒業生/);assert.match(r.retiredHtml,/大3/);
+ assert.deepEqual(r.podiumOrder,['kansai_college','intercollege','japan_open','japan_championship','world_championship']);
+});
