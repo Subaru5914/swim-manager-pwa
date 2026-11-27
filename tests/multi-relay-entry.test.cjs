@@ -50,7 +50,7 @@ test('CPU reserve choices do not reuse swimmers between their A/B/C squads',()=>
  for(const team of Object.values(r)){assert.equal(team.final,12);assert.ok(team.prelim>=12);assert.ok(team.prelim<=16)}
 });
 
-test('manual teams can be freely selected and CPU universities fill A/B/C from remaining athletes at the two eligible meets',()=>{
+test('manual teams stay selectable while CPU universities add B/C squads randomly without skipping a squad',()=>{
  const run=game(),setup=run(setupRaces()),manual={};
  for(const kind of ['4x100fr','4x200fr','4x100medley'])manual[kind]=[
   setup.own.slice(0,4),setup.own.slice(4,8),setup.own.slice(8,12)
@@ -63,6 +63,7 @@ test('manual teams can be freely selected and CPU universities fill A/B/C from r
   })));
   return{spring:summarize('spring_kansai',16),higa:summarize('joint_record',76),feb:summarize('joint_record',84)};
  })()`);
+ const cpuSquadCounts=[];
  for(const meet of ['spring','higa'])for(const relay of report[meet]){
   const own=relay.entries.filter(row=>row.org==='自大学');
   own.sort((a,b)=>a.label.localeCompare(b.label));
@@ -70,10 +71,14 @@ test('manual teams can be freely selected and CPU universities fill A/B/C from r
   assert.deepEqual(own.map(row=>row.ids),manual[relay.kind],`${meet} ${relay.kind} manual lineups`);
   for(const org of ['関西大学','関東大学']){
    const teams=relay.entries.filter(row=>row.org===org).sort((a,b)=>a.label.localeCompare(b.label));
-   assert.deepEqual(teams.map(row=>row.label),['A','B','C'],`${meet} ${relay.kind} ${org} labels`);
-   assert.equal(new Set(teams.flatMap(row=>row.ids)).size,12,`${meet} ${relay.kind} ${org} members are not reused`);
+   const labels=teams.map(row=>row.label);
+   assert.equal(labels[0],'A',`${meet} ${relay.kind} ${org} has an A squad`);
+   assert.deepEqual(labels,['A','B','C'].slice(0,labels.length),`${meet} ${relay.kind} ${org} squads are contiguous`);
+   assert.equal(new Set(teams.flatMap(row=>row.ids)).size,teams.length*4,`${meet} ${relay.kind} ${org} members are not reused`);
+   cpuSquadCounts.push(labels.length);
   }
  }
+ assert.ok(cpuSquadCounts.some(count=>count===1)&&cpuSquadCounts.some(count=>count>1),'CPU B/C participation varies across university, meet and event');
  for(const relay of report.feb)assert.ok(relay.entries.every(row=>row.label===null),`${relay.kind} in February stays one team per university`);
 });
 

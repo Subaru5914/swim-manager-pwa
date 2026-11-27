@@ -63,3 +63,15 @@ test('multi-team relay sanitation removes duplicates within and across teams per
   assert.deepEqual(result['4x100fr'],[['relay-0','', 'relay-1','relay-2'],['relay-3','', 'relay-4','relay-5'],['relay-6','relay-7','relay-8','relay-9']]);
   assert.deepEqual(result['4x200fr'],[['relay-0','relay-1','relay-2','relay-3'],[],[]]);
 });
+
+test('CPU B/C relay-team entry is seeded-random, roster-limited, and C requires B',()=>{
+  const run=game(),result=run(`(()=>{
+    const count=(organization,rosterCount=16,kind='4x100fr',slot=16,limit=3)=>cpuRelayTeamEntryCount('spring_kansai',slot,organization,kind,Array.from({length:rosterCount},(_,i)=>({id:organization+'-'+i})),limit);
+    const sample=Array.from({length:1024},(_,i)=>count('大学'+i));
+    const withB=sample.filter(n=>n>=2).length,withC=sample.filter(n=>n===3).length;
+    return{sample,short:count('8名大学',7),medium:count('8〜11名大学',8),noC:count('11名大学',11),singleLimit:count('単独大会',16,'4x100fr',16,1),same:count('固定大学')===count('固定大学'),withB,withC};
+  })()`);
+  assert.equal(result.short,1);assert.ok(result.medium===1||result.medium===2);assert.ok(result.noC===1||result.noC===2);assert.equal(result.singleLimit,1);assert.equal(result.same,true);
+  assert.deepEqual([...new Set(result.sample)].sort(),[1,2,3]);assert.ok(result.withB>result.sample.length*.4&&result.withB<result.sample.length*.6);
+  assert.ok(result.withC>result.withB*.4&&result.withC<result.withB*.6);
+});
