@@ -50,3 +50,16 @@ test('relay entry and race-video member lists always use two columns',()=>{
   assert.match(html,/\.modal-relay-editor \.relay-entry-team>\.row\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(html,/\.relay-entry-summary-names\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('multi-team relay sanitation removes duplicates within and across teams per event only',()=>{
+  const run=game(),result=run(`(()=>{
+    const ids=Array.from({length:10},(_,i)=>'relay-'+i);
+    state.players=ids.map(id=>({id,year:2}));
+    const selections={'4x100fr':[[ids[0],ids[0],ids[1],ids[2]],[ids[3],ids[1],ids[4],ids[5]],[ids[6],ids[7],ids[8],ids[9]]],
+      '4x200fr':[[ids[0],ids[1],ids[2],ids[3]],[],[]]};
+    filterMeetEntryGrades('spring_kansai',{},selections,10);
+    return selections;
+  })()`);
+  assert.deepEqual(result['4x100fr'],[['relay-0','', 'relay-1','relay-2'],['relay-3','', 'relay-4','relay-5'],['relay-6','relay-7','relay-8','relay-9']]);
+  assert.deepEqual(result['4x200fr'],[['relay-0','relay-1','relay-2','relay-3'],[],[]]);
+});

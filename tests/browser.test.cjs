@@ -5378,6 +5378,7 @@ test('relay entry selectors and race-video member names stay in two columns on P
    await page.evaluate(ids=>openRelayEditor({'4x100fr':ids},()=>{},{kinds:['4x100fr'],roster:state.players.slice(0,4),formContext:{meet:'teijimayama_championship',slot:61,season:2026}}),ids);
    const editorRow=page.locator('.modal-relay-editor .relay-entry-team>.row');
    assert.equal(await editorRow.evaluate(el=>getComputedStyle(el).display),'grid');assert.equal(await editorRow.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
+   assert.ok(await page.locator('.modal-relay-editor .relay-entry-team label').first().evaluate(el=>el.getBoundingClientRect().width<=221));
    await page.locator('.modal-relay-editor #relayClose').click();
    await page.evaluate(ids=>showEntryConfirmation('teijimayama_championship',Object.fromEntries(EVENTS.map(e=>[e,[]])),{'4x100fr':ids},61,2026),ids);
    assert.equal(await page.locator('.relay-entry-summary-names').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
@@ -5395,6 +5396,28 @@ test('relay entry selectors and race-video member names stay in two columns on P
    });
    await page.waitForFunction(()=>typeof window.capturedRaceStage==='string');assert.equal(await page.evaluate(()=>window.capturedRaceStage),'予選 1組');assert.doesNotMatch(await page.evaluate(()=>window.capturedRaceStage),/\d+\/\d+/);assert.equal(await page.evaluate(()=>innerWidth),viewportWidth);
    assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ }}finally{await app.close()}
+});
+test('spring Kansai relay editor blocks repeated swimmers within and across A/B/C teams, while allowing other relay events',async()=>{
+ const app=await fixture();
+ try{for(const options of [{viewport:{width:1280,height:900}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+  const context=await testContext(options);
+  try{
+   const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>state?.players?.length===32&&!localSaveBusy);
+   const ids=await page.evaluate(()=>state.players.slice(0,12).map(a=>a.id));
+   const initial={'4x100fr':[ids.slice(0,4),ids.slice(4,8),ids.slice(8,12)],'4x200fr':[[],[],[]]};
+   await page.evaluate(initial=>openRelayEditor(initial,()=>{},{kinds:['4x100fr','4x200fr'],roster:state.players.slice(0,12),multiTeam:true,initialDraft:initial,formContext:{meet:'spring_kansai',slot:10,season:2026},onDraft:draft=>window.savedRelayDraft=JSON.parse(JSON.stringify(draft))}),initial);
+   const select=(kind,team,leg)=>page.locator(`#relayEditorBody select[data-kind="${kind}"][data-team="${team}"][data-i="${leg}"]`),disabled=(kind,team,leg,id)=>select(kind,team,leg).locator(`option[value="${id}"]`).evaluate(option=>option.disabled);
+   assert.equal(await disabled('4x100fr',0,1,ids[0]),true);assert.equal(await disabled('4x100fr',1,2,ids[0]),true);
+   await page.evaluate(id=>{const el=document.querySelector('#relayEditorBody select[data-kind="4x100fr"][data-team="0"][data-i="1"]');el.value=id;el.dispatchEvent(new Event('change',{bubbles:true}))},ids[0]);assert.equal(await select('4x100fr',0,1).inputValue(),ids[1]);
+   await page.evaluate(id=>{const el=document.querySelector('#relayEditorBody select[data-kind="4x100fr"][data-team="1"][data-i="2"]');el.value=id;el.dispatchEvent(new Event('change',{bubbles:true}))},ids[0]);assert.equal(await select('4x100fr',1,2).inputValue(),ids[6]);
+   await select('4x200fr',2,3).selectOption(ids[0]);assert.equal(await select('4x200fr',2,3).inputValue(),ids[0]);
+   await page.locator('.modal-relay-editor #relayClose').click();
+   const stale={'4x100fr':[[ids[0],ids[0],ids[1],ids[2]],[ids[4],ids[0],ids[5],ids[6]],[ids[7],ids[8],ids[9],ids[10]]],'4x200fr':[[],[],[]]};
+   await page.evaluate(stale=>openRelayEditor(stale,()=>{},{kinds:['4x100fr'],roster:state.players.slice(0,12),multiTeam:true,initialDraft:stale,onDraft:draft=>window.sanitizedRelayDraft=JSON.parse(JSON.stringify(draft))}),stale);
+   assert.equal(await select('4x100fr',0,1).inputValue(),'');assert.equal(await select('4x100fr',1,1).inputValue(),'');
+   assert.equal(await page.evaluate(()=>window.sanitizedRelayDraft['4x100fr'][0][1]),'');assert.equal(await page.evaluate(()=>window.sanitizedRelayDraft['4x100fr'][1][1]),'');assert.deepEqual(errors,[]);
   }finally{await context.close()}
  }}finally{await app.close()}
 });
