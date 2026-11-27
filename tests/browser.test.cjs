@@ -1314,9 +1314,7 @@ test('November Teijimayama opens from training, admits slow PBs under college li
       await page.evaluate(()=>{rng=()=>.5;gauss=()=>0;const original=executeMeet;executeMeet=(...args)=>{window.teijimayamaResult=original(...args);return window.teijimayamaResult}});
       await page.locator('#advanceBtn').click();await page.locator('.modal-training-result #next').click();await page.waitForSelector('#entryMatrix');
       assert.equal(await page.evaluate(()=>state.slot),61);assert.match(await page.locator('.modal-meet-entry h2').innerText(),/帝嶋山選手権/);
-      assert.match(await page.locator('.modal-meet-entry .notice').innerText(),/参加標準記録はありません/);
-      assert.match(await page.locator('.modal-meet-entry .notice').innerText(),/1大会30pt固定/);
-      assert.doesNotMatch(await page.locator('.modal-meet-entry .notice').innerText(),/決勝1〜8位/);
+      assert.ok(await page.locator('.modal-meet-entry [data-entry-form-points]').isVisible());
       assert.equal(await page.locator('#entryMatrix thead th').count(),17);assert.equal(await page.locator('.entry-standard-status').count(),0);
       const choice=(id,event)=>page.locator(`input[data-pid="${id}"][data-event="${event}"]`);
       for(const e of ['ba50','br50','fly50'])await choice(ids[0],e).check();
@@ -5370,6 +5368,36 @@ test('relay results pair each actual swimmer with their split in every stage, na
  }}finally{await app.close()}
 });
 
+test('relay entry selectors and race-video member names stay in two columns on PC and iPhone',async()=>{
+ const app=await fixture();
+ try{for(const options of [{viewport:{width:1280,height:900}},{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]){
+  const context=await testContext(options);
+  try{
+   const page=await context.newPage(),errors=runtimeErrors(page);await page.goto(app.url);await page.waitForFunction(()=>state?.players?.length===32&&!localSaveBusy);const viewportWidth=await page.evaluate(()=>innerWidth);
+   const ids=await page.evaluate(()=>state.players.slice(0,4).map(a=>a.id));
+   await page.evaluate(ids=>openRelayEditor({'4x100fr':ids},()=>{},{kinds:['4x100fr'],roster:state.players.slice(0,4),formContext:{meet:'teijimayama_championship',slot:61,season:2026}}),ids);
+   const editorRow=page.locator('.modal-relay-editor .relay-entry-team>.row');
+   assert.equal(await editorRow.evaluate(el=>getComputedStyle(el).display),'grid');assert.equal(await editorRow.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
+   await page.locator('.modal-relay-editor #relayClose').click();
+   await page.evaluate(ids=>showEntryConfirmation('teijimayama_championship',Object.fromEntries(EVENTS.map(e=>[e,[]])),{'4x100fr':ids},61,2026),ids);
+   assert.equal(await page.locator('.relay-entry-summary-names').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
+   const card=await page.evaluate(()=>{
+    const members=state.players.slice(0,4),race=withMeetRaceContext('teijimayama_championship',61,2026,()=>simulateRelay(members,'4x100fr',true));
+    const root=document.createElement('div');root.innerHTML=raceEntrantCard({source:'PLAYER',athlete:{name:state.playerUniversity,organization:state.playerUniversity,category:'relay'},members,race,heatLane:1},0,'4x100fr');document.body.append(root);
+    const list=root.querySelector('.relay-members'),style=getComputedStyle(list),items=[...list.children].map(el=>{const r=el.getBoundingClientRect();return{left:r.left,top:r.top,width:r.width}});
+    return{columns:style.gridTemplateColumns.split(' ').length,forms:list.querySelectorAll('.meet-form').length,items};
+   });
+   assert.equal(card.columns,2);assert.equal(card.forms,0);assert.equal(card.items.length,4);assert.equal(card.items[0].top,card.items[1].top);assert.equal(card.items[2].top,card.items[3].top);assert.notEqual(card.items[0].left,card.items[1].left);
+   await page.evaluate(()=>{
+    const athlete=state.players[0],row={source:'PLAYER',athlete,heatLane:1,race:{total:50,trajectory:[]}},block={event:'fr100',phase:'prelim',rows:[row],heats:[[row]],swimOffs:[],ownIds:[athlete.id],showOverview:false},queued={event:'fr100',label:'予選 1組',rows:[row],programIndex:0};
+    state.meetSession=null;buildMeetProgram=()=>[block];buildMeetRaceQueue=()=>[queued];playRaceCanvas=(event,rows,options)=>{window.capturedRaceStage=options.stageLabel};
+    playMeetSequence({meet:'teijimayama_championship',slot:61,season:2026},{fr100:[athlete.id]},()=>{},[queued]);
+   });
+   await page.waitForFunction(()=>typeof window.capturedRaceStage==='string');assert.equal(await page.evaluate(()=>window.capturedRaceStage),'予選 1組');assert.doesNotMatch(await page.evaluate(()=>window.capturedRaceStage),/\d+\/\d+/);assert.equal(await page.evaluate(()=>innerWidth),viewportWidth);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ }}finally{await app.close()}
+});
 test('favorite rivals register beside roster names without scrolling or opening details, open current details from any page and persist offline on PC and phones',async()=>{
  const app=await fixture();
  try{for(const [label,options]of [['pc',{viewport:{width:1280,height:900}}],['iphone-landscape',{viewport:{width:844,height:390},isMobile:true,hasTouch:true}],['iphone-portrait',{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]]){

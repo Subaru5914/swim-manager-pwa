@@ -1,7 +1,8 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {test}=require('node:test');
-const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 function game(){
   const context=vm.createContext({crypto:{getRandomValues:a=>{a[0]=12345;return a}}});
   vm.runInContext(source.slice(0,source.indexOf('document.getElementById("nav").addEventListener')),context);
@@ -38,8 +39,14 @@ test('actual race-form tags appear only beside own swimmers in race video cards'
     const relayCpuCard=raceEntrantCard({source:'CPU',athlete:{name:'他大学',organization:'他大学',category:'relay'},members:cpu,race:relayCpuRace,heatLane:2},1,'4x100fr');
     const resultTable=relayResultTable([{organization:state.playerUniversity,members:own,race:relayRace}], '4x100fr', [{organization:state.playerUniversity,members:own,race:relayRace}]);
     const levels=html=>[...html.matchAll(/data-form-level="(-?[0-9]+)"/g)].map(m=>Number(m[1]));
-    return{own:levels(ownCard),cpu:levels(cpuCard),relayOwn:levels(relayOwnCard),relayCpu:levels(relayCpuCard),ownLevel:ownRace.physics.meetFormLevel,relayLevels:relayRace.formLevels,resultTags:levels(resultTable)};
+    return{own:levels(ownCard),cpu:levels(cpuCard),relayOwn:levels(relayOwnCard),relayCpu:levels(relayCpuCard),relayOwnCard,ownLevel:ownRace.physics.meetFormLevel,relayLevels:relayRace.formLevels,resultTags:levels(resultTable)};
   })()`);
   assert.deepEqual(result.own,[result.ownLevel],JSON.stringify(result));assert.deepEqual(result.cpu,[]);
-  assert.deepEqual(result.relayOwn,result.relayLevels);assert.deepEqual(result.relayCpu,[]);assert.deepEqual(result.resultTags,[]);
+  assert.deepEqual(result.relayOwn,[]);assert.deepEqual(result.relayCpu,[]);assert.equal((result.relayOwnCard.match(/class="relay-member"/g)||[]).length,4);assert.doesNotMatch(result.relayOwnCard,/meet-form/);assert.deepEqual(result.resultTags,[]);
+});
+
+test('relay entry and race-video member lists always use two columns',()=>{
+  assert.match(html,/\.relay-members\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html,/\.modal-relay-editor \.relay-entry-team>\.row\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html,/\.relay-entry-summary-names\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
